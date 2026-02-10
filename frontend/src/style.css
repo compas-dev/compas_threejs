@@ -1,9 +1,0 @@
-@import "tailwindcss";
-
-body {
-    margin: 0;
-    overflow: hidden;
-} /* Remove scrollbars */
-canvas {*/
-    display: block;
-} /* Prevent default inline-block spacing
