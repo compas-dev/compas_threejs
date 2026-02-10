@@ -16,6 +16,7 @@ dependencies = [
     "compas",
     "compas_pb",
     "websockets",
+    "fastapi",
 ]
 
 [project.urls]
