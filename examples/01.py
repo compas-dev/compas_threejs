@@ -70,7 +70,6 @@ viewer.background_color = Color(0.5, 0.1, 0.1)
 
 
 def update():
-    print("Hello")
     torus.frame.rotate(0.005, Vector(0, 1, 0), torus.frame.point)
     torus.frame.rotate(-0.011, Vector(1, 0, 0), torus.frame.point)
     torus.frame.rotate(0.01, Vector(0, 0, 1), torus.frame.point)
@@ -86,7 +85,7 @@ def update():
 
 # viewer.loop(update, 0.01)
 
-viewer.loop = update
+# viewer.loop = update
 viewer.start(show=False)
 
 # viewer.loop(update, 0.01)

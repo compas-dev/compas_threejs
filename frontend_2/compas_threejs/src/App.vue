@@ -1,0 +1,29 @@
+<template>
+    <div ref="threeContainer" class="three-container"></div>
+    <div class="controls"></div>
+</template>
+
+<script setup lang="ts">
+// 1. Make sure to import `ref` and `onMounted` from 'vue'
+import { ref, onMounted } from "vue";
+import { startAnimation, renderer } from "./scene_manager";
+import { initializeWebSocketConnection } from "./communication";
+import { Button } from "@/components/ui/button"; // Make sure this path is correct
+
+// 2. Declare the ref at the top level of the script, initialized to null.
+const threeContainer = ref<HTMLDivElement | null>(null);
+
+// 3. Use the onMounted hook to safely access the DOM element.
+onMounted(() => {
+    // By the time onMounted runs, Vue has rendered the template,
+    // and threeContainer.value will now hold the <div> element.
+    if (threeContainer.value) {
+        // This check ensures we don't run this code if the element, for some reason, wasn't found.
+        threeContainer.value.appendChild(renderer.domElement);
+
+        // It's safer to start animations and connections after the DOM is ready.
+        startAnimation();
+        initializeWebSocketConnection();
+    }
+});
+</script>

@@ -9,6 +9,7 @@ clients = set()
 server_loop = None
 scene_state = {}
 shutdown_event = threading.Event()
+viewer_instance = None
 
 
 @app.websocket("/ws")
@@ -23,6 +24,11 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         while True:
+            data = await websocket.receive_bytes()
+            print(viewer_instance)
+            print(data)
+            if viewer_instance:
+                viewer_instance.on_message(data)
             await websocket.receive_bytes()
     except WebSocketDisconnect:
         clients.discard(websocket)
@@ -42,9 +48,10 @@ async def broadcast(binary_data: bytes, obj_id: str = None):
     )
 
 
-def run_server(port=9001):
+def run_server(port=9001, viewer=None):
     """This function now creates and runs the server with a robust shutdown procedure."""
-    global server_loop
+    global server_loop, viewer_instance
+    viewer_instance = viewer
     server_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(server_loop)
 

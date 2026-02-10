@@ -1,20 +1,25 @@
+<script setup lang="ts">
+    import { ArrowUpIcon } from "lucide-vue-next";
+    import { Button } from "@/components/ui/button";
+</script>
+
 <!doctype html>
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link href="/src/style.css" rel="stylesheet" />
         <title>COMPAS threejs</title>
-        <style>
-            body {
-                margin: 0;
-                overflow: hidden;
-            } /* Remove scrollbars */
-            canvas {
-                display: block;
-            } /* Prevent default inline-block spacing */
-        </style>
     </head>
     <body>
         <script type="module" src="src/main.ts"></script>
+        <script setup lang="ts">
+            import { Button } from "@/components/ui/button";
+        </script>
+        <h1 class="text-3xl font-bold underline">Hello world!</h1>
+        <Button variant="outline">Button</Button>
+        <Button variant="outline" size="icon" aria-label="Submit">
+            <ArrowUpIcon />
+        </Button>
     </body>
 </html>

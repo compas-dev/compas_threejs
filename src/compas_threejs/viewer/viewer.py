@@ -5,7 +5,6 @@ import webbrowser
 from uuid import uuid4
 
 import compas_pb
-import rich
 from compas.colors import Color
 from compas.geometry import Point
 from rich.console import Console
@@ -87,7 +86,7 @@ class Viewer:
         # The server thread can be a daemon because the run() method will block the main thread.
         console.log(f"[green]Starting viewer server on port {self.port}...[/green]")
         self.server_thread = threading.Thread(
-            target=run_server, args=(self.port,), daemon=True
+            target=run_server, args=(self.port, self), daemon=True
         )
         self.server_thread.start()
         while get_server_loop() is None:
@@ -208,3 +207,12 @@ class Viewer:
             asyncio.run_coroutine_threadsafe(broadcast(binary_data, mat_id), loop)
         else:
             self.queued_messages.append((binary_data, mat_id))
+
+    # ---- MESSAGES ----------------------------------------------------------------------------------
+
+    def on_message(self, message):
+        """
+        Default handler for messages received from the frontend.
+        This method can be overridden in a subclass.
+        """
+        print(f"Received message: {message}")
