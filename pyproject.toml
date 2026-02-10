@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "compas3D"
+version = "0.1.0"
+description = "A lightweight Three.js viewer for COMPAS using Protobuf"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+  { name = "Eric Gozzi", email = "eric.gozzi@arch.ethz.ch" },
+]
+keywords = ["compas", "viewer", "threejs", "protobuf"]
+dependencies = [
+    "compas",
+    "compas_pb",
+    "websockets",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/my_compas_viewer"
+
+# -- DISCOVERY --
+# Tells setuptools that the code is inside the 'src' folder
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# -- STATIC FILES --
+# Critical: Tells setuptools to look at MANIFEST.in for non-python files (html, js)
+[tool.setuptools]
+include-package-data = true
