@@ -68,6 +68,29 @@ export function sendWebSocketMessage(message: ArrayBuffer): void {
   }
 }
 
+/**
+ * Converts a JavaScript object to a JSON string and sends it over the WebSocket.
+ * This is the primary function you should use to send data to the Python backend.
+ *
+ * @param data - A JavaScript object that can be serialized into JSON.
+ */
+export function sendData(data: Record<string, any>): void {
+  try {
+    // 1. Convert the JavaScript object to a JSON string.
+    const jsonString = JSON.stringify(data);
+
+    // 2. Convert the JSON string to an ArrayBuffer using your existing helper.
+    const buffer = stringToArrayBuffer(jsonString);
+
+    // 3. Send the ArrayBuffer through the WebSocket.
+    sendWebSocketMessage(buffer);
+
+    console.log("🔵 [WebSocket] Sent data:", data);
+  } catch (error) {
+    console.error("🔴 [WebSocket] Failed to serialize or send data:", error);
+  }
+}
+
 export function stringToArrayBuffer(str: string): ArrayBuffer {
   /**
    * Converts a string to an ArrayBuffer.

@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 
 // Initialize Scene
 export const scene = new THREE.Scene();
@@ -31,6 +32,10 @@ export function startAnimation() {
   }
   animate();
 }
+
+// Environment & Lighting;
+// const pmremGenerator = new THREE.PMREMGenerator(renderer);
+// scene.environment = pmremGenerator.fromScene(new RoomEnvironment()).texture;
 
 // Resize Handling
 window.addEventListener("resize", () => {

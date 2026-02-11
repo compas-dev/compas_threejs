@@ -25,11 +25,10 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         while True:
             data = await websocket.receive_bytes()
-            print(viewer_instance)
-            print(data)
+
             if viewer_instance:
                 viewer_instance.on_message(data)
-            await websocket.receive_bytes()
+
     except WebSocketDisconnect:
         clients.discard(websocket)
 

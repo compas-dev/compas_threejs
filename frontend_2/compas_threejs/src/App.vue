@@ -1,13 +1,15 @@
 <template>
+    <Sidebar />
+
     <div ref="threeContainer" class="three-container"></div>
-    <div class="controls"></div>
 </template>
 
 <script setup lang="ts">
 // 1. Make sure to import `ref` and `onMounted` from 'vue'
 import { ref, onMounted } from "vue";
-import { startAnimation, renderer } from "./scene_manager";
-import { initializeWebSocketConnection } from "./communication";
+import Sidebar from "./components/layout/Sidebar.vue";
+import { startAnimation, renderer } from "./viewer/scene_manager";
+import { initializeWebSocketConnection } from "./communications/communication";
 import { Button } from "@/components/ui/button"; // Make sure this path is correct
 
 // 2. Declare the ref at the top level of the script, initialized to null.

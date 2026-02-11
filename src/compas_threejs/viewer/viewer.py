@@ -1,4 +1,5 @@
 import asyncio
+import json
 import threading
 import time
 import webbrowser
@@ -34,6 +35,7 @@ class Viewer:
         self._camera_damping = camera_damping
         self._default_lighting = default_lighting
         self.queued_messages = []
+        self._buttons = dict()
 
     def __enter__(self):
         return self
@@ -208,6 +210,13 @@ class Viewer:
         else:
             self.queued_messages.append((binary_data, mat_id))
 
+    # ---- BUTTONS ----------------------------------------------------------------------------------
+
+    def add_ui_element(self, element):
+        # register the function with the id
+        self._buttons[element.guid] = element.action
+        self._send_dictionary_message(element.as_dict())
+
     # ---- MESSAGES ----------------------------------------------------------------------------------
 
     def on_message(self, message):
@@ -215,4 +224,19 @@ class Viewer:
         Default handler for messages received from the frontend.
         This method can be overridden in a subclass.
         """
-        print(f"Received message: {message}")
+        # Decode the message from bytes to string and parse it as JSON
+        decoded_message = json.loads(message.decode("utf-8"))
+        # Transform the message into a usable dictionary
+        action_id = decoded_message.get("action")
+        console.log(f"[blue]Received message from frontend: {decoded_message}[/blue]")
+
+        value = decoded_message.get("value")
+        if value is not None and action_id and action_id in self._buttons:
+            console.log(f"[blue]Value associated with the action: {value}[/blue]")
+            self._buttons[action_id](value[0])
+
+        elif action_id and action_id in self._buttons:
+            self._buttons[action_id]()
+
+        else:
+            print(f"Unrecognized action or missing handler for action ID: {action_id}")

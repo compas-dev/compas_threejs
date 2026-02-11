@@ -5,15 +5,15 @@ export const GEOMETRY_MATERIALS: { [guid: string]: THREE.Material } = {};
 export const SCENE_MATERIALS: { [guid: string]: THREE.Material } = {};
 
 export function materialManager(matData: { [key: string]: any }) {
-  let material;
-  if (SCENE_MATERIALS[matData.guid.value]) {
-    console.log("mat yes");
-    material = SCENE_MATERIALS[matData.guid.value];
-  } else {
-    console.log("mat no");
-    material = buildMaterial(matData);
-    SCENE_MATERIALS[matData.guid.value] = material;
-  }
+  let material: THREE.Material;
+  // if (SCENE_MATERIALS[matData.guid.value]) {
+  //   console.log("mat yes");
+  //   material = SCENE_MATERIALS[matData.guid.value];
+  // } else {
+  console.log("mat no");
+  material = buildMaterial(matData);
+  SCENE_MATERIALS[matData.guid.value] = material;
+  // }
 
   //update the material of the geometry
   updateMaterial(matData.geometry_guid.value, material);

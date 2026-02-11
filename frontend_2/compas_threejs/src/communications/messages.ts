@@ -1,12 +1,13 @@
-import { scene } from "./scene_builder";
-import { unpackMessageToGeometry, unpackMessage } from "./protobuff/analyzers";
-import type { AnyData } from "./protobuff/generated/compas_pb/data/message";
-import { Dictionary } from "./protobuff/messages";
+import { scene } from "../viewer/scene_builder";
+import { unpackMessageToGeometry, unpackMessage } from "../protobuff/analyzers";
+import type { AnyData } from "../protobuff/generated/compas_pb/data/message";
+import { Dictionary } from "../protobuff/messages";
 import * as THREE from "three";
-import { lightManager } from "./light_manager";
-import { geometryManager } from "./geometry_manager";
-import { materialManager } from "./material_manager";
-import { sceneManager } from "./scene_manager";
+import { lightManager } from "../viewer/light_manager";
+import { geometryManager } from "../viewer/geometry_manager";
+import { materialManager } from "../viewer/material_manager";
+import { sceneManager } from "../viewer/scene_manager";
+import { uiManager } from "./sidebarStore";
 
 const SCENE_GEOMETRIES: { [guid: string]: THREE.Object3D } = {};
 
@@ -36,6 +37,9 @@ function analyzeDictionary(dictionary: Dictionary) {
       break;
     case "scene":
       sceneManager(data);
+      break;
+    case "ui":
+      uiManager(data);
       break;
     default:
       console.warn("Unknown dispatch value:", data.dispatch.value);
