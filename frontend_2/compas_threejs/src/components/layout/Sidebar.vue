@@ -30,20 +30,15 @@
                     :max="item.props.max"
                     :step="item.props.step"
                     :default-value="item.props.defaultValue"
-                    v-model="item.props.currentValue"
+                    v-model="item.props.defaultValue"
                     @update:model-value="
                         (value) => handleAction(item.action, value)
                     "
                     class="w-[80%]"
                 >
                 </Slider>
-                <span
-                    v-if="item.props.currentValue || item.props.defaultValue"
-                    class="slider-value"
-                >
-                    {{
-                        (item.props.currentValue || item.props.defaultValue)[0]
-                    }}
+                <span v-if="item.props.defaultValue" class="slider-value">
+                    {{ item.props.defaultValue[0] }}
                 </span>
             </div>
 

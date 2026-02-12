@@ -6,7 +6,7 @@ import * as THREE from "three";
 export class Reflection {
   public readonly data: ReflectionData;
 
-  cosntructor(input: { bytes: Uint8Array } | { data: ReflectionData }) {
+  constructor(input: { bytes: Uint8Array } | { data: ReflectionData }) {
     let reflectionData: ReflectionData;
     if ("bytes" in input) {
       reflectionData = bytesToReflectionData(input.bytes);

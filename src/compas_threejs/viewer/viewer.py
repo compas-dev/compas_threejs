@@ -25,16 +25,15 @@ class Viewer:
     def __init__(
         self,
         websocket_port=9001,
-        frontend_port=8888,
+        # frontend_port is no longer strictly needed but we keep it for compatibility
         background_color: Color = Color(0.9, 0.9, 0.9),
         default_lighting: bool = True,
         camera_damping: bool = True,
         loop_interval: float = 0.02,
     ):
         self.websocket_port = websocket_port
-        self.frontend_port = frontend_port
         self.websocket_server_thread = None
-        self.frontend_server_thread = None
+        # We've removed the frontend_server_thread variables
         self.loop_interval = loop_interval
         self._loop = None
         self._background_color = background_color
@@ -89,53 +88,31 @@ class Viewer:
 
     # ---- SERVER ---------------------------------------------------------------------------------
 
-    def _initialize_websocket_server(self):
-        """Starts the background websocket server thread."""
+    def _initialize_server(self):
+        """Starts the consolidated FastAPI server."""
         console.log(
-            f"[green]Starting websocket server on port {self.websocket_port}...[/green]"
+            f"[green]Starting server on http://localhost:{self.websocket_port}...[/green]"
         )
         self.websocket_server_thread = threading.Thread(
             target=run_server, args=(self.websocket_port, self), daemon=True
         )
         self.websocket_server_thread.start()
+
         while get_server_loop() is None:
             time.sleep(0.05)
-        console.log(
-            f"[green]Websocket server ready on port {self.websocket_port}![/green]"
-        )
-
-    def _initialize_frontend_server(self):
-        """Starts the background frontend server thread."""
-        console.log(
-            f"[green]Starting frontend server on port {self.frontend_port}...[/green]"
-        )
-        dist_path = Path(__file__).parent / "dist"
-
-        class Handler(http.server.SimpleHTTPRequestHandler):
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, directory=str(dist_path), **kwargs)
-
-        self.frontend_server = socketserver.TCPServer(("", self.frontend_port), Handler)
-        self.frontend_server_thread = threading.Thread(
-            target=self.frontend_server.serve_forever, daemon=True
-        )
-        self.frontend_server_thread.start()
-        console.log(
-            f"[green]Frontend server ready on http://localhost:{self.frontend_port}[/green]"
-        )
+        console.log("[green]Server ready![/green]")
 
     def start(self, show=False):
-        """Initializes the servers, starts the viewer, and keeps the main thread alive."""
-        self._initialize_websocket_server()
-        self._initialize_frontend_server()
+        """Initializes the consolidated server and keeps the main thread alive."""
+        self._initialize_server()
 
-        # Set the properties and updates the viewer
+        # Update viewer settings
         self.background_color = self.background_color
         self.camera_damping = self.camera_damping
         if self._default_lighting:
             self._send_default_lighting()
 
-        # Send any queued messages
+        # Send queued messages
         for msg, obj_id in self.queued_messages:
             loop = get_server_loop()
             if loop:
@@ -152,29 +129,22 @@ class Viewer:
                     callback = self.loop
                     if callback:
                         callback()
-
             except KeyboardInterrupt:
                 console.log("[green]Interruption ordered[/green]")
             finally:
                 self.stop()
-                console.log("[green]Viewer stopped successfully![/green]")
 
     def stop(self):
-        """Stops all background services gracefully."""
-        console.log("[green]Stopping websocket server...[/green]")
+        """Stops the background server gracefully."""
+        console.log("[green]Stopping server...[/green]")
         stop_server()
         if self.websocket_server_thread:
             self.websocket_server_thread.join()
-
-        console.log("[green]Stopping frontend server...[/green]")
-        if hasattr(self, "frontend_server") and self.frontend_server:
-            self.frontend_server.shutdown()
-            self.frontend_server.server_close()
-        if self.frontend_server_thread:
-            self.frontend_server_thread.join()
+        console.log("[green]Viewer stopped successfully![/green]")
 
     def show(self):
-        webbrowser.open(f"http://localhost:{self.frontend_port}/")
+        # We now point to the websocket_port because FastAPI is serving the HTML there
+        webbrowser.open(f"http://localhost:{self.websocket_port}/")
 
     def _send_dictionary_message(self, msg: dict):
         binary_data = compas_pb.pb_dump_bts(msg)

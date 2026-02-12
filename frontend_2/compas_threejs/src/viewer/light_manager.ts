@@ -1,7 +1,7 @@
 import { scene } from "./scene_manager";
 import * as THREE from "three";
-import { RectAreaLightHelper } from "three/addons/helpers/RectAreaLightHelper.js";
-import { Sky } from "three/addons/objects/Sky.js";
+import { RectAreaLightHelper } from "three/examples/jsm/helpers/RectAreaLightHelper.js";
+import { Sky } from "three/examples/jsm/objects/Sky.js";
 
 export const SCENE_LIGHTS: { [guid: string]: THREE.Material } = {};
 export const SCENE_LIGTH_HELPERS: { [guid: string]: THREE.Material } = {};

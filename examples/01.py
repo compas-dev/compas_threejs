@@ -21,7 +21,7 @@ from compas.geometry import (
 )
 from compas_timber.elements import Beam
 
-from compas_threejs.lights import PointLight, RectLight, Skylight, SpotLight, Sunlight
+from compas_threejs.lights import PointLight, RectLight, SpotLight, Sunlight
 from compas_threejs.materials import Material
 from compas_threejs.viewer import Viewer
 

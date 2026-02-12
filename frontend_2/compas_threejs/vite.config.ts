@@ -11,11 +11,8 @@ export default defineConfig({
     },
   },
   build: {
-    // Path relative to the vite.config.ts file
-    outDir: path.resolve(__dirname, "../../../src/compas_threejs/frontend"),
-
-    // Optional but nice:
-    emptyOutDir: true, // Clears previous build automatically
-    sourcemap: false, // Skip sourcemaps for pip distribution
+    outDir: path.resolve(__dirname, "dist"), // ✅ build goes into dist
+    emptyOutDir: true, // clears old build
+    sourcemap: false, // no sourcemaps needed
   },
 });

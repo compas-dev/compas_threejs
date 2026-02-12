@@ -5,6 +5,11 @@
     "paths": {
       "@/*": ["./src/*"],
     },
-    // ...
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
   },
 }
