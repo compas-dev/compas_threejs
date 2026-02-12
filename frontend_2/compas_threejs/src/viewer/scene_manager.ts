@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import { DebugEnvironment } from "three/addons/environments/DebugEnvironment.js";
+import { TransformControls } from "three/addons/controls/TransformControls.js";
 
 // Initialize Scene
 export const scene = new THREE.Scene();
@@ -15,8 +17,16 @@ export const camera = new THREE.PerspectiveCamera(
 camera.position.set(10, 10, 15);
 
 export const renderer = new THREE.WebGLRenderer({ antialias: true });
+// export const renderer = new THREE.WebGPURenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMappingExposure = 2.5;
+// renderer.physicallyCorrectLights = true;
+// renderer.outputColorSpace = THREE.SRGBColorSpace;
+// renderer.setAnimationLoop(animate);
 document.body.appendChild(renderer.domElement);
 
 // Controls
@@ -24,18 +34,18 @@ export const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
 // The Loop
-export function startAnimation() {
-  function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    renderer.render(scene, camera);
-  }
-  animate();
+// export function startAnimation() {
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
 }
+animate();
+// }
 
-// Environment & Lighting;
+// // Environment & Lighting;
 // const pmremGenerator = new THREE.PMREMGenerator(renderer);
-// scene.environment = pmremGenerator.fromScene(new RoomEnvironment()).texture;
+// scene.environment = pmremGenerator.fromScene(new DebugEnvironment()).texture;
 
 // Resize Handling
 window.addEventListener("resize", () => {

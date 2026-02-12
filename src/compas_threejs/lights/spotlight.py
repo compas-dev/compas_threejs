@@ -9,17 +9,17 @@ class SpotLight:
     def __init__(
         self,
         point: Point = Point(0, 0, 0),
-        direction: Vector = Vector(0, 0, -1),
+        target: Point = Point(0, 0, -1),
         color: Color = Color.white(),
-        intensity: float = 1,
+        intensity: float = 100,
         distance: float = 0,
-        angle: float = math.pi / 3,
+        angle: float = math.pi / 7,
         penumbra: float = 0,
         decay: float = 2,
         helper: bool = False,
     ):
         self.point = point
-        self.direction = direction
+        self.target = target
         self.color = color
         self.intensity = intensity
         self.distance = distance
@@ -36,9 +36,9 @@ class SpotLight:
             "x": self.point.x,
             "y": self.point.y,
             "z": self.point.z,
-            "dx": self.direction.x,
-            "dy": self.direction.y,
-            "dz": self.direction.z,
+            "tx": self.target.x,
+            "ty": self.target.y,
+            "tz": self.target.z,
             "color": self.color.hex,
             "intensity": self.intensity,
             "distance": self.distance,

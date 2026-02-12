@@ -1,4 +1,4 @@
-import { FaceData } from "../generated/compas_pb/data/datastructures.ts";
+import { FaceData } from "../generated/compas_pb/data/datastructures";
 
 export class PolyhedronFace {
   public readonly data: FaceData;

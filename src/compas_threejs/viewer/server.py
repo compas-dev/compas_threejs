@@ -5,6 +5,8 @@ import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
 app = FastAPI()
+
+
 clients = set()
 server_loop = None
 scene_state = {}

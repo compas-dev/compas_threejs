@@ -1,8 +1,11 @@
 import asyncio
+import http.server
 import json
+import socketserver
 import threading
 import time
 import webbrowser
+from pathlib import Path
 from uuid import uuid4
 
 import compas_pb
@@ -21,14 +24,17 @@ console = Console()
 class Viewer:
     def __init__(
         self,
-        port=9001,
+        websocket_port=9001,
+        frontend_port=8888,
         background_color: Color = Color(0.9, 0.9, 0.9),
         default_lighting: bool = True,
         camera_damping: bool = True,
         loop_interval: float = 0.02,
     ):
-        self.port = port
-        self.server_thread = None
+        self.websocket_port = websocket_port
+        self.frontend_port = frontend_port
+        self.websocket_server_thread = None
+        self.frontend_server_thread = None
         self.loop_interval = loop_interval
         self._loop = None
         self._background_color = background_color
@@ -83,21 +89,45 @@ class Viewer:
 
     # ---- SERVER ---------------------------------------------------------------------------------
 
-    def _initialize_server(self):
-        """Starts the background server thread."""
-        # The server thread can be a daemon because the run() method will block the main thread.
-        console.log(f"[green]Starting viewer server on port {self.port}...[/green]")
-        self.server_thread = threading.Thread(
-            target=run_server, args=(self.port, self), daemon=True
+    def _initialize_websocket_server(self):
+        """Starts the background websocket server thread."""
+        console.log(
+            f"[green]Starting websocket server on port {self.websocket_port}...[/green]"
         )
-        self.server_thread.start()
+        self.websocket_server_thread = threading.Thread(
+            target=run_server, args=(self.websocket_port, self), daemon=True
+        )
+        self.websocket_server_thread.start()
         while get_server_loop() is None:
             time.sleep(0.05)
-        console.log(f"[green]Viewer Server ready on port {self.port}![/green]")
+        console.log(
+            f"[green]Websocket server ready on port {self.websocket_port}![/green]"
+        )
+
+    def _initialize_frontend_server(self):
+        """Starts the background frontend server thread."""
+        console.log(
+            f"[green]Starting frontend server on port {self.frontend_port}...[/green]"
+        )
+        dist_path = Path(__file__).parent / "dist"
+
+        class Handler(http.server.SimpleHTTPRequestHandler):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, directory=str(dist_path), **kwargs)
+
+        self.frontend_server = socketserver.TCPServer(("", self.frontend_port), Handler)
+        self.frontend_server_thread = threading.Thread(
+            target=self.frontend_server.serve_forever, daemon=True
+        )
+        self.frontend_server_thread.start()
+        console.log(
+            f"[green]Frontend server ready on http://localhost:{self.frontend_port}[/green]"
+        )
 
     def start(self, show=False):
-        """Initializes the server, starts the viewer, and keeps the main thread alive."""
-        self._initialize_server()
+        """Initializes the servers, starts the viewer, and keeps the main thread alive."""
+        self._initialize_websocket_server()
+        self._initialize_frontend_server()
 
         # Set the properties and updates the viewer
         self.background_color = self.background_color
@@ -131,13 +161,20 @@ class Viewer:
 
     def stop(self):
         """Stops all background services gracefully."""
-        console.log("[green]Stopping viewer server...[/green]")
+        console.log("[green]Stopping websocket server...[/green]")
         stop_server()
-        if self.server_thread:
-            self.server_thread.join()
+        if self.websocket_server_thread:
+            self.websocket_server_thread.join()
+
+        console.log("[green]Stopping frontend server...[/green]")
+        if hasattr(self, "frontend_server") and self.frontend_server:
+            self.frontend_server.shutdown()
+            self.frontend_server.server_close()
+        if self.frontend_server_thread:
+            self.frontend_server_thread.join()
 
     def show(self):
-        webbrowser.open("http://localhost:5173/")
+        webbrowser.open(f"http://localhost:{self.frontend_port}/")
 
     def _send_dictionary_message(self, msg: dict):
         binary_data = compas_pb.pb_dump_bts(msg)
@@ -187,6 +224,9 @@ class Viewer:
             asyncio.run_coroutine_threadsafe(broadcast(binary_data, obj_id), loop)
         else:
             self.queued_messages.append((binary_data, obj_id))
+
+    def update_light(self, light):
+        self.add_light(light)
 
     def _send_default_lighting(self):
         sunlight = Sunlight(point=Point(30, 30, 10), intensity=2)

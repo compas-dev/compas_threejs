@@ -36,7 +36,7 @@ class PointLight:
         self,
         point: Point = Point(0, 0, 0),
         color: Color = Color.white(),
-        intensity: float = 1,
+        intensity: float = 100,
         distance: float = 0,
         decay: float = 2,
         helper: bool = False,

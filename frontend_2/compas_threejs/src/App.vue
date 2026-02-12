@@ -8,7 +8,7 @@
 // 1. Make sure to import `ref` and `onMounted` from 'vue'
 import { ref, onMounted } from "vue";
 import Sidebar from "./components/layout/Sidebar.vue";
-import { startAnimation, renderer } from "./viewer/scene_manager";
+import { renderer } from "./viewer/scene_manager";
 import { initializeWebSocketConnection } from "./communications/communication";
 import { Button } from "@/components/ui/button"; // Make sure this path is correct
 
@@ -24,7 +24,7 @@ onMounted(() => {
         threeContainer.value.appendChild(renderer.domElement);
 
         // It's safer to start animations and connections after the DOM is ready.
-        startAnimation();
+        // startAnimation();
         initializeWebSocketConnection();
     }
 });

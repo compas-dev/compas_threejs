@@ -46,6 +46,9 @@ function addBufferGeometryToScene(
   }
 
   const mesh = new THREE.Mesh(geometry, material);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  // mesh.computeVertexNormals();
   scene.add(mesh);
   SCENE_GEOMETRIES[guid] = mesh;
 }

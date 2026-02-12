@@ -1,7 +1,7 @@
 from .ambientlight import AmbientLight
 from .pointlight import PointLight
 from .rectlight import RectLight
-from .skylight import Skylight
+from .sky import Sky
 from .spotlight import SpotLight
 from .sunlight import Sunlight
 
@@ -10,6 +10,6 @@ __all__ = [
     "SpotLight",
     "RectLight",
     "Sunlight",
-    "Skylight",
+    "Sky",
     "AmbientLight",
 ]
