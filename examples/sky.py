@@ -1,5 +1,5 @@
 from compas.colors import Color
-from compas.geometry import Box, Frame, Sphere, Vector
+from compas.geometry import Circle, Frame, Point, Sphere
 
 from compas_threejs.lights import PointLight, RectLight, Sky, SpotLight, Sunlight
 from compas_threejs.materials import Material
@@ -11,7 +11,8 @@ viz = Viewer(default_lighting=False)
 sky = Sky()
 viz.add_light(sky)
 
-sphere = Sphere(10)
+sphere = Sphere(1)
+sphere.frame.point = Point(0, 1, 0)
 material = Material(color=Color.white(), metalness=0.1, roughness=0.5)
 viz.add_geometry(sphere, material)
 
@@ -110,5 +111,6 @@ slider = Slider(
     action=update_turbidity,
 )
 viz.add_ui_element(slider)
+
 
 viz.start()
