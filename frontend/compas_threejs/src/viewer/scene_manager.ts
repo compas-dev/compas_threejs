@@ -1,6 +1,9 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
+// Change the default UP vector for all objects
+THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
+
 // Initialize Scene
 export const scene = new THREE.Scene();
 

@@ -156,6 +156,7 @@ class Viewer:
 
     def add_geometry(self, geometry, material=None):
         obj_id = geometry.guid
+
         binary_data = compas_pb.pb_dump_bts(geometry)
         loop = get_server_loop()
         if loop:

@@ -6,6 +6,7 @@ export const SCENE_GEOMETRIES: { [guid: string]: THREE.Object3D } = {};
 
 export function geometryManager(obj: any) {
   const guid: string = obj.guid;
+  console.log("geometry manager", obj);
 
   // check if object is already in scene
   if (guid in SCENE_GEOMETRIES) {
@@ -56,7 +57,7 @@ export function updateMaterial(
   material: THREE.MeshStandardMaterial,
 ) {
   const object = SCENE_GEOMETRIES[geometry_guid];
-  if (object && object instanceof THREE.Mesh) {
+  if (object) {
     object.material = material;
   }
 }

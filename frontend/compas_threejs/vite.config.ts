@@ -11,7 +11,7 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: path.resolve(__dirname, "dist"), // ✅ build goes into dist
+    outDir: path.resolve(__dirname, "../../src/compas_threejs/viewer/frontend"), // ✅ build goes into dist
     emptyOutDir: true, // clears old build
     sourcemap: false, // no sourcemaps needed
   },

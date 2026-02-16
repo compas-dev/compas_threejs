@@ -1,5 +1,4 @@
 import random
-import uuid
 
 from compas.colors import Color
 from compas.geometry import Box, Frame, Sphere, Vector

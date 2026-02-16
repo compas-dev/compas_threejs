@@ -7,7 +7,17 @@ export const SCENE_MATERIALS: { [guid: string]: THREE.Material } = {};
 export function materialManager(matData: { [key: string]: any }) {
   let material: THREE.Material;
 
-  material = buildMaterial(matData);
+  // get the right material
+  switch (matData.type.value) {
+    case "standard_material":
+      material = buildStandardMaterial(matData);
+      break;
+    case "line_material":
+      material = buildLineMaterial(matData);
+      break;
+  }
+
+  // save the material
   SCENE_MATERIALS[matData.guid.value] = material;
 
   //update the material of the geometry
@@ -15,7 +25,7 @@ export function materialManager(matData: { [key: string]: any }) {
   GEOMETRY_MATERIALS[matData.geometry_guid.value] = matData.guid.value;
 }
 
-function buildMaterial(data: { [key: string]: any }) {
+function buildStandardMaterial(data: { [key: string]: any }) {
   let color = data.color.value;
   color = color.replace("#", "0x");
   let emissive = data.emissive.value;
@@ -30,6 +40,20 @@ function buildMaterial(data: { [key: string]: any }) {
     flatShading: data.flat_shading.value,
     wireframe: data.wireframe.value,
     side: THREE.DoubleSide,
+  });
+
+  return material;
+}
+
+function buildLineMaterial(data: {
+  [key: string]: any;
+}): THREE.LineBasicMaterial {
+  let color = data.color.value;
+  color = color.replace("#", "0x");
+
+  const material = new THREE.LineBasicMaterial({
+    color: parseInt(color),
+    linewidth: data.linewidth.value,
   });
   return material;
 }
