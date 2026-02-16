@@ -1,1 +1,1 @@
-recursive-include src/compas3D/static *
+recursive-include src/compas_threejs/viewer/frontend/ *
