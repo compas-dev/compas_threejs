@@ -11,6 +11,8 @@ material = Material(color=Color(1, 0.8, 0), metalness=1, roughness=1)
 
 text = TextGeometry(
     text="HELLO COMPAS",
+    font="helvetiker",
+    bold=True,
     # point=Point(-10, 0, 0),
     # direction=Vector(0, 1, 0),
     # up=Vector(-1, 0, 0),

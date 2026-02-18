@@ -43,7 +43,7 @@ async function loadFont(fontName: string, fontWeight: string): Promise<any> {
 
 async function buildTextGeometry(data: { [key: string]: any }) {
   const text = data.text.value;
-  const fontName = "helvetiker";
+  const fontName = data.font.value;
   const fontWeight = data.weight.value;
   const depth = data.depth.value;
   const size = data.size.value;

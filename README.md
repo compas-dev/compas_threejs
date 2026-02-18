@@ -22,3 +22,18 @@ viz.add_geometry(box)
 
 viz.start()
 ```
+
+
+
+
+# Invokes
+
+To start the development server, run the following command in a second terminal:
+```
+invoke rundev
+```
+
+To build the static files directly into the python package run the following command in the terminal:
+```
+invoke buildstatic
+```
