@@ -5,9 +5,14 @@ from compas.geometry import Point, Vector
 
 
 class TextGeometry:
+    """
+    parameter `font` can  have the following values: "helvetiker", "gentilis" or "optimer"
+    """
+
     def __init__(
         self,
         text: str,
+        font: str = "helvetiker",
         size: float = 2,
         depth: float = 0.5,
         bold: bool = False,
@@ -17,6 +22,7 @@ class TextGeometry:
         centered: bool = False,
     ):
         self.text = text
+        self.font = font
         self.size = size
         self.depth = depth
         self.bold = bold
@@ -31,6 +37,7 @@ class TextGeometry:
             "dispatch": "text",
             "type": "text_geometry",
             "text": self.text,
+            "font": self.font,
             "size": self.size,
             "depth": self.depth,
             "weight": self._weight,
