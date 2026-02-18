@@ -57,9 +57,12 @@ export class Capsule {
       segments,
       segments,
     );
+
+    const capsuleMesh = new THREE.Mesh(capsuleGeometry);
+
     const transformationMatrix = buildTransformationFromFrame(this.data.frame!);
-    capsuleGeometry.applyMatrix4(transformationMatrix);
-    return capsuleGeometry;
+    capsuleMesh.applyMatrix4(transformationMatrix);
+    return capsuleMesh;
   }
 }
 

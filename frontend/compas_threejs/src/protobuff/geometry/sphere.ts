@@ -57,6 +57,7 @@ export class Sphere {
 
     const transformationMatrix = buildTransformationFromFrame(this.data.frame!);
     sphereMesh.applyMatrix4(transformationMatrix);
+
     return sphereMesh;
   }
 }

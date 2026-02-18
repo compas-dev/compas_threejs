@@ -6,50 +6,38 @@ export const SCENE_GEOMETRIES: { [guid: string]: THREE.Object3D } = {};
 
 export function geometryManager(obj: any) {
   const guid: string = obj.guid;
-  console.log("geometry manager", obj);
+  const existingObj = SCENE_GEOMETRIES[guid];
 
-  // check if object is already in scene
-  if (guid in SCENE_GEOMETRIES) {
-    const oldObject = SCENE_GEOMETRIES[guid];
-    scene.remove(oldObject);
-    delete SCENE_GEOMETRIES[guid];
-  }
+  // 1. Get the new Mesh from your API
+  const newMesh = obj.buildGeometry();
+  if (!newMesh || !(newMesh instanceof THREE.Mesh)) return;
 
-  const threeGeometry = obj.buildGeometry();
-  dispatchGeometry(threeGeometry, guid);
-}
+  // 2. Extract and prepare the geometry from the new mesh
+  const newGeo = newMesh.geometry;
+  newGeo.computeBoundingSphere();
+  newGeo.computeBoundingBox();
 
-function dispatchGeometry(geometry: THREE.Object3D, guid: string) {
-  if (geometry instanceof THREE.BufferGeometry) {
-    // A buffer geometry needs to be conveted into a mesh
-    addBufferGeometryToScene(geometry as THREE.BufferGeometry, guid);
+  if (existingObj instanceof THREE.Mesh) {
+    // 3. UPDATE: Swap geometry only
+    const oldGeo = existingObj.geometry;
+    existingObj.geometry = newGeo;
+
+    // 4. Transform: Copy position/rotation/scale from the new mesh
+    existingObj.position.copy(newMesh.position);
+    existingObj.quaternion.copy(newMesh.quaternion);
+    existingObj.scale.copy(newMesh.scale);
+
+    // 5. Cleanup
+    if (oldGeo) oldGeo.dispose();
+
+    // IMPORTANT: Since newMesh was just a temporary container from the API,
+    // make sure it doesn't hang around in memory.
   } else {
-    scene.add(geometry);
-    SCENE_GEOMETRIES[guid] = geometry;
+    // INITIAL CREATION
+    // Since it's already a Mesh, we can just add it
+    scene.add(newMesh);
+    SCENE_GEOMETRIES[guid] = newMesh;
   }
-}
-
-function addBufferGeometryToScene(
-  geometry: THREE.BufferGeometry,
-  guid: string,
-) {
-  let material;
-  if (GEOMETRY_MATERIALS[guid]) {
-    const material_guid = GEOMETRY_MATERIALS[guid];
-    material = SCENE_MATERIALS[material_guid];
-  } else {
-    material = new THREE.MeshStandardMaterial({
-      color: 0x0099ff,
-      side: THREE.DoubleSide,
-    });
-  }
-
-  const mesh = new THREE.Mesh(geometry, material);
-  // mesh.castShadow = true;
-  // mesh.receiveShadow = true;
-  // mesh.computeVertexNormals();
-  scene.add(mesh);
-  SCENE_GEOMETRIES[guid] = mesh;
 }
 
 export function updateMaterial(

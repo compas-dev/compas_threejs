@@ -59,11 +59,13 @@ export class Cylinder {
       segments,
     );
 
+    const cylinderMesh = new THREE.Mesh(cylinder_geometry);
+
     // transform geometry to the correct position
     const transform = buildTransformationFromFrame(this.frame);
-    cylinder_geometry.applyMatrix4(transform);
+    cylinderMesh.applyMatrix4(transform);
 
-    return cylinder_geometry;
+    return cylinderMesh;
   }
 }
 

@@ -56,9 +56,12 @@ export class Cone {
       this.height,
       segments,
     );
+
+    const coneMesh = new THREE.Mesh(coneGeometry);
+
     const transformationMatrix = buildTransformationFromFrame(this.data.frame!);
-    coneGeometry.applyMatrix4(transformationMatrix);
-    return coneGeometry;
+    coneMesh.applyMatrix4(transformationMatrix);
+    return coneMesh;
   }
 }
 

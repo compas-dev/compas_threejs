@@ -57,9 +57,13 @@ export class Torus {
       segmentsTubular,
       segmentsRadial,
     );
+
+    const torusMesh = new THREE.Mesh(torusGeometry);
+
     const transformationMatrix = buildTransformationFromFrame(this.data.frame!);
-    torusGeometry.applyMatrix4(transformationMatrix);
-    return torusGeometry;
+    torusMesh.applyMatrix4(transformationMatrix);
+
+    return torusMesh;
   }
 }
 
