@@ -57,6 +57,7 @@ export function updateMaterial(
   material: THREE.MeshStandardMaterial,
 ) {
   const object = SCENE_GEOMETRIES[geometry_guid];
+  console.log(object);
   if (object) {
     object.material = material;
   }

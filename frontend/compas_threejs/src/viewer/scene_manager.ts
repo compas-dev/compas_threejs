@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { initializePicker, PickHelper } from "./picker";
 
 // Change the default UP vector for all objects
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
@@ -17,7 +18,6 @@ export const camera = new THREE.PerspectiveCamera(
 camera.position.set(10, -20, 15);
 
 export const renderer = new THREE.WebGLRenderer({ antialias: true });
-// export const renderer = new THREE.WebGPURenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -26,7 +26,6 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMappingExposure = 2.5;
 renderer.physicallyCorrectLights = true;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
-// renderer.setAnimationLoop(animate);
 document.body.appendChild(renderer.domElement);
 
 // Controls
@@ -37,19 +36,17 @@ controls.enableDamping = true;
 const axesHelper = new THREE.AxesHelper(5);
 scene.add(axesHelper);
 
+// Initialize the picker
+const picker = new PickHelper();
+initializePicker(picker);
+
 // The Loop
-// export function startAnimation() {
 function animate() {
   requestAnimationFrame(animate);
   controls.update();
   renderer.render(scene, camera);
 }
 animate();
-// }
-
-// // Environment & Lighting;
-// const pmremGenerator = new THREE.PMREMGenerator(renderer);
-// scene.environment = pmremGenerator.fromScene(new DebugEnvironment()).texture;
 
 // Resize Handling
 window.addEventListener("resize", () => {

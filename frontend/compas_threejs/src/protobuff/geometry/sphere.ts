@@ -52,9 +52,12 @@ export class Sphere {
       segments,
       segments,
     );
+
+    const sphereMesh = new THREE.Mesh(sphereGeometry);
+
     const transformationMatrix = buildTransformationFromFrame(this.data.frame!);
-    sphereGeometry.applyMatrix4(transformationMatrix);
-    return sphereGeometry;
+    sphereMesh.applyMatrix4(transformationMatrix);
+    return sphereMesh;
   }
 }
 

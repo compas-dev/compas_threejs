@@ -63,10 +63,14 @@ export class Box {
     );
     // create transformation matrix from the frame
     const matrix = buildTransformationFromFrame(this.data.frame!);
-    // applyt the matrix to the geometry
-    box_geometry.applyMatrix4(matrix);
 
-    return box_geometry;
+    const boxMesh = new THREE.Mesh(box_geometry);
+
+    // applyt the matrix to the geometry
+
+    boxMesh.applyMatrix4(matrix);
+
+    return boxMesh;
   }
 }
 

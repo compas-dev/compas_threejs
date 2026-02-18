@@ -10,7 +10,7 @@ viz = Viewer()
 viz.background_color = Color(0.1, 0.1, 0.1)
 
 
-for i in range(2):
+for i in range(10):
     line = Line(
         Point(
             random.randrange(-10, 10),
@@ -29,7 +29,7 @@ for i in range(2):
     )
     viz.add_geometry(line, material)
 
-for i in range(2):
+for i in range(10):
     vector = Vector.from_start_end(
         Point(
             random.randrange(-10, 10),
@@ -43,11 +43,7 @@ for i in range(2):
         ),
     )
 
-    material = LineMaterial(
-        color=Color(random.random(), random.random(), random.random())
-    )
-
-    print(vector.guid)
+    material = LineMaterial(color=Color.blue())
 
     viz.add_geometry(vector, material)
 
