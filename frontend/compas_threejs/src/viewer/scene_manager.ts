@@ -14,7 +14,7 @@ export const camera = new THREE.PerspectiveCamera(
   0.1,
   1000,
 );
-camera.position.set(10, 10, 15);
+camera.position.set(10, -20, 15);
 
 export const renderer = new THREE.WebGLRenderer({ antialias: true });
 // export const renderer = new THREE.WebGPURenderer({ antialias: true });
@@ -24,14 +24,18 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMappingExposure = 2.5;
-// renderer.physicallyCorrectLights = true;
-// renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.physicallyCorrectLights = true;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
 // renderer.setAnimationLoop(animate);
 document.body.appendChild(renderer.domElement);
 
 // Controls
 export const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
+
+// Create an axes helper with a size of 5 units
+const axesHelper = new THREE.AxesHelper(5);
+scene.add(axesHelper);
 
 // The Loop
 // export function startAnimation() {

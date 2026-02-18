@@ -19,10 +19,9 @@ export function materialManager(matData: { [key: string]: any }) {
 
   // save the material
   SCENE_MATERIALS[matData.guid.value] = material;
-
+  GEOMETRY_MATERIALS[matData.geometry_guid.value] = matData.guid.value;
   //update the material of the geometry
   updateMaterial(matData.geometry_guid.value, material);
-  GEOMETRY_MATERIALS[matData.geometry_guid.value] = matData.guid.value;
 }
 
 function buildStandardMaterial(data: { [key: string]: any }) {
@@ -41,7 +40,6 @@ function buildStandardMaterial(data: { [key: string]: any }) {
     wireframe: data.wireframe.value,
     side: THREE.DoubleSide,
   });
-
   return material;
 }
 
@@ -53,7 +51,6 @@ function buildLineMaterial(data: {
 
   const material = new THREE.LineBasicMaterial({
     color: parseInt(color),
-    linewidth: data.linewidth.value,
   });
   return material;
 }

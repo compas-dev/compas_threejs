@@ -183,6 +183,26 @@ class Viewer:
         else:
             self.queued_messages.append((binary_data, obj_id))
 
+    # ---- TEXT --------------------------------------------------------------------------------
+
+    def add_text(self, text, material=None):
+        obj_id = text.guid
+        binary_data = compas_pb.pb_dump_bts(text.as_dict())
+        loop = get_server_loop()
+        if loop:
+            asyncio.run_coroutine_threadsafe(broadcast(binary_data, obj_id), loop)
+        else:
+            self.queued_messages.append((binary_data, obj_id))
+        if material:
+            material._geometry_guid = obj_id
+            material_data = compas_pb.pb_dump_bts(material.as_dict())
+            if loop:
+                asyncio.run_coroutine_threadsafe(
+                    broadcast(material_data, str(uuid4())), loop
+                )
+            else:
+                self.queued_messages.append((material_data, str(uuid4())))
+
     # ---- LIGHTS ----------------------------------------------------------------------------------
     def add_light(self, light):
         obj_id = light.guid
@@ -197,11 +217,11 @@ class Viewer:
         self.add_light(light)
 
     def _send_default_lighting(self):
-        sunlight = Sunlight(point=Point(30, 30, 10), intensity=2)
+        sunlight = Sunlight(point=Point(30, -10, 30), intensity=1)
         self.add_light(sunlight)
-        sunlight2 = Sunlight(point=Point(-30, 30, 20), intensity=1)
+        sunlight2 = Sunlight(point=Point(-30, -20, 30), intensity=0.5)
         self.add_light(sunlight2)
-        sunlight3 = Sunlight(point=Point(-30, 10, -20), intensity=1)
+        sunlight3 = Sunlight(point=Point(-30, 20, 10), intensity=0.5)
         self.add_light(sunlight3)
         ambient_light = AmbientLight(color=Color.white(), intensity=0.5)
         self.add_light(ambient_light)

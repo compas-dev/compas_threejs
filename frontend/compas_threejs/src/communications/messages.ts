@@ -8,6 +8,7 @@ import { geometryManager } from "../viewer/geometry_manager";
 import { materialManager } from "../viewer/material_manager";
 import { sceneManager } from "../viewer/scene_manager";
 import { uiManager } from "./sidebarStore";
+import { textManager } from "../viewer/text_manager";
 
 const SCENE_GEOMETRIES: { [guid: string]: THREE.Object3D } = {};
 
@@ -37,6 +38,9 @@ function analyzeDictionary(dictionary: Dictionary) {
       break;
     case "ui":
       uiManager(data);
+      break;
+    case "text":
+      textManager(data);
       break;
     default:
       console.warn("Unknown dispatch value:", data.dispatch.value);

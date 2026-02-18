@@ -266,7 +266,8 @@ function buildAmbientLight(data: { [key: string]: any }) {
   color = parseInt(color);
   ambientLight.color.set(color);
   ambientLight.intensity = data.intensity.value;
-
+  ambientLight.color.needsUpdate = true;
+  console.log(data.intensity.value);
   // Save
-  SCENE_LIGHTS[data.guid.value] = ambientLight;
+  // SCENE_LIGHTS[data.guid.value] = ambientLight;
 }
