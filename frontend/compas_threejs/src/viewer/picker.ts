@@ -91,11 +91,12 @@ function setPickPosition(event: MouseEvent) {
 export function initializePicker(picker: PickHelper): PickHelper {
   canvas = document.querySelector("canvas") as HTMLCanvasElement;
   pickPosition = { x: 0, y: 0 };
-
   const tControlsManager = new TransformControlsManager();
   tControl = tControlsManager.controls;
 
-  window.addEventListener("click", (event) => {
+  window.addEventListener("mousedown", (event) => {
+    if (event.button !== 0) return; // Only proceed if left-click
+    if (tControl.dragging) return; // Don't pick while dragging
     setPickPosition(event);
     picker.pick(pickPosition, scene);
   });

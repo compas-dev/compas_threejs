@@ -31,6 +31,11 @@ document.body.appendChild(renderer.domElement);
 // Controls
 export const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
+controls.mouseButtons = {
+  LEFT: null,
+  MIDDLE: null,
+  RIGHT: THREE.MOUSE.ROTATE,
+};
 
 // Create an axes helper with a size of 5 units
 const axesHelper = new THREE.AxesHelper(5);

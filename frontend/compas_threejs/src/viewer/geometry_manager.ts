@@ -33,6 +33,21 @@ export function geometryManager(obj: any) {
     // IMPORTANT: Since newMesh was just a temporary container from the API,
     // make sure it doesn't hang around in memory.
   } else {
+    // MATERIALCHECK
+    if (GEOMETRY_MATERIALS[guid]) {
+      const material_guid = GEOMETRY_MATERIALS[guid];
+      if (SCENE_MATERIALS[material_guid]) {
+        newMesh.material = SCENE_MATERIALS[material_guid];
+      }
+    } else {
+      // If no material is assigned, give it a default one
+      newMesh.material = new THREE.MeshStandardMaterial({
+        color: 0x088ff,
+        roughness: 0.5,
+        metalness: 0.5,
+      });
+    }
+
     // INITIAL CREATION
     // Since it's already a Mesh, we can just add it
     scene.add(newMesh);
@@ -45,7 +60,6 @@ export function updateMaterial(
   material: THREE.MeshStandardMaterial,
 ) {
   const object = SCENE_GEOMETRIES[geometry_guid];
-  console.log(object);
   if (object) {
     object.material = material;
   }

@@ -211,6 +211,7 @@ function buildSky(data: { [key: string]: any }) {
 
   // Properties
   sky.scale.setScalar(1000);
+  sky.material.uniforms["up"].value = new THREE.Vector3(0, 0, 1); // Set sky up direction
   sky.material.uniforms["turbidity"].value = data.turbidity.value;
   sky.material.uniforms["rayleigh"].value = data.rayleigh.value;
   sky.material.uniforms["mieCoefficient"].value = data.mie_coefficient.value;
