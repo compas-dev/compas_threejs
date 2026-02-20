@@ -3,11 +3,13 @@ import json
 import threading
 import time
 import webbrowser
+from ctypes import Union
 from uuid import uuid4
 
 import compas_pb
 from compas.colors import Color
 from compas.geometry import Point
+from pydantic.fields import PropertyT
 from rich.console import Console
 
 from compas_threejs.lights.ambientlight import AmbientLight
@@ -19,23 +21,59 @@ console = Console()
 
 
 class Viewer:
+    class Viewer:
+        """
+        The Viewer class is responsible for visualizing 3D geometry, lights, and other elements
+        in a browser-based environment. It integrates with a server to enable real-time
+        updates and interactions.
+
+
+        Parameters
+        ----------
+        websocket_port : int, optional
+            The port on which the WebSocket server will run. Default is 9001.
+        background_color : Color, optional
+            The background color of the viewer. Default is a light gray (0.9, 0.9, 0.9).
+
+
+        Attributes
+        ----------
+        loop : callable
+            A user-defined callback function that will be called in each iteration of the main loop.
+
+        loop_interval : float, optional
+            The interval in seconds for the main loop to run. Default is 0.02 (50 FPS).
+
+        background_color : Color
+            The background color of the viewer.
+
+        camera_damping : bool
+            Whether camera damping is enabled. Default is True.
+
+        default_lighting : bool, optional
+            Whether to include default lighting in the scene. Default is True.
+            This attribute can only be modifief before calling `Viewer.start()`.
+
+
+        """
+
     def __init__(
         self,
         websocket_port=9001,
-        # frontend_port is no longer strictly needed but we keep it for compatibility
-        background_color: Color = Color(0.9, 0.9, 0.9),
         default_lighting: bool = True,
-        camera_damping: bool = True,
-        loop_interval: float = 0.02,
     ):
+        # Server
         self.websocket_port = websocket_port
         self.websocket_server_thread = None
-        # We've removed the frontend_server_thread variables
-        self.loop_interval = loop_interval
+
+        # Setter Attributes
+        self._loop_interval = 0.02
         self._loop = None
-        self._background_color = background_color
-        self._camera_damping = camera_damping
-        self._default_lighting = default_lighting
+        self._background_color = Color(0.9, 0.9, 0.9)
+        self._camera_damping = True
+        self._default_lighting = True
+
+        # Registry
         self.queued_messages = []
         self._buttons = dict()
 
@@ -48,19 +86,30 @@ class Viewer:
     # ---- ATTRIBUTES --------------------------------------------------------------------------------
 
     @property
-    def loop(self):
+    def loop(self) -> callable:
+        """Set or get a user-defined callback function that will be called in each iteration of the main loop."""
         return self._loop
 
     @loop.setter
-    def loop(self, callback):
+    def loop(self, callback: callable):
         self._loop = callback
 
     @property
-    def background_color(self):
+    def loop_interval(self) -> float:
+        """Set or get the interval in seconds for the main loop to run. Default is 0.02 (50 FPS)."""
+        return self._loop_interval
+
+    @loop_interval.setter
+    def loop_interval(self, value: float):
+        self._loop_interval = value
+
+    @property
+    def background_color(self) -> Color:
+        """Set or get the background color of the viewer."""
         return self._background_color
 
     @background_color.setter
-    def background_color(self, value):
+    def background_color(self, value: Color):
         self._background_color = value
         dict = {
             "dispatch": "scene",
@@ -71,6 +120,7 @@ class Viewer:
 
     @property
     def camera_damping(self) -> bool:
+        """Set or get whether camera damping is enabled."""
         return self._camera_damping
 
     @camera_damping.setter
@@ -82,6 +132,15 @@ class Viewer:
             "damping": self._camera_damping,
         }
         self._send_dictionary_message(dict)
+
+    @property
+    def default_lighting(self) -> bool:
+        """Set or get whether to include default lighting in the scene."""
+        return self._default_lighting
+
+    @default_lighting.setter
+    def default_lighting(self, value: bool):
+        self._default_lighting = value
 
     # ---- SERVER ---------------------------------------------------------------------------------
 
@@ -106,6 +165,8 @@ class Viewer:
         # Update viewer settings
         self.background_color = self.background_color
         self.camera_damping = self.camera_damping
+
+        # Send default lighting
         if self._default_lighting:
             self._send_default_lighting()
 
@@ -140,10 +201,11 @@ class Viewer:
         console.log("[green]Viewer stopped successfully![/green]")
 
     def show(self):
-        # We now point to the websocket_port because FastAPI is serving the HTML there
+        """Opens the viewer in the default web browser."""
         webbrowser.open(f"http://localhost:{self.websocket_port}/")
 
     def _send_dictionary_message(self, msg: dict):
+        """Helper method to send a dictionary message to the frontend."""
         binary_data = compas_pb.pb_dump_bts(msg)
         loop = get_server_loop()
         if loop:
@@ -155,6 +217,21 @@ class Viewer:
     # ---- GEOMETRY --------------------------------------------------------------------------------
 
     def add_geometry(self, geometry, material=None):
+        """
+        Adds a geometry object to the viewer. Optionally, a material can be associated with the geometry.
+
+        Parameters
+        ----------
+        geometry : compas.geometry.Geometry | compas.datastructures.Mesh
+            The geometry object to be added to the viewer. It must have a unique GUID.
+        material : compas_threejs.material.Material, optional
+            An optional material to be associated with the geometry.
+
+        Returns
+        -------
+        None
+
+        """
         obj_id = geometry.guid
 
         binary_data = compas_pb.pb_dump_bts(geometry)
@@ -175,6 +252,14 @@ class Viewer:
                 self.queued_messages.append((material_data, str(uuid4())))
 
     def update_geometry(self, geometry):
+        """
+        Updates an existing geometry object in the viewer.
+
+        Parameters
+        ----------
+        geometry : compas.geometry.Geometry | compas.datastructures.Mesh
+            The geometry object to be updated.
+        """
         obj_id = geometry.guid
         binary_data = compas_pb.pb_dump_bts(geometry)
         loop = get_server_loop()
@@ -186,6 +271,16 @@ class Viewer:
     # ---- TEXT --------------------------------------------------------------------------------
 
     def add_text(self, text, material=None):
+        """
+        Adds a text object to the viewer. Optionally, a material can be associated with the text.
+
+        Parameters
+        ----------
+        text : compas.geometry.Text
+            The text object to be added to the viewer. It must have a unique GUID.
+        material : compas_threejs.material.Material, optional
+            An optional material to be associated with the text.
+        """
         obj_id = text.guid
         binary_data = compas_pb.pb_dump_bts(text.as_dict())
         loop = get_server_loop()
@@ -205,6 +300,14 @@ class Viewer:
 
     # ---- LIGHTS ----------------------------------------------------------------------------------
     def add_light(self, light):
+        """
+        Adds a light object to the viewer.
+
+        Parameters
+        ----------
+        light : compas_threejs.lights.Light
+            The light object to be added to the viewer.
+        """
         obj_id = light.guid
         binary_data = compas_pb.pb_dump_bts(light.as_dict())
         loop = get_server_loop()
@@ -214,6 +317,14 @@ class Viewer:
             self.queued_messages.append((binary_data, obj_id))
 
     def update_light(self, light):
+        """
+        Updates an existing light object in the viewer.
+
+        Parameters
+        ----------
+        light : compas_threejs.lights.Light
+            The light object to be updated.
+        """
         self.add_light(light)
 
     def _send_default_lighting(self):
@@ -230,6 +341,14 @@ class Viewer:
     # ---- MATERIALS ----------------------------------------------------------------------------------
 
     def update_material(self, material):
+        """
+        Updates an existing material in the viewer.
+
+        Parameters
+        ----------
+        material : compas_threejs.material.Material
+            The material object to be updated.
+        """
         mat_id = material.guid
         binary_data = compas_pb.pb_dump_bts(material.as_dict())
         loop = get_server_loop()
@@ -241,6 +360,14 @@ class Viewer:
     # ---- BUTTONS ----------------------------------------------------------------------------------
 
     def add_ui_element(self, element):
+        """
+        Adds a UI element (e.g., button) to the viewer and registers its associated action.
+
+        Parameters
+        ----------
+        element : compas_threejs.ui.UIElement
+            The UI element to be added to the viewer. It must have a unique GUID and an
+        """
         # register the function with the id
         self._buttons[element.guid] = element.action
         self._send_dictionary_message(element.as_dict())

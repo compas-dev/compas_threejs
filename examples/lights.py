@@ -14,8 +14,10 @@ from compas_threejs.materials import Material
 from compas_threejs.ui import Button, Slider
 from compas_threejs.viewer import Viewer
 
-viz = Viewer(default_lighting=False)
+viz = Viewer()
 viz.background_color = Color.black()
+viz.default_lighting = False
+
 
 material = Material(color=Color.white(), metalness=0.1, roughness=0.5)
 mirror = Material(color=Color.white(), metalness=0.8, roughness=0.1)
