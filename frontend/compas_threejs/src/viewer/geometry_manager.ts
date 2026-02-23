@@ -4,7 +4,15 @@ import { GEOMETRY_MATERIALS, SCENE_MATERIALS } from "./material_manager";
 
 export const SCENE_GEOMETRIES: { [guid: string]: THREE.Object3D } = {};
 
+const ABSTRACT_GEOMETRIES = ["Line", "Point", "Vector", "Frame", "Plane"];
+
 export function geometryManager(obj: any) {
+  // FILTER
+  // if the geometry is abstract, than send it to another workflow
+  if (ABSTRACT_GEOMETRIES.includes(obj.name)) {
+    abstractGeometryManager(obj);
+  }
+
   const guid: string = obj.guid;
   const existingObj = SCENE_GEOMETRIES[guid];
 
@@ -55,6 +63,36 @@ export function geometryManager(obj: any) {
   }
 }
 
+function abstractGeometryManager(obj: any) {
+  const geometry = obj.buildGeometry();
+  const guid: string = obj.guid;
+
+  // MATERIAL
+  let material: THREE.Material;
+
+  if (GEOMETRY_MATERIALS[guid]) {
+    const material_guid = GEOMETRY_MATERIALS[guid];
+    if (SCENE_MATERIALS[material_guid]) {
+      material = SCENE_MATERIALS[material_guid];
+    }
+  } else {
+    return;
+  }
+
+  // GEOMETRY
+  if (geometry instanceof THREE.Line || geometry instanceof THREE.Points) {
+    geometry.material = material;
+  } else if (
+    geometry instanceof THREE.ArrowHelper ||
+    geometry instanceof THREE.PlaneHelpers
+  ) {
+    geometry.setColor(material.color);
+  }
+
+  scene.add(geometry);
+  SCENE_GEOMETRIES[guid] = geometry;
+}
+
 export function updateMaterial(
   geometry_guid: string,
   material: THREE.MeshStandardMaterial,
@@ -62,5 +100,12 @@ export function updateMaterial(
   const object = SCENE_GEOMETRIES[geometry_guid];
   if (object) {
     object.material = material;
+  }
+
+  if (
+    object instanceof THREE.ArrowHelper ||
+    object instanceof THREE.PlaneHelpers
+  ) {
+    object.setColor(material.color);
   }
 }

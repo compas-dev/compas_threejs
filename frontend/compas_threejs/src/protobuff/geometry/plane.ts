@@ -60,7 +60,7 @@ export class Plane {
     plane.translate(
       new THREE.Vector3(this.point.x, this.point.y, this.point.z),
     );
-    const planeGeometry = new THREE.PlaneHelper(plane, size, 0xff00ff);
+    const planeGeometry = new THREE.PlaneHelper(plane, size);
     return planeGeometry;
   }
 }

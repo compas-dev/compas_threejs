@@ -1,9 +1,12 @@
 import uuid
 from typing import Optional
 
+from .ui_element import UIElement
 
-class Button:
-    def __init__(self, text, action, label: Optional[str] = None):
+
+class Button(UIElement):
+    def __init__(self, text, action, label: Optional[str] = None, **kwargs):
+        super().__init__(**kwargs)
         self.text = text
         self.action = action
         self.label = label

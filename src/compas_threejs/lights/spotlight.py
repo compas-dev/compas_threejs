@@ -4,8 +4,41 @@ import uuid
 from compas.colors import Color
 from compas.geometry import Point, Vector
 
+from .light import Light
+
 
 class SpotLight:
+    """
+    A class representing a spotlight in a 3D environment.
+
+    The SpotLight class defines a light source that emits light in a specific direction
+    with a conical shape. It includes properties for position, target, color, intensity,
+    distance, angle, penumbra, and decay, among others.
+
+    Attributes
+    ----------
+        point: Point
+            The position of the spotlight in 3D space.
+        target: Point
+            The target point that the spotlight is directed towards.
+        color: Color
+            The color of the light emitted by the spotlight.
+        intensity: float
+            The brightness of the light. Must be non-negative.
+        distance: float
+            The maximum range of the light. Must be non-negative.
+        angle: float
+            The angle of the spotlight's cone in radians. Must be between 0 and π/2.
+        penumbra: float
+            The softness of the spotlight's edge. Must be between 0 and 1.
+        decay: float
+            The rate at which the light intensity decreases over distance. Must be non-negative.
+        helper: bool
+            Whether to display a helper visualization for the spotlight.
+        guid: str
+            A unique identifier for the spotlight instance.
+    """
+
     def __init__(
         self,
         point: Point = Point(0, 0, 0),
@@ -17,7 +50,9 @@ class SpotLight:
         penumbra: float = 0,
         decay: float = 2,
         helper: bool = False,
+        **kwargs,
     ):
+        super().__init__(**kwargs)
         self.point = point
         self.target = target
         self.color = color

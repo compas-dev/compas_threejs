@@ -236,11 +236,8 @@ class Viewer:
 
         binary_data = compas_pb.pb_dump_bts(geometry)
         loop = get_server_loop()
-        if loop:
-            asyncio.run_coroutine_threadsafe(broadcast(binary_data, obj_id), loop)
-        else:
-            self.queued_messages.append((binary_data, obj_id))
 
+        # send material
         if material:
             material._geometry_guid = str(obj_id)
             material_data = compas_pb.pb_dump_bts(material.as_dict())
@@ -250,6 +247,11 @@ class Viewer:
                 )
             else:
                 self.queued_messages.append((material_data, str(uuid4())))
+        # send geometry
+        if loop:
+            asyncio.run_coroutine_threadsafe(broadcast(binary_data, obj_id), loop)
+        else:
+            self.queued_messages.append((binary_data, obj_id))
 
     def update_geometry(self, geometry):
         """

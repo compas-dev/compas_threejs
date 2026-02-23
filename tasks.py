@@ -10,8 +10,7 @@ console = Console()
 
 @task
 def rundev(c):
-    with c.cd("frontend/compas_threejs"):
-        c.run("npm run dev")
+    c.run("cd frontend/compas_threejs && npm run dev")
 
 
 @task

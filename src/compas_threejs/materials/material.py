@@ -2,8 +2,31 @@ from uuid import uuid4
 
 from compas.colors import Color
 
+from .generic_material import GenericMaterial
 
-class Material:
+
+class Material(GenericMaterial):
+    """
+    Represents the standard material properties for a 3D object.
+
+    Parameters
+    ----------
+    color : Color, optional
+        The base color of the material. Default is white.
+    metalness : float, optional
+        The metalness of the material, between 0 and 1. Default is 0 (non-metallic).
+    roughness : float, optional
+        The roughness of the material, between 0 and 1. Default is 1 (fully rough).
+    emissive : Color, optional
+        The emissive color of the material. Default is black (no emission).
+    emissive_intensity : float, optional
+        The intensity of the emissive color. Default is 0 (no emission).
+    flat_shading : bool, optional
+        Whether to use flat shading. Default is False (smooth shading).
+    wireframe : bool, optional
+        Whether to render the material as a wireframe. Default is False (solid rendering).
+    """
+
     def __init__(
         self,
         color: Color = Color.white(),
@@ -13,7 +36,9 @@ class Material:
         emissive_intensity: float = 0,
         flat_shading: bool = False,
         wireframe: bool = False,
+        **kwargs,
     ):
+        super().__init__(**kwargs)
         self.color = color
         self.metalness = metalness
         self.roughness = roughness

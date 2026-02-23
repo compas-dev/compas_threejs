@@ -3,32 +3,31 @@ from uuid import uuid4
 from compas.colors import Color
 from compas.geometry import Point
 
+from .light import Light
 
-class PointLight:
+
+class PointLight(Light):
     """
 
-    new PointLight( color : number | Color | string, intensity : number, distance : number, decay : number )
-    Constructs a new point light.
+    Constructs a new PointLight instance.
 
-    color
-    The light's color.
+    Parameters
+    ----------
+    color : int | Color | str, optional
+        The color of the light. Can be specified as an integer, a Color object, or a string.
+        Default is 0xffffff (white).
 
-    Default is 0xffffff.
+    intensity : float, optional
+        The intensity or strength of the light, measured in candela (cd).
+        Default is 1.
 
-    intensity
-    The light's strength/intensity measured in candela (cd).
+    distance : float, optional
+        The maximum range of the light. A value of 0 indicates no limit.
+        Default is 0.
 
-    Default is 1.
-
-    distance
-    Maximum range of the light. 0 means no limit.
-
-    Default is 0.
-
-    decay
-    The amount the light dims along the distance of the light.
-
-    Default is 2.
+    decay : float, optional
+        The rate at which the light diminishes over distance.
+        Default is 2.
 
     """
 
@@ -40,7 +39,9 @@ class PointLight:
         distance: float = 0,
         decay: float = 2,
         helper: bool = False,
+        **kwargs,
     ):
+        super().__init__(**kwargs)
         self.point = point
         self.color = color
         self.intensity = intensity

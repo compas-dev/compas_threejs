@@ -15,6 +15,9 @@ export function materialManager(matData: { [key: string]: any }) {
     case "line_material":
       material = buildLineMaterial(matData);
       break;
+    case "point_material":
+      material = buildPointsMaterial(matData);
+      break;
   }
 
   // save the material
@@ -51,6 +54,19 @@ function buildLineMaterial(data: {
 
   const material = new THREE.LineBasicMaterial({
     color: parseInt(color),
+  });
+  return material;
+}
+
+function buildPointsMaterial(data: {
+  [key: string]: any;
+}): THREE.PointsMaterial {
+  let color = data.color.value;
+  color = color.replace("#", "0x");
+
+  const material = new THREE.PointsMaterial({
+    color: parseInt(color),
+    size: data.size.value,
   });
   return material;
 }

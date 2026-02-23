@@ -1,8 +1,10 @@
 import uuid
 from typing import Optional
 
+from .ui_element import UIElement
 
-class Slider:
+
+class Slider(UIElement):
     def __init__(
         self,
         min: float = 0,
@@ -11,7 +13,9 @@ class Slider:
         default_value: float = 33,
         action=None,
         label: Optional[str] = None,
+        **kwargs,
     ):
+        super().__init__(**kwargs)
         self.min = min
         self.max = max
         self.step = step
