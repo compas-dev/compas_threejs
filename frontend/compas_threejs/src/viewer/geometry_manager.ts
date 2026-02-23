@@ -1,6 +1,7 @@
 import { scene } from "./scene_manager";
 import * as THREE from "three";
 import { GEOMETRY_MATERIALS, SCENE_MATERIALS } from "./material_manager";
+import { ReceiptTurkishLiraIcon } from "lucide-vue-next";
 
 export const SCENE_GEOMETRIES: { [guid: string]: THREE.Object3D } = {};
 
@@ -59,6 +60,7 @@ export function geometryManager(obj: any) {
     // INITIAL CREATION
     // Since it's already a Mesh, we can just add it
     scene.add(newMesh);
+    console.log(newMesh);
     SCENE_GEOMETRIES[guid] = newMesh;
   }
 }
@@ -98,8 +100,14 @@ export function updateMaterial(
   material: THREE.MeshStandardMaterial,
 ) {
   const object = SCENE_GEOMETRIES[geometry_guid];
+
+  if (!object) {
+    return;
+  }
+
   if (object) {
     object.material = material;
+    return;
   }
 
   if (
