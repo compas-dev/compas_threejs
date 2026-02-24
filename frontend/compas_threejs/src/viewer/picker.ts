@@ -2,6 +2,8 @@ import * as THREE from "three";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { camera, renderer, scene, controls } from "./scene_manager";
 import { SCENE_GEOMETRIES } from "./geometry_manager";
+import { sendData } from "@/communications/communication";
+import { objectInfoManager } from "@/communications/objectInfo";
 
 export let pickPosition: { x: number; y: number };
 let canvas: HTMLCanvasElement;
@@ -64,11 +66,25 @@ export class PickHelper {
       // An object was clicked.
       this.pickedObject = intersectedObjects[0].object;
       tControl.attach(this.pickedObject);
+
+      // Find the key of the picked object in SCENE_GEOMETRIES
+      const pickedKey = Object.keys(SCENE_GEOMETRIES).find(
+        (key) => SCENE_GEOMETRIES[key] === this.pickedObject,
+      );
+
+      const message = {
+        dispatch: "object_picked",
+        guid: pickedKey,
+      };
+      sendData(message);
+
+      console.log("Picked object key:", pickedKey);
     } else {
       // Nothing was clicked, so deselect.
       if (this.pickedObject) {
         this.pickedObject = null;
         tControl.detach();
+        objectInfoManager(null);
       }
     }
   }

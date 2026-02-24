@@ -76,6 +76,7 @@ class Viewer:
         # Registry
         self.queued_messages = []
         self._buttons = dict()
+        self._geoemetry_registry = dict()
 
     def __enter__(self):
         return self
@@ -247,11 +248,15 @@ class Viewer:
                 )
             else:
                 self.queued_messages.append((material_data, str(uuid4())))
+
         # send geometry
         if loop:
             asyncio.run_coroutine_threadsafe(broadcast(binary_data, obj_id), loop)
         else:
             self.queued_messages.append((binary_data, obj_id))
+
+        # save the geometry for furture reference
+        self._geoemetry_registry[str(obj_id)] = geometry
 
     def update_geometry(self, geometry):
         """
@@ -379,21 +384,49 @@ class Viewer:
     def on_message(self, message):
         """
         Default handler for messages received from the frontend.
-        This method can be overridden in a subclass.
         """
-        # Decode the message from bytes to string and parse it as JSON
-        decoded_message = json.loads(message.decode("utf-8"))
-        # Transform the message into a usable dictionary
-        action_id = decoded_message.get("action")
-        console.log(f"[blue]Received message from frontend: {decoded_message}[/blue]")
+        action_dictionary = self.process_message(message)
 
-        value = decoded_message.get("value")
+        if action_dictionary.get("dispatch") == "ui_callback":
+            self.manage_ui_callback(action_dictionary)
+        elif action_dictionary.get("dispatch") == "object_picked":
+            self.manage_picked_object(action_dictionary)
+        else:
+            console.log(
+                f"[yellow]Received unrecognized message from frontend: {action_dictionary}[/yellow]"
+            )
+
+    def process_message(self, message_in_bytes) -> dict:
+        """Decodes a message from bytes to a string, then parses it as a JSON diction"""
+        # First, decode the bytes to a UTF-8 string.
+        message_str = message_in_bytes.decode("utf-8")
+        # Then, parse the JSON string into a Python dictionary.
+        message_dict = json.loads(message_str)
+        return message_dict
+
+    def manage_ui_callback(self, action_dictionary):
+        """Handles all actions that are tied to an user-defined action in a ui-element."""
+
+        action_id = action_dictionary.get("action")
+        console.log(f"[blue]Received message from frontend: {action_dictionary}[/blue]")
+        value = action_dictionary.get("value")
         if value is not None and action_id and action_id in self._buttons:
             console.log(f"[blue]Value associated with the action: {value}[/blue]")
             self._buttons[action_id](value[0])
-
         elif action_id and action_id in self._buttons:
             self._buttons[action_id]()
-
         else:
             print(f"Unrecognized action or missing handler for action ID: {action_id}")
+
+    def manage_picked_object(self, action_dictionary):
+        object_id = action_dictionary.get("guid")
+        console.log(
+            f"[blue]Received object picked message from frontend. Object ID: {object_id}[/blue]"
+        )
+        geometry = self._geoemetry_registry.get(object_id)
+        print(str(geometry))
+        message = dict()
+        for key in geometry.__data__.keys():
+            message[key] = str(geometry.__data__[key])
+        message["dispatch"] = "object_infos"
+        self._send_dictionary_message(message)

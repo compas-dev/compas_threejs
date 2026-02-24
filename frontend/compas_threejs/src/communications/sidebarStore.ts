@@ -87,8 +87,10 @@ export function addSlider(data: { [key: string]: any }) {
 // --- Updated Action Handler ---
 // It now accepts a payload, which will be the slider's value.
 export function handleAction(actionGuid: string, value?: any) {
-  const message: { action: string; value?: any } = {
+  const message = {
+    dispatch: "ui_callback",
     action: actionGuid,
+    value: null,
   };
 
   if (value !== undefined) {

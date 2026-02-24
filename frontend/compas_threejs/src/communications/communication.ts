@@ -90,3 +90,17 @@ export function stringToArrayBuffer(str: string): ArrayBuffer {
   const uint8Array = encoder.encode(str);
   return uint8Array.buffer;
 }
+
+export function dictionaryToArrayBuffer(
+  data: Record<string, any>,
+): ArrayBuffer {
+  /**
+   * Converts a dictionary (JavaScript object) to an ArrayBuffer by first serializing it to a JSON string.
+   * This allows it to be easily parsed back into a dictionary in Python.
+   *
+   * @param data - The dictionary to convert.
+   * @returns The resulting ArrayBuffer.
+   */
+  const jsonString = JSON.stringify(data);
+  return stringToArrayBuffer(jsonString);
+}
