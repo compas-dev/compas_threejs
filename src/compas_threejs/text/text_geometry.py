@@ -32,6 +32,10 @@ class TextGeometry:
         self.centered = centered
         self.guid = str(uuid.uuid4())
 
+    @property
+    def __data__(self):
+        return self.as_dict()
+
     def as_dict(self):
         return {
             "dispatch": "text",

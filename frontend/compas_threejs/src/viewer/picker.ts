@@ -4,6 +4,7 @@ import { camera, renderer, scene, controls } from "./scene_manager";
 import { SCENE_GEOMETRIES } from "./geometry_manager";
 import { sendData } from "@/communications/communication";
 import { objectInfoManager } from "@/communications/objectInfo";
+import { pickerEnabled } from "@/store/store";
 
 export let pickPosition: { x: number; y: number };
 let canvas: HTMLCanvasElement;
@@ -56,6 +57,10 @@ export class PickHelper {
   }
 
   pick(normalizedPosition, scene) {
+    if (!pickerEnabled.value) {
+      return;
+    }
+
     this.raycaster.setFromCamera(normalizedPosition, camera);
     const intersectedObjects = this.raycaster.intersectObjects(
       SCENE_GEOMETRIES ? Object.values(SCENE_GEOMETRIES) : [],

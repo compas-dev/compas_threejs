@@ -5,3 +5,5 @@ export const objectInfoState = reactive({
   isVisible: true,
   data: null,
 });
+
+export const pickerEnabled = reactive({ value: true });

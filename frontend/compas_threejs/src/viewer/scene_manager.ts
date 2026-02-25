@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { initializePicker, PickHelper } from "./picker";
+import { pickerEnabled } from "@/store/store";
 
 // Change the default UP vector for all objects
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
@@ -16,6 +17,7 @@ export const camera = new THREE.PerspectiveCamera(
   1000,
 );
 camera.position.set(10, -20, 15);
+camera.zoom = 1;
 
 export const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -65,11 +67,23 @@ export function sceneManager(data: { [key: string]: any }) {
     case "background_color":
       updateSceneBackgroundColor(data);
       break;
-
     case "controls_damping":
       controls.enableDamping = data.damping.value;
       break;
-
+    case "world_axis":
+      axesHelper.visible = data.show.value;
+      break;
+    case "picker":
+      pickerEnabled.value = data.enabled.value;
+      break;
+    case "camera_fov":
+      camera.fov = data.fov.value;
+      camera.updateProjectionMatrix();
+      break;
+    case "camera_zoom":
+      camera.zoom = data.zoom.value;
+      camera.updateProjectionMatrix();
+      break;
     default:
       console.warn("Unknown scene type:", data.type.value);
   }

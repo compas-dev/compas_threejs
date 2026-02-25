@@ -3,13 +3,11 @@ import json
 import threading
 import time
 import webbrowser
-from ctypes import Union
 from uuid import uuid4
 
 import compas_pb
 from compas.colors import Color
 from compas.geometry import Point
-from pydantic.fields import PropertyT
 from rich.console import Console
 
 from compas_threejs.lights.ambientlight import AmbientLight
@@ -72,6 +70,10 @@ class Viewer:
         self._background_color = Color(0.9, 0.9, 0.9)
         self._camera_damping = True
         self._default_lighting = True
+        self._world_axis = True
+        self._picker = True
+        self._camera_fov = 60
+        self._camera_zoom = 1
 
         # Registry
         self.queued_messages = []
@@ -142,6 +144,66 @@ class Viewer:
     @default_lighting.setter
     def default_lighting(self, value: bool):
         self._default_lighting = value
+
+    @property
+    def world_axis(self) -> bool:
+        """Set or get whether to show the world axis in the scene."""
+        return self._world_axis
+
+    @world_axis.setter
+    def world_axis(self, value: bool):
+        self._world_axis = value
+        dict = {
+            "dispatch": "scene",
+            "type": "world_axis",
+            "show": self._world_axis,
+        }
+        self._send_dictionary_message(dict)
+
+    @property
+    def picker(self) -> bool:
+        """Set or get whether to enable the object picker in the scene."""
+        return self._picker
+
+    @picker.setter
+    def picker(self, value: bool):
+        self._picker = value
+        dict = {
+            "dispatch": "scene",
+            "type": "picker",
+            "enabled": self._picker,
+        }
+        self._send_dictionary_message(dict)
+
+    @property
+    def camera_fov(self) -> float:
+        """Set or get the camera field of view (FOV) in degrees."""
+        return self._camera_fov
+
+    @camera_fov.setter
+    def camera_fov(self, value: float):
+        self._camera_fov = value
+        dict = {
+            "dispatch": "scene",
+            "type": "camera_fov",
+            "fov": self._camera_fov,
+        }
+        self._send_dictionary_message(dict)
+
+    @property
+    def camera_zoom(self) -> float:
+        """Set or get the camera zoom level."""
+        return self._camera_zoom
+
+    @camera_zoom.setter
+    def camera_zoom(self, value: float):
+        self._camera_zoom = value
+        dict = {
+            "dispatch": "scene",
+            "type": "camera_zoom",
+            "zoom": self._camera_zoom,
+        }
+        self._send_dictionary_message(dict)
 
     # ---- SERVER ---------------------------------------------------------------------------------
 
@@ -424,7 +486,8 @@ class Viewer:
             f"[blue]Received object picked message from frontend. Object ID: {object_id}[/blue]"
         )
         geometry = self._geoemetry_registry.get(object_id)
-        print(str(geometry))
+        if not geometry:
+            return
         message = dict()
         for key in geometry.__data__.keys():
             message[key] = str(geometry.__data__[key])
