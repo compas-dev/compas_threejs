@@ -245,11 +245,13 @@ class Viewer:
 
         with console.status("[bold yellow] Running viewer... ", spinner="dots"):
             try:
+                i = 0
                 while True:
                     time.sleep(self.loop_interval)
                     callback = self.loop
                     if callback:
-                        callback()
+                        callback(i)
+                    i += 1
             except KeyboardInterrupt:
                 console.log("[green]Interruption ordered[/green]")
             finally:
@@ -319,6 +321,10 @@ class Viewer:
 
         # save the geometry for furture reference
         self._geoemetry_registry[str(obj_id)] = geometry
+
+    def add_geometries(self, geometries: list, material=None):
+        for geo in geometries:
+            self.add_geometry(geo, material)
 
     def update_geometry(self, geometry):
         """

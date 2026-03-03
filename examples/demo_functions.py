@@ -16,11 +16,12 @@ def morph_to_cuboid(vertices, power=8):
         norm = (abs(x) ** power + abs(y) ** power + abs(z) ** power) ** (1 / power)
 
         # 2. Scale the point by this norm
-        sharp_cube_vertices.append([x / norm, y / norm, z / norm])
+        # 3. Adjust the scale to make the cuboid of length 6
+        sharp_cube_vertices.append([3 * (x / norm), 3 * (y / norm), 3 * (z / norm)])
     return sharp_cube_vertices
 
 
-def morph_to_spiraled_torus(vertices, R=2.0, r=0.5):
+def morph_to_spiraled_torus(vertices, R=5, r=2):
     torus_vertices = []
     n = len(vertices)
 
@@ -39,7 +40,7 @@ def morph_to_spiraled_torus(vertices, R=2.0, r=0.5):
     return torus_vertices
 
 
-def morph_to_torus(vertices, R=2.0, r=0.7):
+def morph_to_torus(vertices, R=5, r=2):
     """
     R = Major radius (distance from center of hole to center of tube)
     r = Minor radius (radius of the tube itself)
@@ -85,7 +86,7 @@ def interpolate_vertices(start_vertices, end_vertices, factor):
 # ---- SPHERE
 
 
-def create_fibonacci_sphere(n_points=100, radius=1.0) -> list[Point]:
+def create_fibonacci_sphere(n_points=100, radius=3) -> list[Point]:
     vertices = []
     # The 'Golden Angle' in radians (~137.5 degrees)
     golden_angle = math.pi * (3 - math.sqrt(5))

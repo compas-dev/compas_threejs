@@ -75,12 +75,11 @@ def main():
         viz.update_geometry(mesh)
 
         # update the material
-        MESH_MATERIAL.metalness = value * 0.9
         MESH_MATERIAL.roughness = 1 - value
         MESH_MATERIAL.color = Color(value, value, 1 - value)
         viz.update_material(MESH_MATERIAL)
 
-    torus_vertices = morph_to_torus(sphere_vertices)
+    torus_vertices = morph_to_spiraled_torus(sphere_vertices)
     slider = Slider(action=transition_to_torus, label="Morph to Torus")
     viz.add_ui_element(slider)
 

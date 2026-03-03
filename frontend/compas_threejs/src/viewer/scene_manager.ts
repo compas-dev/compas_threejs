@@ -16,7 +16,7 @@ export const camera = new THREE.PerspectiveCamera(
   0.1,
   1000,
 );
-camera.position.set(10, -20, 15);
+camera.position.set(8, -15, 15);
 camera.zoom = 1;
 
 export const renderer = new THREE.WebGLRenderer({ antialias: true });
