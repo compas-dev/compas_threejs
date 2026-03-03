@@ -23,12 +23,10 @@ export function materialManager(matData: { [key: string]: any }) {
       break;
   }
 
-  console.log(material);
-
   // save the material
   SCENE_MATERIALS[matData.guid.value] = material;
   GEOMETRY_MATERIALS[matData.geometry_guid.value] = matData.guid.value;
-  console.log(matData.geometry_guid.value);
+
   //update the material of the geometry
   updateMaterial(matData.geometry_guid.value, material);
 }

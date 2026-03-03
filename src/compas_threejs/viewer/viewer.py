@@ -65,11 +65,11 @@ class Viewer:
         self.websocket_server_thread = None
 
         # Setter Attributes
-        self._loop_interval = 0.02
+        self._loop_interval = 0.01
         self._loop = None
-        self._background_color = Color(0.9, 0.9, 0.9)
+        self._background_color = Color(0.1, 0.1, 0.1)
         self._camera_damping = True
-        self._default_lighting = True
+        self._default_lighting = False
         self._world_axis = True
         self._picker = True
         self._camera_fov = 60
@@ -489,7 +489,12 @@ class Viewer:
         if not geometry:
             return
         message = dict()
-        for key in geometry.__data__.keys():
-            message[key] = str(geometry.__data__[key])
-        message["dispatch"] = "object_infos"
-        self._send_dictionary_message(message)
+        try:
+            for key in geometry.__data__.keys():
+                message[key] = str(geometry.__data__[key])
+            message["dispatch"] = "object_infos"
+            self._send_dictionary_message(message)
+        except Exception as e:
+            console.log(
+                f"[yellow]Error while processing picked object information: {e}[/yellow]"
+            )

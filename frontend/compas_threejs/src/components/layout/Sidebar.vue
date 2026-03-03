@@ -86,7 +86,7 @@ div.fixed-sidebar {
 .dynamic-label {
     font-weight: 500;
     font-size: 15px;
-    color: #333;
+    color: white;
     margin-bottom: -13px;
     padding: 0;
 }
