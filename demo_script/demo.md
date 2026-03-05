@@ -1,46 +1,50 @@
-
-
-
-# ACT 1 : the space and the singularity
-
-_"I couldn't see nothing... but I knew I was in the mid of the universe."_
+# ACT I
 
 ```python
+"""
+ACT I - THE ABSTRACT
+-----
+"""
+
+
 viz = Viewer()
 
-viz.start()
-```
-
-The singularity of the digital universe in my machine.
 
 
-```python
-viz = Viewer()
-
+# the SINGULARITY
+#       the eternal
+#
 point = Point(0, 0, 0)
-viz.add_geometry(point)
+viz.add_geometry(point, pt_material)
+
+
+# the MOVEMENT
+#       the ephemeral
+#
+
+movement = Vector(2, 3, 4)
+viz.add_geometry(movement, vct_material)
+
+point += movement
+viz.update_geometry(point)
+
+
+# the CHAOS
+#   the eternal exploded into the plenty
+
+points = create_fibonacci_sphere(500)
+viz.add_geometries(points, pt_material)
+
+
+# the CALM
+#       the dynamism woven in the ethernal chaos
+
+polyline = Polyline(points)
+viz.add_geometry(polyline, ln_material)
+
+
 
 viz.start()
-```
 
-I can move it around, play with it. 
 
-```python
-viz = Viewer()
-
-point = Point(2, 3, 4)
-viz.add_geometry(point)
-
-viz.start()
-```
-
-A point that has no meaning, we give it to it. As it can shift from an ethernal point to a dynamic vector.
-
-```python
-viz = Viewer()
-
-point = Vector(2, 3, 4)
-viz.add_geometry(point)
-
-viz.start()
 ```
