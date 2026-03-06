@@ -31,16 +31,21 @@ viz.world_axis = False
 # the MATTER and the LIGTHS
 points = create_fibonacci_sphere(1000)
 mesh  = mesh_from_pointcloud(points)
+
 material = Material(color=Color.blue())
 material.roughness = 0.8
 material.metalness = 0.2
+
 viz.add_geometry(mesh, material)
 
 # and the LIGTHS
+
 point_light = PointLight(color=Color.white(), point=Point(8, -8, 0), helper=False) # the glowing heart
 viz.add_light(point_light)
+
 rect_ligth = RectLight(color = Color.white(), point=Point(0, 3, 7), width=10, height=10, helper=False) # the surface washing
 viz.add_light(rect_ligth)
+
 spot_light = SpotLight(color=Color.white(), point=Point(-15, 0, 0),  helper=False) # the silhouette of the moon
 viz.add_light(spot_light)
 
@@ -82,11 +87,12 @@ def metamorphosis(value):
     viz.update_geometry(mesh)
     viz.update_material(material)
 
+
 # the ACTOR
-#
 
 slider = Slider(action=metamorphosis, label="Metamorphosis")
 viz.add_ui_element(slider)
+
 
 
 viz.start()

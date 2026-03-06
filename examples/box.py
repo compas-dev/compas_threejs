@@ -10,6 +10,8 @@ from compas_threejs.viewer import Viewer
 
 viz = Viewer()
 
+viz.default_lighting = True
+
 
 def add_box():
     box = Box(1, 1, 1)

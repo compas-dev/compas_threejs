@@ -48,7 +48,6 @@ viz.add_geometry(torus, material)
 # the ETERNAL LOOP
 
 def animate(time):
-
     torus.rotate(0.007, Vector(1, 0, 0))
     torus.rotate(0.017, Vector(0, 1, 0))
     torus.rotate(0.013, Vector(0, 0, 1))
@@ -58,6 +57,8 @@ def animate(time):
     viz.update_geometry(torus)
     viz.update_material(material)
 
+
 viz.loop = animate
+
 
 viz.start()

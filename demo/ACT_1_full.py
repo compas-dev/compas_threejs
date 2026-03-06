@@ -11,7 +11,6 @@ pt_material = PointMaterial(color=Color.red(), size=1)
 fibo_material = PointMaterial(color=Color.red(), size=0.15)
 vct_material = LineMaterial(color=Color.green())
 ln_material = LineMaterial(color=Color.yellow())
-
 # ----------------------------------------------------------------------------
 
 """
@@ -24,19 +23,21 @@ ACT I - THE ABSTRACT
 
 # the UNIVERSE
 #
-
 viz = Viewer()
+
 
 # the SINGULARITY
 #       the eternal
-
-point = Point(0,0,0)
+point = Point(0, 0, 0)
 viz.add_geometry(point, pt_material)
 
 # the MOVEMENT
 #       the ephemeral
-movemet = Vector(2,3,5)
-viz.add_geometry(movemet, vct_material)
+movement = Vector(2, 3, 4)
+viz.add_geometry(movement, vct_material)
+
+point += movement
+viz.update_geometry(point)
 
 # the CHAOS
 #   the eternal exploded into the plenty
@@ -48,9 +49,9 @@ viz.add_geometries(points, fibo_material)
 polyline = Polyline(points)
 viz.add_geometry(polyline, ln_material)
 
+
+
 viz.start()
-
-
 
 
 

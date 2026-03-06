@@ -25,16 +25,17 @@ viz = Viewer()
 # the ETERNAL PATTERN
 #
 points = create_fibonacci_sphere(1000)
-viz.add_geometries(points, pt_material)
+# viz.add_geometries(points, pt_material)
+
 
 
 # the MATTER
+#
 mesh = mesh_from_pointcloud(points)
 
 material = Material(color=Color.blue())
 material.roughness = 0.8
 material.metalness = 0.2
-
 viz.add_geometry(mesh, material)
 
 
@@ -45,6 +46,7 @@ viz.add_geometry(mesh, material)
 
 point_light = PointLight(color=Color.white(), point=Point(8, -8, 0), helper=True) # the glowing heart
 viz.add_light(point_light)
+
 
 rect_ligth = RectLight(color = Color.white(), point=Point(0, 3, 7), width=10, height=10, helper=True) # the surface washing
 viz.add_light(rect_ligth)
