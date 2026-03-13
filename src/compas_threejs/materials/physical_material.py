@@ -27,6 +27,7 @@ class PhysicalMaterial(Material):
         iridescence: float = 0.0,
         iridescenceior: float = 1.3,
         iridescence_thickness_range: list[float] = [100, 400],
+        opacity: float = 1.0,
         reflectivity: float = 0.5,
         sheen: float = 0,
         sheen_color: Color = Color.black(),
@@ -56,6 +57,7 @@ class PhysicalMaterial(Material):
         self.iridescence = iridescence
         self.iridescenceior = iridescenceior
         self.iridescence_thickness_range = iridescence_thickness_range
+        self.opacity = opacity
         self.reflectivity = reflectivity
         self.sheen = sheen
         self.sheen_color = sheen_color
@@ -92,6 +94,7 @@ class PhysicalMaterial(Material):
             "iridescence_ior": self.iridescenceior,
             "iridescence_thickness_start": self.iridescence_thickness_range[0],
             "iridescence_thickness_end": self.iridescence_thickness_range[1],
+            "opacity": self.opacity,
             "reflectivity": self.reflectivity,
             "sheen": self.sheen,
             "sheen_color": self.sheen_color.hex,
@@ -248,6 +251,16 @@ class PhysicalMaterial(Material):
             )
         self._iridescence_thickness_range = value
 
+    @property
+    def opacity(self) -> float:
+        return self._opacity
+
+    @opacity.setter
+    def opacity(self, value: float):
+        if not (0.0 <= value <= 1.0):
+            raise ValueError("Opacity must be between 0 and 1")
+        self._opacity = value
+        
     @property
     def reflectivity(self) -> float:
         """Degree of reflectivity, from 0.0 to 1.0. Default is 0.5, which corresponds to an index-of-refraction of 1.5.

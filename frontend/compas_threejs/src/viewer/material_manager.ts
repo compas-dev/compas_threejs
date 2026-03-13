@@ -114,6 +114,9 @@ function buildPhysicalMaterial(data: {
       data.iridescence_thickness_start.value,
       data.iridescence_thickness_end.value,
     ],
+    opacity: data.opacity.value,
+    transparent: data.opacity.value < 1.0,
+    depthWrite: data.opacity.value >= 1.0, // Only write to depth buffer if fully opaque
     reflectivity: data.reflectivity.value,
     sheen: data.sheen.value,
     sheenColor: parseInt(sheenColor),
