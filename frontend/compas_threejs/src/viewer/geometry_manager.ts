@@ -17,6 +17,8 @@ export function geometryManager(obj: any) {
   const guid: string = obj.guid;
   const existingObj = SCENE_GEOMETRIES[guid];
 
+  console.log("RAW PYTHON PAYLOAD:", obj);
+
   // 1. Get the new Mesh from your API
   const newMesh = obj.buildGeometry();
   if (!newMesh || !(newMesh instanceof THREE.Mesh)) return;
@@ -59,7 +61,9 @@ export function geometryManager(obj: any) {
 
     // INITIAL CREATION
     // Since it's already a Mesh, we can just add it
+    newMesh.name = guid;
     scene.add(newMesh);
+    console.log("Created new mesh with name:", newMesh.name);
     console.log(newMesh);
     SCENE_GEOMETRIES[guid] = newMesh;
   }
@@ -86,7 +90,7 @@ function abstractGeometryManager(obj: any) {
     geometry.material = material;
   } else if (
     geometry instanceof THREE.ArrowHelper ||
-    geometry instanceof THREE.PlaneHelpers
+    geometry instanceof THREE.PlaneHelper
   ) {
     geometry.setColor(material.color);
   }
@@ -112,7 +116,7 @@ export function updateMaterial(
 
   if (
     object instanceof THREE.ArrowHelper ||
-    object instanceof THREE.PlaneHelpers
+    object instanceof THREE.PlaneHelper
   ) {
     object.setColor(material.color);
   }

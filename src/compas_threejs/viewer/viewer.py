@@ -337,6 +337,27 @@ class Viewer:
         else:
             self.queued_messages.append((binary_data, obj_id))
 
+    def update_transform(self, obj_id, matrix):
+            """
+            Updates only the 4x4 transformation matrix of an existing object.
+            """
+            # If it's a COMPAS Transformation object, .list is already a flat list of 16 floats
+            if hasattr(matrix, 'list'):
+                flat_matrix = matrix.list
+            else:
+                # Fallback just in case standard Python lists are passed
+                if isinstance(matrix[0], (list, tuple)):
+                    flat_matrix = [item for sublist in matrix for item in sublist]
+                else:
+                    flat_matrix = list(matrix)
+
+            message = {
+                "dispatch": "transform",
+                "guid": str(obj_id),
+                "matrix": flat_matrix
+            }
+            self._send_dictionary_message(message)
+
     # ---- TEXT --------------------------------------------------------------------------------
 
     def add_text(self, text, material=None):
