@@ -2,7 +2,7 @@ import { reactive } from "vue";
 
 export const objectInfoState = reactive({
   title: "Object Infos",
-  isVisible: true,
+  isVisible: false,
   data: null,
 });
 

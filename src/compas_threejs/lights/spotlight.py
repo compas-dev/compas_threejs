@@ -48,7 +48,7 @@ class SpotLight:
         distance: float = 0,
         angle: float = math.pi / 7,
         penumbra: float = 0,
-        decay: float = 2,
+        decay: float = 1,
         helper: bool = False,
         **kwargs,
     ):

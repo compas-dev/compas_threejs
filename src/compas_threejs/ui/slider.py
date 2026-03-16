@@ -7,10 +7,10 @@ from .ui_element import UIElement
 class Slider(UIElement):
     def __init__(
         self,
-        min: float = 0,
-        max: float = 100,
-        step: float = 1,
-        default_value: float = 33,
+        min: float = 0.01,
+        max: float = 1.00,
+        step: float = 0.01,
+        default_value: float = 0.00,
         action=None,
         label: Optional[str] = None,
         **kwargs,

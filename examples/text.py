@@ -9,12 +9,14 @@ from compas_threejs.viewer import Viewer
 viz = Viewer()
 viz.world_axis = False
 viz.picker = True
+viz.default_lighting = True
+viz.background_color = Color(0.0, 0.05, 0.3)
 
 
 material = Material(color=Color(1, 0.8, 0), metalness=1, roughness=1)
 
 text = TextGeometry(
-    text="HELLO COMPAS",
+    text="HELLO COMPAS_DEV!",
     font="helvetiker",
     bold=True,
     # point=Point(-10, 0, 0),
@@ -25,12 +27,6 @@ text = TextGeometry(
 viz.add_text(text, material)
 
 
-def update_fov(value):
-    viz.camera_fov = value
-
-
-fov_slider = Slider(1, 180, 1, 60, update_fov, "Camera FOV")
-viz.add_ui_element(fov_slider)
 
 
 viz.start()
