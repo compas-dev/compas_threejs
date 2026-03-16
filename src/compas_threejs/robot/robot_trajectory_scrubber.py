@@ -206,7 +206,7 @@ for mesh in [x_mesh, y_mesh, z_mesh]:
 print("Spawning Ghost Robot and Tool at target state...")
 
 # 1. Create a transparent material
-ghost_mat = PhysicalMaterial(color=Color(0.5, 0.7, 0.9), opacity = 0.4) 
+ghost_mat = Material(color=Color(0.5, 0.7, 0.9), opacity = 0.4) 
 
 # 2. Get the very last point in the trajectory
 final_point = trajectory.points[-1]

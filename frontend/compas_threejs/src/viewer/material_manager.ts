@@ -46,6 +46,9 @@ function buildStandardMaterial(data: { [key: string]: any }) {
     emissive: parseInt(emissive),
     emissiveIntensity: data.emissive_intensity.value,
     flatShading: data.flat_shading.value,
+    opacity: data.opacity.value,
+    transparent: data.opacity.value < 1.0,
+    depthWrite: data.opacity.value >= 1.0,
     wireframe: data.wireframe.value,
     side: THREE.DoubleSide,
   });
@@ -116,7 +119,7 @@ function buildPhysicalMaterial(data: {
     ],
     opacity: data.opacity.value,
     transparent: data.opacity.value < 1.0,
-    depthWrite: data.opacity.value >= 1.0, // Only write to depth buffer if fully opaque
+    depthWrite: data.opacity.value >= 1.0,
     reflectivity: data.reflectivity.value,
     sheen: data.sheen.value,
     sheenColor: parseInt(sheenColor),
