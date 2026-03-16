@@ -5,11 +5,19 @@ import { ReceiptTurkishLiraIcon } from "lucide-vue-next";
 
 export const SCENE_GEOMETRIES: { [guid: string]: THREE.Object3D } = {};
 
-const ABSTRACT_GEOMETRIES = ["Line", "Point", "Vector", "Frame", "Plane"];
+const ABSTRACT_GEOMETRIES = [
+  "Line",
+  "Point",
+  "Vector",
+  "Frame",
+  "Plane",
+  "Polyline",
+];
 
 export function geometryManager(obj: any) {
   // FILTER
-  // if the geometry is abstract, than send it to another workflow
+  // if the geometry is abstract, than send it to another workflow\
+  console.log(obj.name);
   if (ABSTRACT_GEOMETRIES.includes(obj.name)) {
     abstractGeometryManager(obj);
   }
@@ -61,8 +69,6 @@ export function geometryManager(obj: any) {
     // Since it's already a Mesh, we can just add it
     newMesh.name = guid;
     scene.add(newMesh);
-    console.log("Created new mesh with name:", newMesh.name);
-    console.log(newMesh);
     SCENE_GEOMETRIES[guid] = newMesh;
   }
 }

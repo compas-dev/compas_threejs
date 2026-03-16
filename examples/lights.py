@@ -91,7 +91,7 @@ sphere = Sphere(0.5, Frame([5, -2, 0], [1, 0, 0], [0, 1, 0]))
 viz.add_geometry(sphere, material)
 
 
-def loop():
+def loop(time):
     torus.frame.rotate(0.01, [0, 1, 0], torus.frame.point)
     torus.frame.rotate(0.02, [1, 0, 0], torus.frame.point)
     torus.frame.rotate(0.005, [0, 0, 1], torus.frame.point)

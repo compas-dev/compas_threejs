@@ -25,7 +25,7 @@ class Ball:
 
 
 viz = Viewer()
-
+viz.default_lighting = True
 viz.background_color = Color(0.1, 0.1, 0.1)
 
 balls = []
@@ -49,7 +49,7 @@ mat = Material(wireframe=True, color=Color.red())
 viz.add_geometry(box, mat)
 
 
-def update():
+def update(time):
     for ball in balls:
         ball.update()
         viz.update_geometry(ball.geometry)

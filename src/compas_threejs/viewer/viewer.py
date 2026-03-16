@@ -65,7 +65,7 @@ class Viewer:
         self.websocket_server_thread = None
 
         # Setter Attributes
-        self._loop_interval = 0.02
+        self._loop_interval = 0.01
         self._loop = None
         self._background_color = Color(0.9, 0.9, 0.9)
         self._camera_damping = True
@@ -245,11 +245,13 @@ class Viewer:
 
         with console.status("[bold yellow] Running viewer... ", spinner="dots"):
             try:
+                i = 0
                 while True:
                     time.sleep(self.loop_interval)
                     callback = self.loop
                     if callback:
-                        callback()
+                        callback(i)
+                    i += 1
             except KeyboardInterrupt:
                 console.log("[green]Interruption ordered[/green]")
             finally:
@@ -319,6 +321,10 @@ class Viewer:
 
         # save the geometry for furture reference
         self._geoemetry_registry[str(obj_id)] = geometry
+
+    def add_geometries(self, geometries: list, material=None):
+        for geo in geometries:
+            self.add_geometry(geo, material)
 
     def update_geometry(self, geometry):
         """
@@ -517,7 +523,12 @@ class Viewer:
         if not geometry:
             return
         message = dict()
-        for key in geometry.__data__.keys():
-            message[key] = str(geometry.__data__[key])
-        message["dispatch"] = "object_infos"
-        self._send_dictionary_message(message)
+        try:
+            for key in geometry.__data__.keys():
+                message[key] = str(geometry.__data__[key])
+            message["dispatch"] = "object_infos"
+            self._send_dictionary_message(message)
+        except Exception as e:
+            console.log(
+                f"[yellow]Error while processing picked object information: {e}[/yellow]"
+            )

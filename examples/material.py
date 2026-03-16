@@ -7,6 +7,7 @@ from compas_threejs.ui import Button, Slider
 from compas_threejs.viewer import Viewer
 
 viz = Viewer(default_lighting=True)
+viz.default_lighting = True
 
 
 sphere = Sphere(10)
