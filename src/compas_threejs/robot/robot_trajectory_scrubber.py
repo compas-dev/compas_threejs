@@ -96,7 +96,7 @@ def add_model_to_viewer(model_to_parse, name_prefix=""):
             for item in meshes_to_add:
                 if item is not None:
                     viewer.add_geometry(item)
-                    link_id_map[unique_name].append({"guid": str(item.guid), "T_local": T_local})
+                    link_id_map[unique_name].append({"geometry": item, "T_local": T_local})
 
 # A. Extract Robot
 add_model_to_viewer(model, name_prefix="")
@@ -137,13 +137,12 @@ for rb_name, rb_model in robot_cell.rigid_body_models.items():
             seen_guids.add(guid_str)
             
             viewer.add_geometry(item)
-            link_id_map[rb_name].append({"guid": guid_str, "T_local": Transformation()})
+            link_id_map[rb_name].append({"geometry": item, "T_local": Transformation()})
             print(f"✅ Mapped RigidBody (Visual): {rb_name} (GUID: {guid_str})")
             
-            # Push the static world frame to the viewer immediately
             if rb_state.frame:
                 T_world = Transformation.from_frame(rb_state.frame)
-                viewer.update_transform(guid_str, T_world)
+                viewer.transform(item, T_world)
 
 # ======================================================================
 # 6. STATIC TRACE & TCP TRIAD
@@ -170,7 +169,7 @@ for line in trace_line.lines:
 # viewer.add_geometry(trace_line, PhysicalMaterial(color=Color(0.1, 0.1, 0.1)))
 
 # --- B. The TCP Triad ("Lines" built as 1mm Meshes so they can move!) ---
-triad_guids = []
+triad_objects = []
 
 # 1mm radius makes them visually identical to lines, but WebGL can move them!
 base_cyl = Cylinder(0.001, 0.15)
@@ -198,7 +197,7 @@ viewer.add_geometry(z_mesh, PhysicalMaterial(color=Color(0.0, 0.0, 1.0)))
 # Save their GUIDs so the callback can move them
 for mesh in [x_mesh, y_mesh, z_mesh]:
     if hasattr(mesh, 'guid') and mesh.guid:
-        triad_guids.append(str(mesh.guid))
+        triad_objects.append(mesh)
 
 # ======================================================================
 # 6.5 THE GHOST ROBOT & TOOL (Target Configuration)
@@ -249,7 +248,6 @@ for tool_name, t_state in cell_state.tool_states.items():
     t_model = robot_cell.tool_models[tool_name]
     parent_link = t_model.connected_to
     
-    # Where is the flange at the final configuration?
     parent_frame = model.forward_kinematics(final_cfg, link_name=parent_link)
     T_parent = Transformation.from_frame(parent_frame)
     T_attach = Transformation.from_frame(t_state.attachment_frame) if t_state.attachment_frame else Transformation()
@@ -300,7 +298,7 @@ def scrub_robot(value):
             link_frame = model.forward_kinematics(config, link_name=link_name)
             T_link = Transformation.from_frame(link_frame)
             for mesh_data in link_id_map[link_name]:
-                viewer.update_transform(mesh_data['guid'], T_link * mesh_data['T_local'])
+                viewer.transform(mesh_data['geometry'], T_link * mesh_data['T_local'])
                 
     # B. Update Tool Links based on Cell State
     for tool_name, t_state in cell_state.tool_states.items():
@@ -316,7 +314,7 @@ def scrub_robot(value):
             if unique_name in link_id_map:
                 for mesh_data in link_id_map[unique_name]:
                     T_final = T_parent * T_attach * mesh_data['T_local']
-                    viewer.update_transform(mesh_data['guid'], T_final)
+                    viewer.transform(mesh_data['geometry'], T_final)
                     
     # C. Update RigidBody Links 
     for rb_name, rb_state in cell_state.rigid_body_states.items():
@@ -333,7 +331,7 @@ def scrub_robot(value):
             
             T_attach = Transformation.from_frame(rb_state.attachment_frame) if rb_state.attachment_frame else Transformation()
             for mesh_data in link_id_map[rb_name]:
-                viewer.update_transform(mesh_data['guid'], T_flange * T_attach)
+                viewer.transform(mesh_data['geometry'], T_flange * T_attach)
 
     # D. Update TCP Triad (Only 3 updates per frame!)
     flange_frame = model.forward_kinematics(config, link_name=end_effector_name)
@@ -342,8 +340,8 @@ def scrub_robot(value):
     # Shift the Triad to the tip of the tool (0.2m along Z)
     T_tcp = T_flange * Translation.from_vector([0, 0, 0.2])
     
-    for guid in triad_guids:
-        viewer.update_transform(guid, T_tcp)
+    for guid in triad_objects:
+        viewer.transform(guid, T_tcp)
 
 # ======================================================================
 # 8. Add UI and Launch

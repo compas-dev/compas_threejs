@@ -337,15 +337,22 @@ class Viewer:
         else:
             self.queued_messages.append((binary_data, obj_id))
 
-    def update_transform(self, obj_id, matrix):
+    def transform(self, geometry, matrix):
             """
             Updates only the 4x4 transformation matrix of an existing object.
+            
+            Parameters
+            ----------
+            geometry : compas.geometry.Geometry | str
+                The geometry object to be transformed, or its unique GUID string.
+            matrix : compas.geometry.Transformation | list
+                The 4x4 transformation matrix.
             """
-            # If it's a COMPAS Transformation object, .list is already a flat list of 16 floats
+            obj_id = getattr(geometry, 'guid', geometry)
+
             if hasattr(matrix, 'list'):
                 flat_matrix = matrix.list
             else:
-                # Fallback just in case standard Python lists are passed
                 if isinstance(matrix[0], (list, tuple)):
                     flat_matrix = [item for sublist in matrix for item in sublist]
                 else:

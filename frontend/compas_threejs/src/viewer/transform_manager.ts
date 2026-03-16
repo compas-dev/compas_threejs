@@ -14,8 +14,7 @@ function extractMatrix(data: any): number[] | null {
 
     // 3. Case: Protobuf structure (find the 16 numbers)
     if (typeof data === 'object') {
-        
-        // Use ?. (Optional Chaining) to safely look for the message and value
+
         // If data.message doesn't exist, 'value' becomes undefined instead of crashing
         const message = data?.message || data;
         const value = message?.value; 
@@ -30,14 +29,12 @@ function extractMatrix(data: any): number[] | null {
                 }
                 return matrix;
             } catch (e) {
-                // Not a matrix buffer, ignore it
             }
         }
         
         // 4. Final attempt: Recursively search nested properties
         for (const key in data) {
             if (Object.prototype.hasOwnProperty.call(data, key)) {
-                // Add a check to ensure we aren't diving into something null
                 if (data[key] !== null && typeof data[key] === 'object') {
                     const result = extractMatrix(data[key]);
                     if (result) return result;

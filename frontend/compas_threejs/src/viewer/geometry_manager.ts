@@ -17,8 +17,6 @@ export function geometryManager(obj: any) {
   const guid: string = obj.guid;
   const existingObj = SCENE_GEOMETRIES[guid];
 
-  console.log("RAW PYTHON PAYLOAD:", obj);
-
   // 1. Get the new Mesh from your API
   const newMesh = obj.buildGeometry();
   if (!newMesh || !(newMesh instanceof THREE.Mesh)) return;
