@@ -67,9 +67,9 @@ class Viewer:
         # Setter Attributes
         self._loop_interval = 0.01
         self._loop = None
-        self._background_color = Color(0.1, 0.1, 0.1)
+        self._background_color = Color(0.9, 0.9, 0.9)
         self._camera_damping = True
-        self._default_lighting = False
+        self._default_lighting = True
         self._world_axis = True
         self._picker = True
         self._camera_fov = 60
