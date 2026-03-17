@@ -30,6 +30,45 @@ for i in range(101):
 trajectory = JointTrajectory(trajectory_points=trajectory_points, joint_names=joint_names)
 
 # ======================================================================
+# 3.5 [NEW] DEFINING DYNAMIC PICK AND PLACE DATA
+# ======================================================================
+# Here we define exactly where the workpiece is at any given frame.
+# - Frames 0 to 30: Rests on table
+# - Frames 31 to 70: Attached to gripper
+# - Frames 71+: Rests at assembly destination
+
+table_drop_frame = Frame([0.5, 0.0, 0.05], [1, 0, 0], [0, 1, 0])
+assembly_drop_frame = Frame([0.0, 0.6, 0.05], [1, 0, 0], [0, 1, 0])
+grasp_offset_frame = Frame([0, 0, 0.25], [1, 0, 0], [0, 1, 0]) # Offset relative to TCP
+
+pnp_data = {
+    "workpieces": {
+        "dynamic_brick": {
+            "states": [
+                {
+                    "start_frame": 0,
+                    "end_frame": 30, # Exclusive (up to 29)
+                    "parent": "world",
+                    "transform": Transformation.from_frame(table_drop_frame)
+                },
+                {
+                    "start_frame": 30,
+                    "end_frame": 70,
+                    "parent": "my_gripper", # Attached to tool
+                    "transform": Transformation.from_frame(grasp_offset_frame)
+                },
+                {
+                    "start_frame": 70,
+                    "end_frame": 9999, # Arbitrary large number
+                    "parent": "world",
+                    "transform": Transformation.from_frame(assembly_drop_frame)
+                }
+            ]
+        }
+    }
+}
+
+# ======================================================================
 # 4. INJECTING SCENE OBJECTS INTO CELL (Table & Tool)
 # ======================================================================
 print("Injecting Table and Tool into RobotCell...")
@@ -143,6 +182,14 @@ for rb_name, rb_model in robot_cell.rigid_body_models.items():
             if rb_state.frame:
                 T_world = Transformation.from_frame(rb_state.frame)
                 viewer.transform(item, T_world)
+
+# D. [NEW] Inject Dynamic Workpieces directly into the viewer
+workpiece_box = Box(0.1, 0.1, 0.1)
+workpiece_mesh = CompasMesh.from_shape(workpiece_box)
+viewer.add_geometry(workpiece_mesh, PhysicalMaterial(color=Color(1.0, 0.5, 0.0)))
+
+# Add to the map so our callback can grab it easily
+link_id_map["dynamic_brick"] = [{"geometry": workpiece_mesh, "T_local": Transformation()}]
 
 # ======================================================================
 # 6. STATIC TRACE & TCP TRIAD
@@ -300,18 +347,22 @@ def scrub_robot(value):
     val = value[0] if isinstance(value, list) else value
     frame_index = int(val)
     point = trajectory.points[frame_index]
+
+
     
     config = Configuration(
         joint_values=point.joint_values,
         joint_types=point.joint_types,
         joint_names=trajectory.joint_names
     )
-    
+
+    full_config = cell_state.robot_configuration.merged(config)
+
     # A. Update Robot Links
     for link in model.iter_links():
         link_name = link.name
         if link_name in link_id_map and link_id_map[link_name]:
-            link_frame = model.forward_kinematics(config, link_name=link_name)
+            link_frame = model.forward_kinematics(full_config, link_name=link_name)
             T_link = Transformation.from_frame(link_frame)
             for mesh_data in link_id_map[link_name]:
                 viewer.transform(mesh_data['geometry'], T_link * mesh_data['T_local'])
@@ -348,14 +399,51 @@ def scrub_robot(value):
             T_attach = Transformation.from_frame(rb_state.attachment_frame) if rb_state.attachment_frame else Transformation()
             for mesh_data in link_id_map[rb_name]:
                 viewer.transform(mesh_data['geometry'], T_flange * T_attach)
+    
+    # D. [NEW] Update Dynamic Workpieces
+    for wp_name, data in pnp_data["workpieces"].items():
+        if wp_name not in link_id_map:
+            continue
+            
+        # 1. Find the active state for the current frame
+        current_state = None
+        for state in data["states"]:
+            if state["start_frame"] <= frame_index < state["end_frame"]:
+                current_state = state
+                break
+                
+        if not current_state:
+            continue
+            
+        T_state = current_state["transform"]
+        
+        # 2. Determine the parent matrix
+        if current_state["parent"] == "world":
+            # If resting on a table, the final transform is just its state transform
+            T_final = T_state
+        else:
+            # If attached to a tool, multiply TCP * ToolAttachOffset * StateTransform
+            tool_name = current_state["parent"]
+            t_model = robot_cell.tool_models[tool_name]
+            
+            # Get robot flange matrix
+            flange_frame = model.forward_kinematics(full_config, link_name=t_model.connected_to)
+            T_flange = Transformation.from_frame(flange_frame)
+            
+            # Get tool mounting offset
+            t_state = cell_state.tool_states[tool_name]
+            T_tool_attach = Transformation.from_frame(t_state.attachment_frame) if t_state.attachment_frame else Transformation()
+            
+            T_final = T_flange * T_tool_attach * T_state
+            
+        # 3. Apply the matrix override
+        for mesh_data in link_id_map[wp_name]:
+            viewer.transform(mesh_data['geometry'], T_final * mesh_data['T_local'])
 
-    # D. Update TCP Triad (Only 3 updates per frame!)
+    # E. Update TCP Triad (Only 3 updates per frame!)
     flange_frame = model.forward_kinematics(config, link_name=end_effector_name)
     T_flange = Transformation.from_frame(flange_frame)
-    
-    # Shift the Triad to the tip of the tool (0.2m along Z)
     T_tcp = T_flange * Translation.from_vector([0, 0, 0.2])
-    
     for guid in triad_objects:
         viewer.transform(guid, T_tcp)
 
