@@ -61,6 +61,9 @@ function buildLineMaterial(data: {
 
   const material = new THREE.LineBasicMaterial({
     color: parseInt(color),
+    opacity: data.opacity.value,
+    transparent: data.opacity.value < 1.0,
+    depthWrite: data.opacity.value >= 1.0,
   });
   return material;
 }

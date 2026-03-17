@@ -163,9 +163,25 @@ for point in trajectory.points:
 
 # --- A. Static Trace (Zero Lag, Native Geometry) ---
 trace_line = Polyline(tcp_points)
-# Add it once, give it a bright color, and never touch it again!
-for line in trace_line.lines:
-    viewer.add_geometry(line, LineMaterial(color=Color(0.1, 0.1, 0.1)))
+# line_material = LineMaterial(color=Color(0.1, 0.1, 0.1), opacity=0.5)
+# line_mat = LineMaterial()
+# viewer.add_geometry(trace_line, line_material)
+lines = trace_line.lines
+num_lines = len(lines)
+
+# Break the polyline into segments to color them individually
+for i, line in enumerate(lines):
+    # Calculate a simple gradient: Blue (Start) -> Purple -> Red (End)
+    r = i / num_lines
+    g = 0.0
+    b = 1.0 - (i / num_lines)
+    
+    # Create a specific material for this segment
+    grad_material = LineMaterial(color=Color(r, g, b), opacity=0.5)
+    
+    # Add it statically to the viewer (Do NOT save the GUID, do NOT update in callback)
+    viewer.add_geometry(line, material=grad_material)
+
 # viewer.add_geometry(trace_line, PhysicalMaterial(color=Color(0.1, 0.1, 0.1)))
 
 # --- B. The TCP Triad ("Lines" built as 1mm Meshes so they can move!) ---
@@ -205,7 +221,7 @@ for mesh in [x_mesh, y_mesh, z_mesh]:
 print("Spawning Ghost Robot and Tool at target state...")
 
 # 1. Create a transparent material
-ghost_mat = Material(color=Color(0.5, 0.7, 0.9), opacity = 0.4) 
+ghost_mat = Material(color=Color(0.5, 0.7, 0.9), opacity = 0.2) 
 
 # 2. Get the very last point in the trajectory
 final_point = trajectory.points[-1]
@@ -353,4 +369,4 @@ slider = Slider(
 viewer.add_ui_element(slider)
 scrub_robot([0]) 
 
-viewer.start(show=True)
+viewer.start(show=False)
