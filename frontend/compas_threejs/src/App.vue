@@ -2,12 +2,15 @@
     <Sidebar />
     <ObjectInfo v-if="objectInfoState.isVisible" />
     <div ref="threeContainer" class="three-container"></div>
+
+    <TrajectoryTimeline />
 </template>
 
 <script setup lang="ts">
 // 1. Make sure to import `ref` and `onMounted` from 'vue'
 import { ref, onMounted } from "vue";
 import Sidebar from "./components/layout/Sidebar.vue";
+import TrajectoryTimeline from './components/layout/TrajectoryTimeline.vue'; 
 import ObjectInfo from "./components/layout/ObjectInfo.vue";
 import { renderer } from "./viewer/scene_manager";
 import { initializeWebSocketConnection } from "./communications/communication";

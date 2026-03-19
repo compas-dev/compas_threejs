@@ -10,6 +10,7 @@ from compas.colors import Color
 
 from compas_threejs.viewer import Viewer
 from compas_threejs.ui import Slider
+from compas_threejs.ui import Timeline
 
 # 1. Setup Viewer
 viewer = Viewer()
@@ -454,7 +455,14 @@ slider = Slider(
     label="Scrub Trajectory", min=0, max=len(trajectory.points) - 1, step=1,
     default_value=0, action=scrub_robot
 )
-viewer.add_ui_element(slider)
+timeline = Timeline(
+    total_time=len(trajectory.points) * 0.1, # Assuming each point is 0.1s apart
+    step=0.1,
+    value=0.0,
+    action= scrub_robot) # Convert time back to frame index
+
+# viewer.add_ui_element(slider)
+viewer.add_ui_element(timeline)
 scrub_robot([0]) 
 
-viewer.start(show=False)
+viewer.start(show=True)
