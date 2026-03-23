@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { scene } from "./scene_manager";
 
+const DEBUG_TRANSFORMS = false;
+
 /**
  * Robust matrix extraction that handles both JSON arrays 
  * and Protobuf-encoded Uint8Arrays.
@@ -75,7 +77,9 @@ export function transformManager(data: { [key: string]: any }) {
         targetObject.matrix.copy(matrix);
         targetObject.updateMatrixWorld(true);
         
-        console.log(`✅ Successfully transformed ${targetGuid}`);
+        if (DEBUG_TRANSFORMS) {
+            console.log(`✅ Successfully transformed ${targetGuid}`);
+        }
     } else {
         console.error("❌ Transform Failed", { 
             guid: targetGuid, 
