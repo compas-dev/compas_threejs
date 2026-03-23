@@ -344,32 +344,32 @@ class Viewer:
             self.queued_messages.append((binary_data, obj_id))
 
     def transform(self, geometry, matrix):
-            """
-            Updates only the 4x4 transformation matrix of an existing object.
-            
-            Parameters
-            ----------
-            geometry : compas.geometry.Geometry | str
-                The geometry object to be transformed, or its unique GUID string.
-            matrix : compas.geometry.Transformation | list
-                The 4x4 transformation matrix.
-            """
-            obj_id = getattr(geometry, 'guid', geometry)
+        """
+        Updates only the 4x4 transformation matrix of an existing object.
 
-            if hasattr(matrix, 'list'):
-                flat_matrix = matrix.list
+        Parameters
+        ----------
+        geometry : compas.geometry.Geometry | str
+            The geometry object to be transformed, or its unique GUID string.
+        matrix : compas.geometry.Transformation | list
+            The 4x4 transformation matrix.
+        """
+        obj_id = getattr(geometry, 'guid', geometry)
+
+        if hasattr(matrix, 'list'):
+            flat_matrix = matrix.list
+        else:
+            if isinstance(matrix[0], (list, tuple)):
+                flat_matrix = [item for sublist in matrix for item in sublist]
             else:
-                if isinstance(matrix[0], (list, tuple)):
-                    flat_matrix = [item for sublist in matrix for item in sublist]
-                else:
-                    flat_matrix = list(matrix)
+                flat_matrix = list(matrix)
 
-            message = {
-                "dispatch": "transform",
-                "guid": str(obj_id),
-                "matrix": flat_matrix
-            }
-            self._send_dictionary_message(message)
+        message = {
+            "dispatch": "transform",
+            "guid": str(obj_id),
+            "matrix": flat_matrix
+        }
+        self._send_dictionary_message(message)
 
     # ---- TEXT --------------------------------------------------------------------------------
 
