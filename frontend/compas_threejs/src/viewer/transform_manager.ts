@@ -81,7 +81,7 @@ export function transformManager(data: { [key: string]: any }) {
             console.log(`✅ Successfully transformed ${targetGuid}`);
         }
     } else {
-        console.error("❌ Transform Failed", { 
+       
             guid: targetGuid, 
             foundObject: !!targetObject, 
             matrixValid: !!matrixArray 
