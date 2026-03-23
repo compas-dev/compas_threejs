@@ -29,7 +29,7 @@ class Timeline(UIElement):
         **kwargs
     ):
         super().__init__(**kwargs)
-        # --- FIXED: Changed 'id' to 'guid' ---
+       
         self.guid = str(uuid.uuid4())
         self.total_time = total_time
         self.step = step
