@@ -5,6 +5,27 @@
     @wheel.prevent="handleWheel"
   >
     <div class="flex items-center gap-3">
+
+      <button 
+        @click="cycleCameraMode"
+        class="p-2 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800 transition-colors flex items-center justify-center w-10 h-10"
+        :class="{ 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20': trajectoryState.cameraMode !== 'free', 'text-zinc-500': trajectoryState.cameraMode === 'free' }"
+        :title="`Camera: ${trajectoryState.cameraMode.toUpperCase()}`"
+      >
+        <svg v-if="trajectoryState.cameraMode === 'free'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+          <circle cx="12" cy="13" r="3"/>
+        </svg>
+        
+        <svg v-if="trajectoryState.cameraMode === 'look'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+        
+        <svg v-if="trajectoryState.cameraMode === 'follow'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="3 11 22 2 13 21 11 13 3 11"/><
+        </svg>
+      </button>
       
       <button 
         @click="trajectoryState.isLooping = !trajectoryState.isLooping"
@@ -77,6 +98,12 @@ const cycleSpeed = () => {
   trajectoryState.speedMultiplier = speeds[nextIndex];
 };
 
+const cycleCameraMode = () => {
+  const modes = ['free', 'look', 'follow'];
+  const currentIndex = modes.indexOf(trajectoryState.cameraMode);
+  trajectoryState.cameraMode = modes[(currentIndex + 1) % modes.length];
+};
+
 // --- THE ANIMATION ENGINE ---
 let animationFrameId: number | null = null;
 let lastTimestamp: number = 0;
@@ -133,7 +160,7 @@ let throttleTimeout: ReturnType<typeof setTimeout> | null = null;
 let lastNetworkSend = 0;
 
 // The maximum rate Python can handle (increase to 200 or 250 if it still lags)
-const NETWORK_FRAMERATE_MS = 200; 
+const NETWORK_FRAMERATE_MS = 130; 
 
 watch(() => trajectoryState.currentTime[0], (newTime) => {
   if (!trajectoryState.id) return; 

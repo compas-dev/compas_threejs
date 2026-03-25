@@ -17,5 +17,6 @@ export const trajectoryState = reactive({
   data: null as any,
   isPlaying: false,
   isLooping: false,
-  speedMultiplier: 1.0
+  speedMultiplier: 1.0,
+  cameraMode: 'free', // Options: 'free', 'look', 'follow'
 });

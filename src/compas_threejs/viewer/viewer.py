@@ -368,6 +368,7 @@ class Viewer:
                 "dispatch": "transform",
                 "guid": str(obj_id),
                 "matrix": flat_matrix
+                # "matrix": matrix
             }
             self._send_dictionary_message(message)
 
