@@ -80,11 +80,5 @@ export function transformManager(data: { [key: string]: any }) {
         if (DEBUG_TRANSFORMS) {
             console.log(`✅ Successfully transformed ${targetGuid}`);
         }
-    } else {
-       
-            guid: targetGuid, 
-            foundObject: !!targetObject, 
-            matrixValid: !!matrixArray 
-        });
-    }
+    } 
 }
