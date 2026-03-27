@@ -1,11 +1,9 @@
-import time
-from compas.geometry import Transformation, Scale, Box, Cylinder, Frame, Translation, Polyline, Line, Point
+from compas.geometry import Transformation, Scale, Box, Cylinder, Frame, Translation, Polyline
 from compas.datastructures import Mesh as CompasMesh
 from compas_fab.robots import RigidBody, RigidBodyState, JointTrajectory, JointTrajectoryPoint, ToolState
-from compas_robots import RobotModel, Configuration, ToolModel
+from compas_robots import Configuration, ToolModel
 from compas_fab.robots.robot_library import RobotCellLibrary
-import random
-from compas_threejs.materials import LineMaterial, Material, PhysicalMaterial, PointMaterial
+from compas_threejs.materials import LineMaterial, Material, PhysicalMaterial
 from compas.colors import Color
 
 from compas_threejs.viewer import Viewer
