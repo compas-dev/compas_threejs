@@ -13,6 +13,7 @@ from compas_threejs.lights import (
 from compas_threejs.materials import Material
 from compas_threejs.ui import Button, Slider
 from compas_threejs.viewer import Viewer
+from compas_threejs.metadata import Metadata
 
 viz = Viewer()
 viz.background_color = Color.black()
@@ -66,7 +67,10 @@ rectLight = RectLight(
 viz.add_light(rectLight)
 
 torus = Torus(1, 0.3, Frame([-8, 0, 1.5], [1, 0, 0], [0, 0, 1]))
-viz.add_geometry(torus, material)
+torus_meta = Metadata(name="Torus", radius=torus.radius_axis, tube=torus.radius_pipe, infos="These are custom made metadata")
+
+
+viz.add_geometry(torus, material, torus_meta)
 spotLight = SpotLight(
     point=Point(-5, 4, 5),
     target=torus.frame.point,

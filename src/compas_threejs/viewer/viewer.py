@@ -79,6 +79,7 @@ class Viewer:
         self.queued_messages = []
         self._buttons = dict()
         self._geoemetry_registry = dict()
+        self._metadata_registry = dict()
 
     def __enter__(self):
         return self
@@ -281,7 +282,7 @@ class Viewer:
 
     # ---- GEOMETRY --------------------------------------------------------------------------------
 
-    def add_geometry(self, geometry, material=None):
+    def add_geometry(self, geometry, material=None, metadata=None):
         """
         Adds a geometry object to the viewer. Optionally, a material can be associated with the geometry.
 
@@ -312,6 +313,10 @@ class Viewer:
                 )
             else:
                 self.queued_messages.append((material_data, str(uuid4())))
+
+
+        if metadata:
+            self._metadata_registry[str(obj_id)] = metadata
 
         # send geometry
         if loop:
@@ -491,16 +496,12 @@ class Viewer:
         console.log(
             f"[blue]Received object picked message from frontend. Object ID: {object_id}[/blue]"
         )
-        geometry = self._geoemetry_registry.get(object_id)
-        if not geometry:
-            return
-        message = dict()
-        try:
-            for key in geometry.__data__.keys():
-                message[key] = str(geometry.__data__[key])
-            message["dispatch"] = "object_infos"
-            self._send_dictionary_message(message)
-        except Exception as e:
-            console.log(
-                f"[yellow]Error while processing picked object information: {e}[/yellow]"
-            )
+        metadata = self._metadata_registry.get(object_id)
+        if metadata:
+            metadata['dispatch'] = "object_infos"
+            console.log(f"[blue]Metadata associated with the object: {metadata}[/blue]")
+            self._send_dictionary_message(metadata.metadata)
+        else:
+            metadata={"dispatch": "object_infos", "No metadata associated with this object.": ""}
+            self._send_dictionary_message(metadata)
+        return

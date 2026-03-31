@@ -46,6 +46,7 @@ function analyzeDictionary(dictionary: Dictionary) {
     case "object_infos":
       objectInfoManager(data);
       break;
+      return
     default:
       console.warn("Unknown dispatch value:", data.dispatch.value);
   }

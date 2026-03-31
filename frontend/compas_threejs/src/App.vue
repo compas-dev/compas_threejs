@@ -1,7 +1,10 @@
 <template>
+    <div class="app-container">
     <Sidebar />
-    <ObjectInfo v-if="objectInfoState.isVisible" />
     <div ref="threeContainer" class="three-container"></div>
+    <ObjectInfo v-if="objectInfoState.isVisible" />
+    </div>
+
 </template>
 
 <script setup lang="ts">
@@ -31,3 +34,23 @@ onMounted(() => {
     }
 });
 </script>
+
+
+<style scoped>
+
+div.app-container {
+    padding: 0px;
+    margin: 0px;
+    display: inline-flex;
+    height: 100vh; /* Full viewport height */
+    width: 100%; /* Full viewport width *//* Ensure it doesn't exceed viewport width */
+    overflow: hidden
+}
+
+div.three-container {
+    flex: 1; /* Take up remaining space */
+    position: flex; /* Ensure it can contain absolutely positioned children if needed */
+    overflow: hidden; /* Hide any overflow from the Three.js canvas */
+    }
+
+</style>

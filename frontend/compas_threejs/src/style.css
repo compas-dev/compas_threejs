@@ -118,3 +118,25 @@
         @apply bg-background text-foreground;
     }
 }
+
+
+:root {
+  font-family: Inter, sans-serif;
+  font-feature-settings: 'liga' 1, 'calt' 1; /* fix for Chrome */
+}
+@supports (font-variation-settings: normal) {
+  :root { font-family: InterVariable, sans-serif; }
+}
+
+div#app{
+    margin: 0px;
+    padding: 0px;
+    /*overflow: hidden;*/
+}
+
+body, html {
+    margin: 0px;
+    padding: 0px;
+    overflow: hidden;
+    font-family: Inter, sans-serif;
+}

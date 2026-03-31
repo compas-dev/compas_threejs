@@ -1,16 +1,22 @@
 <template>
     <div class="info-module">
-        <h1>{{ objectInfoState.title }}</h1>
-        <div v-for="(value, key) in objectInfoState.data" :key="key">
+        <Button variant="outline" @click="hideObjectInfo()"> X </Button>
+        <div class="metadata">
+        <h1>METADATA</h1>
+        <div v-for="(value, key) in objectInfoState.data" :key="key" class="single_data">
             <p>
-                <strong>{{ key }}:</strong> {{ value }}
+                <strong>{{ key }}:</strong> {{ value.value }}
             </p>
+        </div>
         </div>
     </div>
 </template>
 
 <script setup>
 import { objectInfoState } from "../../store/store";
+import { Button } from "@/components/ui/button";
+import { hideObjectInfo } from  "@/communications/objectInfo"
+
 
 const geoInformation = objectInfoState.data
     ? Object.fromEntries(
@@ -22,23 +28,41 @@ const geoInformation = objectInfoState.data
 </script>
 
 <style scoped>
+
 /* 'scoped' means these styles only apply to this module */
-.info-module {
-    position: absolute;
+div.info-module {
+    position: flex;
     z-index: 1000; /* Ensure it appears above other content */
     padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    font-family: sans-serif;
+    width: 33vw;
+    border-radius: 10px;
     bottom: 0;
     right: 0%;
-    text-align: right;
-    background-color: rgba(200, 200, 200, 0.5);
-    margin: 20px;
-    /*transform: translateX(-50%);*/
+    background-color: white;
+    max-width: 400px;
 }
-h1,
+
+div.metadata {
+    margin-top: 30px;
+}
+
+div.single_data {
+    margin-bottom: 10px;
+}
+
 p {
-    color: black;
+    font-size: 1.1em;
+    color: rgb(50, 50, 50);
 }
+
+h1 {
+    margin-top: 0;
+    font-size: 1.3em;
+    color: rgb(50, 50, 50);
+    font-weight: bold;
+    border-bottom: solid;
+    margin-bottom: 20px;
+}
+
+
 </style>
