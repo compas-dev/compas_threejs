@@ -1,4 +1,3 @@
-import { infoState } from "../store/store";
 import { updateObjectInfo, showObjectInfo, hideObjectInfo } from "./objectInfo";
 
 const WEBSOCKET_URL = "ws://localhost:8765"; // Default WebSocket server URL for Python backend
