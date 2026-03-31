@@ -2,6 +2,8 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { initializePicker, PickHelper } from "./picker";
 import { pickerEnabled } from "@/store/store";
+import { SCENE_GEOMETRIES } from "./geometry_manager";
+import { GEOMETRY_MATERIALS } from "./material_manager";
 
 // Change the default UP vector for all objects
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
@@ -94,4 +96,17 @@ function updateSceneBackgroundColor(data: { [key: string]: any }) {
   color = color.replace("#", "0x");
   color = parseInt(color);
   scene.background = new THREE.Color(color);
+}
+
+export function removeObjectFromScene(data: { [key: string]: any }) {
+  const obj_guid = data.guid.value;
+  if (obj_guid in SCENE_GEOMETRIES) {
+    const obj = SCENE_GEOMETRIES[obj_guid];
+    scene.remove(obj);
+    delete SCENE_GEOMETRIES[obj_guid];
+  }
+
+  if (obj_guid in GEOMETRY_MATERIALS) {
+    delete GEOMETRY_MATERIALS[obj_guid];
+  }
 }
