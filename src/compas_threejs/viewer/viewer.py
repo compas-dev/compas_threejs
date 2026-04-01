@@ -348,6 +348,11 @@ class Viewer:
         else:
             self.queued_messages.append((binary_data, obj_id))
 
+    def remove_object(self, geometry):
+        obj_id = geometry.guid
+        message = {"dispatch": "remove_object", "guid": str(obj_id)}
+        self._send_dictionary_message(message)
+
     # ---- TEXT --------------------------------------------------------------------------------
 
     def add_text(self, text, material=None):
