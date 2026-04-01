@@ -17,7 +17,7 @@ export function updateObjectInfo(newInfo: {
 }
 
 export function objectInfoManager(data: { [key: string]: any }) {
-  delete data["dispatch"]
+  delete data["dispatch"];
   objectInfoState.data = data;
 }
 

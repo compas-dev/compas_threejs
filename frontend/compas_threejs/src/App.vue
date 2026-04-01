@@ -1,10 +1,9 @@
 <template>
     <div class="app-container">
-    <Sidebar />
-    <div ref="threeContainer" class="three-container"></div>
-    <ObjectInfo v-if="objectInfoState.isVisible" />
+        <Sidebar v-if="sideBarInfoState.isVisible" />
+        <div ref="threeContainer" class="three-container"></div>
+        <ObjectInfo v-if="objectInfoState.isVisible" />
     </div>
-
 </template>
 
 <script setup lang="ts">
@@ -16,6 +15,7 @@ import { renderer } from "./viewer/scene_manager";
 import { initializeWebSocketConnection } from "./communications/communication";
 import { Button } from "@/components/ui/button"; // Make sure this path is correct
 import { objectInfoState } from "./store/store.ts";
+import { sideBarInfoState } from "./store/store.ts";
 
 // 2. Declare the ref at the top level of the script, initialized to null.
 const threeContainer = ref<HTMLDivElement | null>(null);
@@ -35,22 +35,19 @@ onMounted(() => {
 });
 </script>
 
-
 <style scoped>
-
 div.app-container {
     padding: 0px;
     margin: 0px;
     display: inline-flex;
     height: 100vh; /* Full viewport height */
-    width: 100%; /* Full viewport width *//* Ensure it doesn't exceed viewport width */
-    overflow: hidden
+    width: 100%; /* Full viewport width */ /* Ensure it doesn't exceed viewport width */
+    overflow: hidden;
 }
 
 div.three-container {
     flex: 1; /* Take up remaining space */
-    position: flex; /* Ensure it can contain absolutely positioned children if needed */
+    position: fixed; /* Ensure it can contain absolutely positioned children if needed */
     overflow: hidden; /* Hide any overflow from the Three.js canvas */
-    }
-
+}
 </style>

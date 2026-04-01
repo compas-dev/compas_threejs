@@ -1,6 +1,7 @@
 import { reactive } from "vue";
 import { sendData } from "@/communications/communication";
 import type { Dictionary } from "../protobuff/messages";
+import { sideBarInfoState } from "../store/store";
 
 // Define a type for the components we want to add.
 // This can be expanded later (e.g., to include different component types).
@@ -43,9 +44,11 @@ export function uiManager(data: { [key: string]: any }) {
   switch (type) {
     case "button":
       addButton(data);
+      sideBarInfoState.isVisible = true;
       break;
     case "slider":
       addSlider(data);
+      sideBarInfoState.isVisible = true;
       break;
     default:
       console.warn("Unknown component type:", type);
