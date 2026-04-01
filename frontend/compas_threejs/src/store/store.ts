@@ -6,4 +6,10 @@ export const objectInfoState = reactive({
   data: null,
 });
 
+export const sideBarInfoState = reactive({
+  title: "Sidebar Infos",
+  isVisible: false,
+  data: null,
+});
+
 export const pickerEnabled = reactive({ value: true });

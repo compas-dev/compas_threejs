@@ -47,6 +47,7 @@ function analyzeDictionary(dictionary: Dictionary) {
     case "object_infos":
       objectInfoManager(data);
       break;
+      return
     case "remove_object":
       removeObjectFromScene(data);
       break;
