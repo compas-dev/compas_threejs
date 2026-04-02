@@ -1,0 +1,31 @@
+name: Build
+
+on:
+  pull_request:
+    paths:
+      - 'frontend/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-slim
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'npm'
+          cache-dependency-path: frontend/compas_threejs/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend/compas_threejs
+        run: npm ci
+      
+      - name: Build frontend assets
+        working-directory: frontend/compas_threejs
+        run: npm run build
+
+      - name: Ensure frontend build assets are up-to-date
+        run: git diff --exit-code -- src/compas_threejs/viewer
