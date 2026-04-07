@@ -34,10 +34,10 @@ View shortcuts (numpad):
 - `8`: Back view
 - `4`: Left view
 - `6`: Right view
-- `7`: Front-left perspective
-- `9`: Front-right perspective
-- `1`: Back-left perspective
-- `3`: Back-right perspective
+- `1`: Front-left perspective
+- `3`: Front-right perspective
+- `7`: Back-left perspective
+- `9`: Back-right perspective
 - `0`: Bottom view
 
 Object transform shortcuts:

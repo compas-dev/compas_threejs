@@ -126,13 +126,13 @@ function getViewPresetFromKey(code: string): ViewPreset | null {
       return "left";
     case "Numpad6":
       return "right";
-    case "Numpad7":
-      return "front_left";
-    case "Numpad9":
-      return "front_right";
     case "Numpad1":
-      return "back_left";
+      return "front_left";
     case "Numpad3":
+      return "front_right";
+    case "Numpad7":
+      return "back_left";
+    case "Numpad9":
       return "back_right";
     default:
       return null;
