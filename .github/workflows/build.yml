@@ -28,4 +28,4 @@ jobs:
         run: npm run build
 
       - name: Ensure frontend build assets are up-to-date
-        run: git diff --exit-code --ignore-cr-at-eol --ignore-space-at-eol -- src/compas_threejs/viewer
+        run: git diff --exit-code --ignore-space-change -- src/compas_threejs/viewer
