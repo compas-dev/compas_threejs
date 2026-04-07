@@ -15,7 +15,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 24
+          node-version: '24.3.0'
           cache: 'npm'
           cache-dependency-path: frontend/compas_threejs/package-lock.json
 
