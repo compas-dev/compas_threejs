@@ -3,6 +3,8 @@ import json
 import threading
 import time
 import webbrowser
+from enum import IntEnum
+from typing import Union
 from uuid import uuid4
 
 import compas_pb
@@ -17,6 +19,19 @@ from .server import broadcast, get_server_loop, run_server, stop_server
 
 console = Console()
 
+class CameraView(IntEnum):
+    """Numpad-compatible camera view presets."""
+
+    BOTTOM = 0
+    FRONT_LEFT = 1
+    FRONT = 2
+    FRONT_RIGHT = 3
+    LEFT = 4
+    TOP = 5
+    RIGHT = 6
+    BACK_LEFT = 7
+    BACK = 8
+    BACK_RIGHT = 9
 
 class Viewer:
     class Viewer:
@@ -244,63 +259,36 @@ class Viewer:
         }
         self._send_dictionary_message(dict)
 
-    def set_view(self, key: int):
-        """Set the camera view using the numpad mapping.
+    def set_view(self, view: Union[CameraView, Point, tuple, list], target=None):
+        """Set camera view from a preset or explicit point.
 
-        Mapping:
-        5: top, 0: bottom, 2: front, 8: back, 4: left, 6: right,
-        1: front_left, 3: front_right, 7: back_left, 9: back_right.
+        Parameters
+        ----------
+        view : CameraView | Point | tuple | list
+            Either a CameraView preset or an XYZ camera position.
+        target : Point | tuple | list, optional
+            Target point for the camera to look at when `view` is an explicit position.
+            If omitted, the current camera target is kept.
         """
-        view_map = {
-            5: "top",
-            0: "bottom",
-            2: "front",
-            8: "back",
-            4: "left",
-            6: "right",
-            1: "front_left",
-            3: "front_right",
-            7: "back_left",
-            9: "back_right",
-        }
+        if isinstance(view, (Point, tuple, list)):
+            camera_point = view if isinstance(view, Point) else Point(*view)
+            self.camera_position = camera_point
+            if target is not None:
+                target_point = target if isinstance(target, Point) else Point(*target)
+                self.camera_target = target_point
+            return
 
-        try:
-            number = int(key)
-        except (TypeError, ValueError):
+        if not isinstance(view, CameraView):
             raise ValueError(
-                "Invalid view key. Use one of: 0-9"
+                "Invalid view. Use CameraView for presets or Point/xyz for position"
             )
 
-        preset = view_map.get(number)
-        if not preset:
-            raise ValueError(
-                "Invalid view key. Use one of: 0-9"
-            )
-
-        self._apply_view_preset(preset)
-
-    def _apply_view_preset(self, preset: str):
-        presets = {
-            "perspective": (Point(8, -15, 15), Point(0, 0, 0)),
-            "top": (Point(0, 0, 30), Point(0, 0, 0)),
-            "bottom": (Point(0, 0, -30), Point(0, 0, 0)),
-            "front": (Point(0, -30, 0), Point(0, 0, 0)),
-            "back": (Point(0, 30, 0), Point(0, 0, 0)),
-            "right": (Point(30, 0, 0), Point(0, 0, 0)),
-            "left": (Point(-30, 0, 0), Point(0, 0, 0)),
-            "front_left": (Point(-20, -20, 20), Point(0, 0, 0)),
-            "front_right": (Point(20, -20, 20), Point(0, 0, 0)),
-            "back_left": (Point(-20, 20, 20), Point(0, 0, 0)),
-            "back_right": (Point(20, 20, 20), Point(0, 0, 0)),
+        dict = {
+            "dispatch": "scene",
+            "type": "camera_view",
+            "preset": view.name.lower(),
         }
-
-        if preset not in presets:
-            valid = ", ".join(presets.keys())
-            raise ValueError(f"Unknown view preset '{preset}'. Valid presets: {valid}")
-
-        position, target = presets[preset]
-        self.camera_position = position
-        self.camera_target = target
+        self._send_dictionary_message(dict)
 
     def _send_default_view(self):
         self.camera_position = self.camera_position

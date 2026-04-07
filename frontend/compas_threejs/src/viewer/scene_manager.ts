@@ -66,6 +66,19 @@ const viewPresets: Record<ViewPreset, THREE.Vector3> = {
   back_right: new THREE.Vector3(1, 1, 1),
 };
 
+const NUMPAD_VIEW_MAP = new Map<string, ViewPreset>([
+  ["Numpad5", "top"],
+  ["Numpad0", "bottom"],
+  ["Numpad2", "front"],
+  ["Numpad8", "back"],
+  ["Numpad4", "left"],
+  ["Numpad6", "right"],
+  ["Numpad1", "front_left"],
+  ["Numpad3", "front_right"],
+  ["Numpad7", "back_left"],
+  ["Numpad9", "back_right"],
+]);
+
 // Create an axes helper with a size of 5 units
 const axesHelper = new THREE.AxesHelper(5);
 scene.add(axesHelper);
@@ -113,30 +126,7 @@ function applyViewPreset(preset: ViewPreset) {
 }
 
 function getViewPresetFromKey(code: string): ViewPreset | null {
-  switch (code) {
-    case "Numpad5":
-      return "top";
-    case "Numpad0":
-      return "bottom";
-    case "Numpad2":
-      return "front";
-    case "Numpad8":
-      return "back";
-    case "Numpad4":
-      return "left";
-    case "Numpad6":
-      return "right";
-    case "Numpad1":
-      return "front_left";
-    case "Numpad3":
-      return "front_right";
-    case "Numpad7":
-      return "back_left";
-    case "Numpad9":
-      return "back_right";
-    default:
-      return null;
-  }
+  return NUMPAD_VIEW_MAP.get(code) ?? null;
 }
 
 export function sceneManager(data: { [key: string]: any }) {
@@ -169,6 +159,13 @@ export function sceneManager(data: { [key: string]: any }) {
       controls.target.set(data.x.value, data.y.value, data.z.value);
       controls.update();
       break;
+    case "camera_view": {
+      const preset = data.preset.value as ViewPreset;
+      if (preset) {
+        applyViewPreset(preset);
+      }
+      break;
+    }
     default:
       console.warn("Unknown scene type:", data.type.value);
   }
