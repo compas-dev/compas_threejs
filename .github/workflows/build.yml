@@ -15,9 +15,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '24.3.0'
+          node-version: 24
           cache: 'npm'
           cache-dependency-path: frontend/compas_threejs/package-lock.json
+
+      - name: Use npm 11.11.0
+        run: npm i -g npm@11.11.0
 
       - name: Install dependencies
         working-directory: frontend/compas_threejs
@@ -28,4 +31,4 @@ jobs:
         run: npm run build
 
       - name: Ensure frontend build assets are up-to-date
-        run: git diff --exit-code --ignore-space-change -- src/compas_threejs/viewer
+        run: git diff --exit-code --ignore-space-change --ignore-space-at-eol --ignore-cr-at-eol -- src/compas_threejs/viewer
