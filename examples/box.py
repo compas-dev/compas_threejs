@@ -11,6 +11,7 @@ from compas_threejs.viewer import Viewer
 viz = Viewer()
 
 viz.default_lighting = True
+viz.set_view(4)
 
 
 def add_box():

@@ -74,6 +74,9 @@ class Viewer:
         self._picker = True
         self._camera_fov = 60
         self._camera_zoom = 1
+        self._camera_position = Point(8, -15, 15)
+        self._camera_target = Point(0, 0, 0)
+        self._view_preset = "perspective"
 
         # Registry
         self.queued_messages = []
@@ -206,6 +209,137 @@ class Viewer:
         }
         self._send_dictionary_message(dict)
 
+    @property
+    def camera_position(self) -> Point:
+        """Set or get the camera position in world coordinates."""
+        return self._camera_position
+
+    @camera_position.setter
+    def camera_position(self, value):
+        point = value if isinstance(value, Point) else Point(*value)
+        self._camera_position = point
+        dict = {
+            "dispatch": "scene",
+            "type": "camera_position",
+            "x": point.x,
+            "y": point.y,
+            "z": point.z,
+        }
+        self._send_dictionary_message(dict)
+
+    @property
+    def camera_target(self) -> Point:
+        """Set or get the camera target point used by orbit controls."""
+        return self._camera_target
+
+    @camera_target.setter
+    def camera_target(self, value):
+        point = value if isinstance(value, Point) else Point(*value)
+        self._camera_target = point
+        dict = {
+            "dispatch": "scene",
+            "type": "camera_target",
+            "x": point.x,
+            "y": point.y,
+            "z": point.z,
+        }
+        self._send_dictionary_message(dict)
+
+    @property
+    def view_preset(self) -> str:
+        """Set or get a predefined camera view: perspective, top, right, left."""
+        return self._view_preset
+
+    @view_preset.setter
+    def view_preset(self, value: str):
+        preset = str(value).lower()
+        self._apply_view_preset(preset)
+
+    def set_view(self, key: int):
+        """Set the camera view using the numpad mapping.
+
+        Mapping:
+        5: top, 0: bottom, 2: front, 8: back, 4: left, 6: right,
+        7: front_left, 9: front_right, 1: back_left, 3: back_right.
+        """
+        view_map = {
+            5: "top",
+            0: "bottom",
+            2: "front",
+            8: "back",
+            4: "left",
+            6: "right",
+            7: "front_left",
+            9: "front_right",
+            1: "back_left",
+            3: "back_right",
+        }
+
+        try:
+            number = int(key)
+        except (TypeError, ValueError):
+            raise ValueError(
+                "Invalid view key. Use one of: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9"
+            )
+
+        preset = view_map.get(number)
+        if not preset:
+            raise ValueError(
+                "Invalid view key. Use one of: 0, 1, 2, 3, 4, 5, 6, 7, 8, 9"
+            )
+
+        self._apply_view_preset(preset)
+
+    def set_perspective_view(self):
+        self.view_preset = "perspective"
+
+    def set_top_view(self):
+        self.set_view(5)
+
+    def set_right_view(self):
+        self.set_view(6)
+
+    def set_left_view(self):
+        self.set_view(4)
+
+    def set_front_view(self):
+        self.set_view(2)
+
+    def set_back_view(self):
+        self.set_view(8)
+
+    def set_bottom_view(self):
+        self.set_view(0)
+
+    def _apply_view_preset(self, preset: str):
+        presets = {
+            "perspective": (Point(8, -15, 15), Point(0, 0, 0)),
+            "top": (Point(0, 0, 30), Point(0, 0, 0)),
+            "bottom": (Point(0, 0, -30), Point(0, 0, 0)),
+            "front": (Point(0, -30, 0), Point(0, 0, 0)),
+            "back": (Point(0, 30, 0), Point(0, 0, 0)),
+            "right": (Point(30, 0, 0), Point(0, 0, 0)),
+            "left": (Point(-30, 0, 0), Point(0, 0, 0)),
+            "front_left": (Point(-20, -20, 20), Point(0, 0, 0)),
+            "front_right": (Point(20, -20, 20), Point(0, 0, 0)),
+            "back_left": (Point(-20, 20, 20), Point(0, 0, 0)),
+            "back_right": (Point(20, 20, 20), Point(0, 0, 0)),
+        }
+
+        if preset not in presets:
+            valid = ", ".join(presets.keys())
+            raise ValueError(f"Unknown view preset '{preset}'. Valid presets: {valid}")
+
+        self._view_preset = preset
+        position, target = presets[preset]
+        self.camera_position = position
+        self.camera_target = target
+
+    def _send_default_view(self):
+        self.camera_position = self.camera_position
+        self.camera_target = self.camera_target
+        console.log("[green]Default view sent![/green]")
+
     # ---- SERVER ---------------------------------------------------------------------------------
 
     def _initialize_server(self):
@@ -229,6 +363,7 @@ class Viewer:
         # Update viewer settings
         self.background_color = self.background_color
         self.camera_damping = self.camera_damping
+        self._send_default_view()
 
         # Send default lighting
         if self._default_lighting:
