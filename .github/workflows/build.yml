@@ -28,4 +28,4 @@ jobs:
         run: npm run build
 
       - name: Ensure frontend build assets are up-to-date
-        run: git diff --exit-code -- src/compas_threejs/viewer/frontend
+        run: git diff --exit-code -- src/compas_threejs/viewer
