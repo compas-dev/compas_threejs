@@ -24,6 +24,30 @@ viz.start()
 ```
 
 
+# Keyboard Shortcuts
+
+The viewer includes quick keyboard shortcuts for navigation and interaction.
+
+View shortcuts (numpad):
+- `5`: Top view
+- `2`: Front view
+- `8`: Back view
+- `4`: Left view
+- `6`: Right view
+- `1`: Front-left perspective
+- `3`: Front-right perspective
+- `7`: Back-left perspective
+- `9`: Back-right perspective
+- `0`: Bottom view
+
+Object transform shortcuts:
+- `W`, `E`, `S`: Switch transformation modes
+
+UI shortcuts:
+- `I`: Show/hide the metadata bar
+- `Q`: Show/hide the buttons and sliders bar
+
+
 
 
 # Invokes

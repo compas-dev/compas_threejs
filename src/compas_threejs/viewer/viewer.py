@@ -3,6 +3,8 @@ import json
 import threading
 import time
 import webbrowser
+from enum import IntEnum
+from typing import Union
 from uuid import uuid4
 
 import compas_pb
@@ -17,6 +19,19 @@ from .server import broadcast, get_server_loop, run_server, stop_server
 
 console = Console()
 
+class CameraView(IntEnum):
+    """Numpad-compatible camera view presets."""
+
+    BOTTOM = 0
+    FRONT_LEFT = 1
+    FRONT = 2
+    FRONT_RIGHT = 3
+    LEFT = 4
+    TOP = 5
+    RIGHT = 6
+    BACK_LEFT = 7
+    BACK = 8
+    BACK_RIGHT = 9
 
 class Viewer:
     class Viewer:
@@ -74,6 +89,8 @@ class Viewer:
         self._picker = True
         self._camera_fov = 60
         self._camera_zoom = 1
+        self._camera_position = Point(8, -15, 15)
+        self._camera_target = Point(0, 0, 0)
 
         # Registry
         self.queued_messages = []
@@ -206,6 +223,78 @@ class Viewer:
         }
         self._send_dictionary_message(dict)
 
+    @property
+    def camera_position(self) -> Point:
+        """Set or get the camera position in world coordinates."""
+        return self._camera_position
+
+    @camera_position.setter
+    def camera_position(self, value):
+        point = value if isinstance(value, Point) else Point(*value)
+        self._camera_position = point
+        dict = {
+            "dispatch": "scene",
+            "type": "camera_position",
+            "x": point.x,
+            "y": point.y,
+            "z": point.z,
+        }
+        self._send_dictionary_message(dict)
+
+    @property
+    def camera_target(self) -> Point:
+        """Set or get the camera target point used by orbit controls."""
+        return self._camera_target
+
+    @camera_target.setter
+    def camera_target(self, value):
+        point = value if isinstance(value, Point) else Point(*value)
+        self._camera_target = point
+        dict = {
+            "dispatch": "scene",
+            "type": "camera_target",
+            "x": point.x,
+            "y": point.y,
+            "z": point.z,
+        }
+        self._send_dictionary_message(dict)
+
+    def set_view(self, view: Union[CameraView, Point, tuple, list], target=None):
+        """Set camera view from a preset or explicit point.
+
+        Parameters
+        ----------
+        view : CameraView | Point | tuple | list
+            Either a CameraView preset or an XYZ camera position.
+        target : Point | tuple | list, optional
+            Target point for the camera to look at when `view` is an explicit position.
+            If omitted, the current camera target is kept.
+        """
+        if isinstance(view, (Point, tuple, list)):
+            camera_point = view if isinstance(view, Point) else Point(*view)
+            self.camera_position = camera_point
+            if target is not None:
+                target_point = target if isinstance(target, Point) else Point(*target)
+                self.camera_target = target_point
+            return
+
+        if not isinstance(view, CameraView):
+            raise ValueError(
+                "Invalid view. Use CameraView for presets or Point/xyz for position"
+            )
+
+        dict = {
+            "dispatch": "scene",
+            "type": "camera_view",
+            "preset": view.name.lower(),
+        }
+        self._send_dictionary_message(dict)
+
+    def _send_default_view(self):
+        self.camera_position = self.camera_position
+        self.camera_target = self.camera_target
+        console.log("[green]Default view sent![/green]")
+
     # ---- SERVER ---------------------------------------------------------------------------------
 
     def _initialize_server(self):
@@ -229,6 +318,7 @@ class Viewer:
         # Update viewer settings
         self.background_color = self.background_color
         self.camera_damping = self.camera_damping
+        self._send_default_view()
 
         # Send default lighting
         if self._default_lighting:
