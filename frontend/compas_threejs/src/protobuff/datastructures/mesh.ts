@@ -2,6 +2,7 @@ import { MeshData } from "../generated/compas_pb/data/datastructures";
 import { Point } from "../geometry/point";
 import { MeshFaceList } from "./facelist";
 import * as THREE from "three";
+import * as BufferGeometryUtils from "three/examples/jsm/utils/BufferGeometryUtils.js";
 
 export class Mesh {
   public readonly data: MeshData;
@@ -62,7 +63,7 @@ export class Mesh {
   }
 
   buildGeometry() {
-    const geometry = new THREE.BufferGeometry();
+    let geometry = new THREE.BufferGeometry();
 
     // Convert vertices to a flat array of positions
     const vertices = new Float32Array(this.vertices.length * 3);
@@ -84,8 +85,8 @@ export class Mesh {
     geometry.setIndex(indices);
     geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
 
-    // Compute normals for shading
-    geometry.computeVertexNormals();
+    const creaseAngle = THREE.MathUtils.degToRad(30);
+    geometry = BufferGeometryUtils.toCreasedNormals(geometry, creaseAngle);
 
     // Create a basic material
     const material = new THREE.MeshStandardMaterial({

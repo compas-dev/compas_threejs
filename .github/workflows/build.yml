@@ -1,9 +1,13 @@
-name: Build
+name: Build and Sync Frontend
 
 on:
   pull_request:
     paths:
-      - 'frontend/**'
+      - "frontend/**"
+
+# Give the GITHUB_TOKEN permission to write back to the repo
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -11,16 +15,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          # Crucial: Checkout the branch, not a detached head
+          ref: ${{ github.head_ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: 24
-          cache: 'npm'
+          cache: "npm"
           cache-dependency-path: frontend/compas_threejs/package-lock.json
-
-      - name: Use npm 11.11.0
-        run: npm i -g npm@11.11.0
 
       - name: Install dependencies
         working-directory: frontend/compas_threejs
@@ -30,5 +34,10 @@ jobs:
         working-directory: frontend/compas_threejs
         run: npm run build
 
-      - name: Ensure frontend build assets are up-to-date
-        run: git diff --exit-code --ignore-space-change --ignore-space-at-eol --ignore-cr-at-eol -- src/compas_threejs/viewer
+      # Instead of failing on diff, this commits the new files automatically
+      - name: Auto-commit build assets
+        uses: stefanzweifel/git-auto-commit-action@v7
+        with:
+          commit_message: "chore: automated build of frontend assets"
+          # Only track changes in your viewer folder
+          file_pattern: "src/compas_threejs/viewer/**"
