@@ -9,6 +9,40 @@ import { pickerEnabled } from "@/store/store";
 export let pickPosition: { x: number; y: number };
 let canvas: HTMLCanvasElement;
 export let tControl: TransformControls;
+let transformControlsPaused = false;
+
+export type TransformMode = "translate" | "rotate" | "scale";
+
+export function setTransformMode(mode: TransformMode) {
+  if (!tControl || transformControlsPaused) {
+    return;
+  }
+
+  tControl.setMode(mode);
+}
+
+export function setTransformControlsPaused(paused: boolean) {
+  transformControlsPaused = paused;
+
+  if (!tControl) {
+    return;
+  }
+
+  tControl.enabled = !paused;
+
+  if (paused) {
+    controls.enabled = true;
+  }
+}
+
+export function toggleTransformControlsPaused(): boolean {
+  setTransformControlsPaused(!transformControlsPaused);
+  return transformControlsPaused;
+}
+
+export function areTransformControlsPaused(): boolean {
+  return transformControlsPaused;
+}
 
 class TransformControlsManager {
   private tControl: TransformControls;
@@ -20,22 +54,32 @@ class TransformControlsManager {
   }
 
   private setupEventListeners() {
-    this.tControl.addEventListener("dragging-changed", (event) => {
+    this.tControl.addEventListener("dragging-changed", (event: { value: boolean }) => {
       controls.enabled = !event.value;
     });
 
     window.addEventListener("keydown", (event) => {
+      if (event.altKey || event.ctrlKey || event.metaKey) {
+        return;
+      }
+
       switch (event.key) {
         case "w":
-          this.tControl.setMode("translate");
+        case "W":
+          setTransformMode("translate");
           break;
         case "e":
-          this.tControl.setMode("rotate");
+        case "E":
+          setTransformMode("rotate");
           break;
+        case "s":
+        case "S":
         case "r":
-          this.tControl.setMode("scale");
+        case "R":
+          setTransformMode("scale");
           break;
         case "Escape":
+        case "Esc":
           this.tControl.detach();
           break;
       }
@@ -56,7 +100,7 @@ export class PickHelper {
     this.pickedObject = null;
   }
 
-  pick(normalizedPosition, scene) {
+  pick(normalizedPosition: { x: number; y: number }, scene: THREE.Scene) {
     if (!pickerEnabled.value) {
       return;
     }

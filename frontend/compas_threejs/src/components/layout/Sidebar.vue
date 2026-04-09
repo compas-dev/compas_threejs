@@ -1,5 +1,8 @@
 <template>
-    <div class="fixed-sidebar" :class="{ 'is-hidden': !isVisible }">
+    <div
+        class="fixed-sidebar"
+        :class="{ 'is-hidden': !isVisible, 'is-dark': isDarkMode, dark: isDarkMode }"
+    >
         <!-- Dynamically render components from the store -->
         <div
             v-for="item in sidebarComponents"
@@ -54,25 +57,31 @@
         </Button>
     </div>
 
-    <Button
-        variant="secondary"
-        size="icon"
-        class="mb-5"
-        @click="toggleSideBar()"
-        :class="{ 'is-hidden': !isVisible }"
-    >
-        >>
-    </Button>
+    <div :class="{ dark: isDarkMode }">
+        <Button
+            variant="secondary"
+            size="icon"
+            class="mb-5"
+            @click="toggleSideBar()"
+            :class="{ 'is-hidden': !isVisible }"
+        >
+            >>
+        </Button>
+    </div>
 </template>
 
 <script setup lang="ts">
-import { watchEffect, toRaw } from "vue"; // 1. Import watchEffect and toRaw
+import { onBeforeUnmount, ref } from "vue";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { ref } from "vue"; // Import ref
 import { sidebarComponents, handleAction } from "@/communications/sidebarStore";
+import { subscribeBackgroundMode } from "@/viewer/scene_manager";
 
 const isVisible = ref(true);
+const isDarkMode = ref(false);
+const unsubscribeBackgroundMode = subscribeBackgroundMode((mode) => {
+    isDarkMode.value = mode === "dark";
+});
 
 function toggleSideBar() {
     isVisible.value = !isVisible.value;
@@ -82,6 +91,10 @@ document.addEventListener("keydown", (event) => {
     if (event.key === "Q" || event.key === "q") {
         toggleSideBar();
     }
+});
+
+onBeforeUnmount(() => {
+    unsubscribeBackgroundMode();
 });
 </script>
 
@@ -122,6 +135,20 @@ div.fixed-sidebar {
     will-change: transform;
 }
 
+div.fixed-sidebar.is-dark {
+    background: linear-gradient(
+        135deg,
+        rgba(17, 24, 39, 0.15) 0%,
+        rgba(17, 24, 39, 0.2) 100%
+    );
+    border-color: rgba(255, 255, 255, 0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+        0 8px 32px 0 rgba(0, 0, 0, 0.5),
+        inset 0 0 15px rgba(255, 255, 255, 0.1);
+}
+
 div.fixed-sidebar.is-hidden {
     /* Slide left by its width + margin to fully hide it */
     /* Adjust -110% depending on your margin/padding needs */
@@ -147,6 +174,10 @@ div.fixed-sidebar.is-hidden {
     font-size: 15px;
     color: #333;
     padding: 0;
+}
+
+div.fixed-sidebar.is-dark .dynamic-label {
+    color: rgba(255, 255, 255, 0.85);
 }
 Button.mb-4 {
     position: absolute;

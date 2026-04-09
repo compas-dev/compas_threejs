@@ -11,8 +11,38 @@ import { uiManager } from "./sidebarStore";
 import { textManager } from "../viewer/text_manager";
 import { objectInfoManager } from "./objectInfo";
 import { removeObjectFromScene } from "../viewer/scene_manager";
+import { SCENE_GEOMETRIES } from "../viewer/geometry_manager";
 
-const SCENE_GEOMETRIES: { [guid: string]: THREE.Object3D } = {};
+let objectMotionPaused = false;
+const queuedGeometryByGuid = new Map<string, any>();
+
+export function setObjectMotionPaused(paused: boolean): void {
+  objectMotionPaused = paused;
+
+  if (!paused) {
+    flushQueuedGeometryUpdates();
+  }
+}
+
+export function toggleObjectMotionPaused(): boolean {
+  setObjectMotionPaused(!objectMotionPaused);
+  return objectMotionPaused;
+}
+
+export function isObjectMotionPaused(): boolean {
+  return objectMotionPaused;
+}
+
+function flushQueuedGeometryUpdates(): void {
+  if (!queuedGeometryByGuid.size) {
+    return;
+  }
+
+  const updates = Array.from(queuedGeometryByGuid.values());
+  queuedGeometryByGuid.clear();
+
+  updates.forEach((obj) => geometryManager(obj));
+}
 
 export function dispatchMessage(message: Uint8Array) {
   const messageUnpacked = unpackMessage(message);
@@ -22,6 +52,16 @@ export function dispatchMessage(message: Uint8Array) {
     analyzeDictionary(obj);
     return;
   } else {
+    if (objectMotionPaused && obj?.guid) {
+      const existsInScene = obj.guid in SCENE_GEOMETRIES;
+
+      // While paused, keep object creation responsive but freeze updates to existing geometry.
+      if (existsInScene) {
+        queuedGeometryByGuid.set(obj.guid, obj);
+        return;
+      }
+    }
+
     geometryManager(obj);
   }
 }

@@ -21,7 +21,7 @@ export const camera = new THREE.PerspectiveCamera(
 camera.position.set(8, -15, 15);
 camera.zoom = 1;
 
-type ViewPreset =
+export type ViewPreset =
   | "top"
   | "bottom"
   | "front"
@@ -32,6 +32,18 @@ type ViewPreset =
   | "front_right"
   | "back_left"
   | "back_right";
+
+export type SavedView = {
+  id: string;
+  name: string;
+  cameraPosition: { x: number; y: number; z: number };
+  target: { x: number; y: number; z: number };
+  zoom: number;
+  fov: number;
+};
+
+export type BackgroundMode = "light" | "dark";
+type BackgroundModeListener = (mode: BackgroundMode) => void;
 
 export const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -52,6 +64,26 @@ controls.mouseButtons = {
   MIDDLE: null,
   RIGHT: THREE.MOUSE.ROTATE,
 };
+
+const LIGHT_BACKGROUND_COLOR = 0xffffff;
+const DARK_BACKGROUND_COLOR = 0x000000;
+let defaultBackgroundColor = LIGHT_BACKGROUND_COLOR;
+let backgroundOverrideMode: "none" | BackgroundMode = "none";
+const backgroundModeListeners = new Set<BackgroundModeListener>();
+
+function notifyBackgroundModeChanged() {
+  const mode = getBackgroundMode();
+  backgroundModeListeners.forEach((listener) => listener(mode));
+}
+
+export function subscribeBackgroundMode(listener: BackgroundModeListener) {
+  backgroundModeListeners.add(listener);
+  listener(getBackgroundMode());
+
+  return () => {
+    backgroundModeListeners.delete(listener);
+  };
+}
 
 const viewPresets: Record<ViewPreset, THREE.Vector3> = {
   top: new THREE.Vector3(0, 0, 1),
@@ -87,12 +119,25 @@ scene.add(axesHelper);
 const picker = new PickHelper();
 initializePicker(picker);
 
-// The Loop
-function animate() {
-  requestAnimationFrame(animate);
+let animationFrameId: number | null = null;
+let sceneAnimationPaused = false;
+
+function renderSceneFrame() {
   controls.update();
   renderer.render(scene, camera);
 }
+
+// The Loop
+function animate() {
+  if (sceneAnimationPaused) {
+    animationFrameId = null;
+    return;
+  }
+
+  renderSceneFrame();
+  animationFrameId = requestAnimationFrame(animate);
+}
+
 animate();
 
 window.addEventListener("keydown", (event) => {
@@ -123,6 +168,118 @@ function applyViewPreset(preset: ViewPreset) {
 
   camera.position.copy(target.clone().add(direction.multiplyScalar(distance)));
   controls.update();
+}
+
+export function setCameraViewPreset(preset: ViewPreset) {
+  applyViewPreset(preset);
+
+  if (sceneAnimationPaused) {
+    renderSceneFrame();
+  }
+}
+
+export function captureCurrentView(name: string): SavedView {
+  return {
+    id: `view-${Date.now()}`,
+    name,
+    cameraPosition: {
+      x: camera.position.x,
+      y: camera.position.y,
+      z: camera.position.z,
+    },
+    target: {
+      x: controls.target.x,
+      y: controls.target.y,
+      z: controls.target.z,
+    },
+    zoom: camera.zoom,
+    fov: camera.fov,
+  };
+}
+
+export function applySavedView(view: SavedView) {
+  camera.position.set(
+    view.cameraPosition.x,
+    view.cameraPosition.y,
+    view.cameraPosition.z,
+  );
+  controls.target.set(view.target.x, view.target.y, view.target.z);
+  camera.zoom = view.zoom;
+  camera.fov = view.fov;
+  camera.updateProjectionMatrix();
+  controls.update();
+
+  if (sceneAnimationPaused) {
+    renderSceneFrame();
+  }
+}
+
+export function setBackgroundMode(mode: BackgroundMode): BackgroundMode {
+  backgroundOverrideMode = mode;
+  const color = mode === "dark" ? DARK_BACKGROUND_COLOR : LIGHT_BACKGROUND_COLOR;
+  scene.background = new THREE.Color(color);
+
+  if (sceneAnimationPaused) {
+    renderSceneFrame();
+  }
+
+  notifyBackgroundModeChanged();
+
+  return getBackgroundMode();
+}
+
+export function toggleBackgroundMode(): BackgroundMode {
+  return getBackgroundMode() === "dark"
+    ? setBackgroundMode("light")
+    : setBackgroundMode("dark");
+}
+
+export function getBackgroundMode(): BackgroundMode {
+  if (scene.background instanceof THREE.Color) {
+    return scene.background.getHex() === DARK_BACKGROUND_COLOR ? "dark" : "light";
+  }
+
+  return "light";
+}
+
+export function saveCurrentCanvasAsPng(fileName?: string) {
+  renderSceneFrame();
+
+  const link = document.createElement("a");
+  link.download =
+    fileName ?? `compas-view-${new Date().toISOString().replace(/[:.]/g, "-")}.png`;
+  link.href = renderer.domElement.toDataURL("image/png");
+  link.click();
+}
+
+export function setSceneAnimationPaused(paused: boolean) {
+  if (sceneAnimationPaused === paused) {
+    return;
+  }
+
+  sceneAnimationPaused = paused;
+
+  if (sceneAnimationPaused) {
+    if (animationFrameId !== null) {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = null;
+    }
+    renderSceneFrame();
+    return;
+  }
+
+  if (animationFrameId === null) {
+    animate();
+  }
+}
+
+export function toggleSceneAnimationPaused(): boolean {
+  setSceneAnimationPaused(!sceneAnimationPaused);
+  return sceneAnimationPaused;
+}
+
+export function isSceneAnimationPaused(): boolean {
+  return sceneAnimationPaused;
 }
 
 function getViewPresetFromKey(code: string): ViewPreset | null {
@@ -175,7 +332,13 @@ function updateSceneBackgroundColor(data: { [key: string]: any }) {
   let color = data.color.value;
   color = color.replace("#", "0x");
   color = parseInt(color);
-  scene.background = new THREE.Color(color);
+  defaultBackgroundColor = color;
+
+  if (backgroundOverrideMode === "none") {
+    scene.background = new THREE.Color(color);
+  }
+
+  notifyBackgroundModeChanged();
 }
 
 export function removeObjectFromScene(data: { [key: string]: any }) {
