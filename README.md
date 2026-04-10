@@ -2,13 +2,13 @@
 
 [![Made with COMPAS](https://compas.dev/badge.svg)](https://compas.dev/#/)
 
-A browser based viewer for COMPAS, built on top of THREEJS. 
+A browser based viewer for COMPAS, built on top of THREEJS.
 
 # Installation
     pip install git+https://github.com/gramaziokohler/compas_threejs.git
-    
-    
-    
+
+
+
 # Example
 
 ```python
@@ -24,9 +24,9 @@ viz.start()
 ```
 
 
-# Keyboard Shortcuts
+# Commands
 
-The viewer includes quick keyboard shortcuts for navigation and interaction.
+The viewer includes a toolbar and quick keyboard shortcuts for navigation and interaction.
 
 View shortcuts (numpad):
 - `5`: Top view
@@ -41,12 +41,14 @@ View shortcuts (numpad):
 - `0`: Bottom view
 
 Object transform shortcuts:
-- `W`, `E`, `S`: Switch transformation modes
+- `W`: Move
+- `E`: Rotate
+- `S`: Scale
+- `spacebar`: Play/pause movements
 
 UI shortcuts:
 - `I`: Show/hide the metadata bar
 - `Q`: Show/hide the buttons and sliders bar
-
 
 
 
