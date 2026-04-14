@@ -9,39 +9,39 @@ import { pickerEnabled } from "@/store/store";
 export let pickPosition: { x: number; y: number };
 let canvas: HTMLCanvasElement;
 export let tControl: TransformControls;
-let transformControlsPaused = false;
 
 export type TransformMode = "translate" | "rotate" | "scale";
 
 export function setTransformMode(mode: TransformMode) {
-  if (!tControl || transformControlsPaused) {
+  if (!tControl || !pickerEnabled.value) {
     return;
   }
 
   tControl.setMode(mode);
 }
 
-export function setTransformControlsPaused(paused: boolean) {
-  transformControlsPaused = paused;
+export function setPickerEnabled(enabled: boolean) {
+  pickerEnabled.value = enabled;
 
   if (!tControl) {
     return;
   }
 
-  tControl.enabled = !paused;
+  tControl.enabled = enabled;
 
-  if (paused) {
+  if (!enabled) {
+    tControl.detach();
     controls.enabled = true;
   }
 }
 
-export function toggleTransformControlsPaused(): boolean {
-  setTransformControlsPaused(!transformControlsPaused);
-  return transformControlsPaused;
+export function togglePickerEnabled(): boolean {
+  setPickerEnabled(!pickerEnabled.value);
+  return pickerEnabled.value;
 }
 
-export function areTransformControlsPaused(): boolean {
-  return transformControlsPaused;
+export function isPickerEnabled(): boolean {
+  return pickerEnabled.value;
 }
 
 class TransformControlsManager {
@@ -72,8 +72,6 @@ class TransformControlsManager {
         case "E":
           setTransformMode("rotate");
           break;
-        case "s":
-        case "S":
         case "r":
         case "R":
           setTransformMode("scale");
@@ -81,6 +79,10 @@ class TransformControlsManager {
         case "Escape":
         case "Esc":
           this.tControl.detach();
+          break;
+        case "p":
+        case "P":
+          togglePickerEnabled();
           break;
       }
     });
@@ -158,6 +160,7 @@ export function initializePicker(picker: PickHelper): PickHelper {
   pickPosition = { x: 0, y: 0 };
   const tControlsManager = new TransformControlsManager();
   tControl = tControlsManager.controls;
+  tControl.enabled = pickerEnabled.value;
 
   window.addEventListener("mousedown", (event) => {
     if (event.button !== 0) return; // Only proceed if left-click

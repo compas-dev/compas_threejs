@@ -87,20 +87,30 @@
         </div>
 
         <div v-if="showSavedViewsList" class="saved-views-panel">
-            <select
-                v-model="selectedSavedViewId"
-                class="saved-views-select"
-                @change="applySelectedSavedView"
-            >
-                <option disabled value="">Select view</option>
-                <option
-                    v-for="view in savedViews"
-                    :key="view.id"
-                    :value="view.id"
+            <div class="saved-views-controls">
+                <select
+                    v-model="selectedSavedViewId"
+                    class="saved-views-select"
+                    @change="applySelectedSavedView"
                 >
-                    {{ view.name }}
-                </option>
-            </select>
+                    <option disabled value="">Select view</option>
+                    <option
+                        v-for="view in savedViews"
+                        :key="view.id"
+                        :value="view.id"
+                    >
+                        {{ view.name }}
+                    </option>
+                </select>
+                <button
+                    class="saved-view-delete"
+                    title="Delete selected view"
+                    :disabled="!selectedSavedViewId"
+                    @click="deleteSelectedSavedView"
+                >
+                    ×
+                </button>
+            </div>
         </div>
     </div>
 </template>
@@ -120,18 +130,16 @@ import {
     Download,
 } from "lucide-vue-next";
 import {
+    setTransformMode,
+    toggleObjectMotionPaused,
     setCameraViewPreset,
     captureCurrentView,
     applySavedView,
-    toggleBackgroundMode,
     saveCurrentCanvasAsPng,
+    toggleBackgroundMode,
     subscribeBackgroundMode,
     type SavedView,
-} from "@/viewer/scene_manager";
-import { toggleObjectMotionPaused } from "@/communications/messages";
-import {
-    setTransformMode,
-} from "@/viewer/picker";
+} from "@/viewer/toolbar_actions";
 
 const SAVED_VIEWS_STORAGE_KEY = "compas_threejs_saved_views";
 const savedViews = ref<SavedView[]>([]);
@@ -183,6 +191,19 @@ function applySelectedSavedView() {
     applySavedView(selected);
 }
 
+function deleteSelectedSavedView() {
+    if (!selectedSavedViewId.value) {
+        return;
+    }
+
+    const nextViews = savedViews.value.filter(
+        (view) => view.id !== selectedSavedViewId.value
+    );
+    savedViews.value = nextViews;
+    selectedSavedViewId.value = nextViews[0]?.id ?? "";
+    persistSavedViews();
+}
+
 // Group 1: Object Transformations
 const transformationButtons = reactive<ToolbarButton[]>([
     {
@@ -200,7 +221,7 @@ const transformationButtons = reactive<ToolbarButton[]>([
     {
         id: "scale",
         iconComponent: Scale3d,
-        tooltip: "Scale (S)",
+        tooltip: "Scale (R)",
         active: false,
     },
     {
@@ -261,7 +282,7 @@ const displayButtons = reactive<ToolbarButton[]>([
 ]);
 
 const handleTransformation = (id: string) => {
-    // Update active transform tool only for W/E/S.
+    // Update active transform tool only for W/E/R.
     if (id !== "toggle-movement") {
         transformationButtons.forEach((btn) => {
             if (btn.id !== "toggle-movement") {
@@ -373,7 +394,7 @@ onMounted(() => {
                 event.preventDefault();
                 handleTransformation("rotate");
                 break;
-            case "s":
+            case "r":
                 event.preventDefault();
                 handleTransformation("scale");
                 break;
@@ -460,21 +481,51 @@ onBeforeUnmount(() => {
     min-width: 170px;
 }
 
+.saved-views-controls {
+    display: flex;
+    gap: 4px;
+}
+
 .saved-views-select {
     height: 36px;
-    width: 100%;
-    border: 1px solid rgba(0, 0, 0, 0.2);
+    min-width: 140px;
+    border: 1px solid var(--border);
     border-radius: 6px;
-    background: rgba(255, 255, 255, 0.85);
-    color: rgba(0, 0, 0, 0.8);
+    background: var(--secondary);
+    color: var(--secondary-foreground);
+    font-size: 12px;
     padding: 0 8px;
-    font-size: 13px;
-    font-weight: 600;
-    outline: none;
 }
 
 .saved-views-select:focus {
+    outline: none;
     border-color: rgba(59, 130, 246, 0.9);
+}
+
+.saved-views-select:hover {
+    background: var(--muted);
+}
+
+.saved-view-delete {
+    width: 36px;
+    height: 36px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--secondary-foreground);
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.saved-view-delete:hover {
+    background: rgba(220, 38, 38, 0.12);
+    border-color: rgba(220, 38, 38, 0.45);
+}
+
+.saved-view-delete:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .toolbar-button {
@@ -561,8 +612,17 @@ onBeforeUnmount(() => {
 }
 
 .toolbar.is-dark .saved-views-select {
-    background: rgba(55, 65, 81, 0.9);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: rgba(255, 255, 255, 0.85);
+    background: oklch(0.33 0 0);
+    border-color: oklch(1 0 0 / 15%);
+    color: oklch(0.985 0 0);
+}
+
+.toolbar.is-dark .saved-views-select:hover {
+    background: oklch(0.33 0 0);
+}
+
+.toolbar.is-dark .saved-view-delete {
+    border-color: oklch(1 0 0 / 15%);
+    color: oklch(0.985 0 0);
 }
 </style>

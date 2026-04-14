@@ -43,8 +43,8 @@ View shortcuts (numpad):
 Object transform shortcuts:
 - `W`: Move
 - `E`: Rotate
-- `S`: Scale
-- `spacebar`: Play/pause movements
+- `R`: Scale
+- `spacebar`: Play/pause object motion
 
 UI shortcuts:
 - `I`: Show/hide the metadata bar

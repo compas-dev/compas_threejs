@@ -4,6 +4,11 @@ import { initializePicker, PickHelper } from "./picker";
 import { pickerEnabled } from "@/store/store";
 import { SCENE_GEOMETRIES } from "./geometry_manager";
 import { GEOMETRY_MATERIALS } from "./material_manager";
+import {
+  getEffectiveBackgroundColor,
+  setDefaultBackgroundColor,
+  subscribeBackgroundMode,
+} from "./theme_manager";
 
 // Change the default UP vector for all objects
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
@@ -42,9 +47,6 @@ export type SavedView = {
   fov: number;
 };
 
-export type BackgroundMode = "light" | "dark";
-type BackgroundModeListener = (mode: BackgroundMode) => void;
-
 export const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(window.devicePixelRatio);
@@ -64,26 +66,6 @@ controls.mouseButtons = {
   MIDDLE: null,
   RIGHT: THREE.MOUSE.ROTATE,
 };
-
-const LIGHT_BACKGROUND_COLOR = 0xffffff;
-const DARK_BACKGROUND_COLOR = 0x000000;
-let defaultBackgroundColor = LIGHT_BACKGROUND_COLOR;
-let backgroundOverrideMode: "none" | BackgroundMode = "none";
-const backgroundModeListeners = new Set<BackgroundModeListener>();
-
-function notifyBackgroundModeChanged() {
-  const mode = getBackgroundMode();
-  backgroundModeListeners.forEach((listener) => listener(mode));
-}
-
-export function subscribeBackgroundMode(listener: BackgroundModeListener) {
-  backgroundModeListeners.add(listener);
-  listener(getBackgroundMode());
-
-  return () => {
-    backgroundModeListeners.delete(listener);
-  };
-}
 
 const viewPresets: Record<ViewPreset, THREE.Vector3> = {
   top: new THREE.Vector3(0, 0, 1),
@@ -126,6 +108,14 @@ function renderSceneFrame() {
   controls.update();
   renderer.render(scene, camera);
 }
+
+subscribeBackgroundMode(() => {
+  scene.background = new THREE.Color(getEffectiveBackgroundColor());
+
+  if (sceneAnimationPaused) {
+    renderSceneFrame();
+  }
+});
 
 // The Loop
 function animate() {
@@ -212,34 +202,6 @@ export function applySavedView(view: SavedView) {
   if (sceneAnimationPaused) {
     renderSceneFrame();
   }
-}
-
-export function setBackgroundMode(mode: BackgroundMode): BackgroundMode {
-  backgroundOverrideMode = mode;
-  const color = mode === "dark" ? DARK_BACKGROUND_COLOR : LIGHT_BACKGROUND_COLOR;
-  scene.background = new THREE.Color(color);
-
-  if (sceneAnimationPaused) {
-    renderSceneFrame();
-  }
-
-  notifyBackgroundModeChanged();
-
-  return getBackgroundMode();
-}
-
-export function toggleBackgroundMode(): BackgroundMode {
-  return getBackgroundMode() === "dark"
-    ? setBackgroundMode("light")
-    : setBackgroundMode("dark");
-}
-
-export function getBackgroundMode(): BackgroundMode {
-  if (scene.background instanceof THREE.Color) {
-    return scene.background.getHex() === DARK_BACKGROUND_COLOR ? "dark" : "light";
-  }
-
-  return "light";
 }
 
 export function saveCurrentCanvasAsPng(fileName?: string) {
@@ -332,13 +294,7 @@ function updateSceneBackgroundColor(data: { [key: string]: any }) {
   let color = data.color.value;
   color = color.replace("#", "0x");
   color = parseInt(color);
-  defaultBackgroundColor = color;
-
-  if (backgroundOverrideMode === "none") {
-    scene.background = new THREE.Color(color);
-  }
-
-  notifyBackgroundModeChanged();
+  setDefaultBackgroundColor(color);
 }
 
 export function removeObjectFromScene(data: { [key: string]: any }) {

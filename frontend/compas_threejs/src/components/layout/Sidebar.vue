@@ -75,7 +75,7 @@ import { onBeforeUnmount, ref } from "vue";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { sidebarComponents, handleAction } from "@/communications/sidebarStore";
-import { subscribeBackgroundMode } from "@/viewer/scene_manager";
+import { subscribeBackgroundMode } from "@/viewer/toolbar_actions";
 
 const isVisible = ref(true);
 const isDarkMode = ref(false);
