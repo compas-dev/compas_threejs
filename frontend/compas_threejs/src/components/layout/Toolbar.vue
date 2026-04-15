@@ -1,432 +1,25 @@
 <template>
     <div class="toolbar" :class="{ 'is-dark': isDarkMode }">
-        <!-- Group 1: Object Transformations -->
-        <div class="toolbar-group">
-            <button
-                v-for="button in transformationButtons"
-                :key="button.id"
-                class="toolbar-button"
-                :class="{ active: button.active }"
-                :title="button.tooltip"
-                @click="handleTransformation(button.id)"
-            >
-                <span
-                    class="button-icon"
-                    :class="{
-                        'front-icon': button.id === 'view-front',
-                        'pause-icon': button.id === 'toggle-movement' && button.icon === '⏸'
-                    }"
-                >
-                    <component
-                        v-if="button.iconComponent"
-                        :is="button.iconComponent"
-                        :size="16"
-                        :stroke-width="2"
-                        aria-hidden="true"
-                    />
-                    <span v-else>{{ button.icon }}</span>
-                </span>
-            </button>
-        </div>
-
-        <!-- Group 2: Views Switching -->
-        <div class="toolbar-group">
-            <button
-                v-for="button in viewButtons"
-                :key="button.id"
-                class="toolbar-button"
-                :title="button.tooltip"
-                @click="handleViewSwitch(button.id)"
-            >
-                <span
-                    class="button-icon"
-                    :class="{
-                        'front-icon': button.id === 'view-front',
-                        'pause-icon': button.id === 'toggle-movement' && button.icon === '⏸'
-                    }"
-                >
-                    <component
-                        v-if="button.iconComponent"
-                        :is="button.iconComponent"
-                        :size="16"
-                        :stroke-width="2"
-                        aria-hidden="true"
-                    />
-                    <span v-else>{{ button.icon }}</span>
-                </span>
-            </button>
-        </div>
-
-        <!-- Group 3: Display & Save -->
-        <div class="toolbar-group">
-            <button
-                v-for="button in displayButtons"
-                :key="button.id"
-                class="toolbar-button"
-                :class="{ active: button.active }"
-                :title="button.tooltip"
-                @click="handleDisplayAction(button.id)"
-            >
-                <span
-                    class="button-icon"
-                    :class="{
-                        'front-icon': button.id === 'view-front',
-                        'pause-icon': button.id === 'toggle-movement' && button.icon === '⏸'
-                    }"
-                >
-                    <component
-                        v-if="button.iconComponent"
-                        :is="button.iconComponent"
-                        :size="16"
-                        :stroke-width="2"
-                        aria-hidden="true"
-                    />
-                    <span v-else>{{ button.icon }}</span>
-                </span>
-            </button>
-        </div>
-
-        <div v-if="showSavedViewsList" class="saved-views-panel">
-            <div class="saved-views-controls">
-                <select
-                    v-model="selectedSavedViewId"
-                    class="saved-views-select"
-                    @change="applySelectedSavedView"
-                >
-                    <option disabled value="">Select view</option>
-                    <option
-                        v-for="view in savedViews"
-                        :key="view.id"
-                        :value="view.id"
-                    >
-                        {{ view.name }}
-                    </option>
-                </select>
-                <button
-                    class="saved-view-delete"
-                    title="Delete selected view"
-                    :disabled="!selectedSavedViewId"
-                    @click="deleteSelectedSavedView"
-                >
-                    ×
-                </button>
-            </div>
-        </div>
+        <TransformGroup />
+        <ViewGroup />
+        <DisplayGroup :is-dark-mode="isDarkMode" />
     </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, onMounted, onBeforeUnmount, type Component } from "vue";
-import {
-    Move3d,
-    Rotate3d,
-    Scale3d,
-    RectangleVertical,
-    Square,
-    RectangleHorizontal,
-    Cuboid,
-    Save,
-    ClipboardList,
-    Download,
-} from "lucide-vue-next";
-import {
-    setTransformMode,
-    toggleObjectMotionPaused,
-    setCameraViewPreset,
-    captureCurrentView,
-    applySavedView,
-    saveCurrentCanvasAsPng,
-    toggleBackgroundMode,
-    subscribeBackgroundMode,
-    type SavedView,
-} from "@/viewer/toolbar_actions";
+import { onMounted, onBeforeUnmount, ref } from "vue";
+import { subscribeBackgroundMode } from "@/viewer/toolbar_actions";
+import TransformGroup from "@/components/tools/transforms/TransformGroup.vue";
+import ViewGroup from "@/components/tools/views/ViewGroup.vue";
+import DisplayGroup from "@/components/tools/display/DisplayGroup.vue";
 
-const SAVED_VIEWS_STORAGE_KEY = "compas_threejs_saved_views";
-const savedViews = ref<SavedView[]>([]);
-const selectedSavedViewId = ref<string>("");
-const showSavedViewsList = ref(false);
 const isDarkMode = ref(false);
 let unsubscribeBackgroundMode: (() => void) | null = null;
 
-type ToolbarButton = {
-    id: string;
-    icon?: string;
-    iconComponent?: Component;
-    tooltip: string;
-    active?: boolean;
-};
-
-function persistSavedViews() {
-    localStorage.setItem(
-        SAVED_VIEWS_STORAGE_KEY,
-        JSON.stringify(savedViews.value)
-    );
-}
-
-function loadSavedViewsFromStorage() {
-    const raw = localStorage.getItem(SAVED_VIEWS_STORAGE_KEY);
-    if (!raw) {
-        return;
-    }
-
-    try {
-        const parsed = JSON.parse(raw) as SavedView[];
-        if (Array.isArray(parsed)) {
-            savedViews.value = parsed;
-        }
-    } catch {
-        savedViews.value = [];
-    }
-}
-
-function applySelectedSavedView() {
-    const selected = savedViews.value.find(
-        (view) => view.id === selectedSavedViewId.value
-    );
-
-    if (!selected) {
-        return;
-    }
-
-    applySavedView(selected);
-}
-
-function deleteSelectedSavedView() {
-    if (!selectedSavedViewId.value) {
-        return;
-    }
-
-    const nextViews = savedViews.value.filter(
-        (view) => view.id !== selectedSavedViewId.value
-    );
-    savedViews.value = nextViews;
-    selectedSavedViewId.value = nextViews[0]?.id ?? "";
-    persistSavedViews();
-}
-
-// Group 1: Object Transformations
-const transformationButtons = reactive<ToolbarButton[]>([
-    {
-        id: "move",
-        iconComponent: Move3d,
-        tooltip: "Move (W)",
-        active: false,
-    },
-    {
-        id: "rotate",
-        iconComponent: Rotate3d,
-        tooltip: "Rotate (E)",
-        active: false,
-    },
-    {
-        id: "scale",
-        iconComponent: Scale3d,
-        tooltip: "Scale (R)",
-        active: false,
-    },
-    {
-        id: "toggle-movement",
-        icon: "⏸",
-        tooltip: "Play/Pause Movements (Space)",
-        active: false,
-    },
-]);
-
-// Group 2: Views Switching
-const viewButtons = reactive<ToolbarButton[]>([
-    {
-        id: "view-top",
-        iconComponent: RectangleVertical,
-        tooltip: "Top View (5)",
-    },
-    {
-        id: "view-front",
-        iconComponent: Square,
-        tooltip: "Front View (2)",
-    },
-    {
-        id: "view-right",
-        iconComponent: RectangleHorizontal,
-        tooltip: "Right View (6)",
-    },
-    {
-        id: "view-perspective",
-        iconComponent: Cuboid,
-        tooltip: "Perspective View (3)",
-    },
-]);
-
-// Group 3: Display & Save
-const displayButtons = reactive<ToolbarButton[]>([
-    {
-        id: "save-view",
-        iconComponent: Save,
-        tooltip: "Save Current View",
-    },
-    {
-        id: "saved-views",
-        iconComponent: ClipboardList,
-        tooltip: "Saved Views",
-    },
-    {
-        id: "toggle-background",
-        icon: "◐",
-        tooltip: "Toggle Dark/Light Background",
-        active: false,
-    },
-    {
-        id: "save-screenshot",
-        iconComponent: Download,
-        tooltip: "Save as PNG",
-    },
-]);
-
-const handleTransformation = (id: string) => {
-    // Update active transform tool only for W/E/R.
-    if (id !== "toggle-movement") {
-        transformationButtons.forEach((btn) => {
-            if (btn.id !== "toggle-movement") {
-                btn.active = btn.id === id;
-            }
-        });
-    }
-
-    // Handle specific transformation
-    switch (id) {
-        case "move":
-            setTransformMode("translate");
-            break;
-        case "rotate":
-            setTransformMode("rotate");
-            break;
-        case "scale":
-            setTransformMode("scale");
-            break;
-        case "toggle-movement":
-            const btn = transformationButtons.find((b) => b.id === id);
-            if (btn) {
-                const paused = toggleObjectMotionPaused();
-                btn.active = paused;
-                btn.icon = paused ? "▶" : "⏸";
-            }
-            break;
-    }
-};
-
-const handleViewSwitch = (id: string) => {
-    switch (id) {
-        case "view-top":
-            setCameraViewPreset("top");
-            break;
-        case "view-front":
-            setCameraViewPreset("front");
-            break;
-        case "view-right":
-            setCameraViewPreset("right");
-            break;
-        case "view-perspective":
-            setCameraViewPreset("front_right");
-            break;
-    }
-};
-
-const handleDisplayAction = (id: string) => {
-    switch (id) {
-        case "save-view": {
-            const defaultName = `View ${savedViews.value.length + 1}`;
-            const requestedName = window.prompt("Name for saved view", defaultName);
-            if (requestedName === null) {
-                break;
-            }
-
-            const name = requestedName.trim() || defaultName;
-            const view = captureCurrentView(name);
-            savedViews.value = [...savedViews.value, view];
-            selectedSavedViewId.value = view.id;
-            showSavedViewsList.value = true;
-            persistSavedViews();
-            break;
-        }
-        case "saved-views": {
-            showSavedViewsList.value = !showSavedViewsList.value;
-            break;
-        }
-        case "toggle-background":
-            const btn = displayButtons.find((b) => b.id === "toggle-background");
-            if (btn) {
-                const mode = toggleBackgroundMode();
-                btn.active = mode === "dark";
-            }
-            break;
-        case "save-screenshot":
-            saveCurrentCanvasAsPng();
-            break;
-    }
-};
-
-// Keyboard shortcuts
 onMounted(() => {
-    loadSavedViewsFromStorage();
     unsubscribeBackgroundMode = subscribeBackgroundMode((mode) => {
         isDarkMode.value = mode === "dark";
-        const backgroundButton = displayButtons.find(
-            (button) => button.id === "toggle-background"
-        );
-        if (backgroundButton) {
-            backgroundButton.active = mode === "dark";
-        }
     });
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-        const key = event.key.toLowerCase();
-
-        // Only trigger if no modifier keys are pressed (to avoid conflicts with browser shortcuts)
-        if (event.ctrlKey || event.metaKey || event.altKey) {
-            return;
-        }
-
-        switch (key) {
-            case "w":
-                event.preventDefault();
-                handleTransformation("move");
-                break;
-            case "e":
-                event.preventDefault();
-                handleTransformation("rotate");
-                break;
-            case "r":
-                event.preventDefault();
-                handleTransformation("scale");
-                break;
-            case " ": // Space bar for play/pause
-                event.preventDefault();
-                handleTransformation("toggle-movement");
-                break;
-            case "2":
-                event.preventDefault();
-                handleViewSwitch("view-front");
-                break;
-            case "3":
-                event.preventDefault();
-                handleViewSwitch("view-perspective");
-                break;
-            case "5":
-                event.preventDefault();
-                handleViewSwitch("view-top");
-                break;
-            case "6":
-                event.preventDefault();
-                handleViewSwitch("view-right");
-                break;
-        }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-
-    // Cleanup
-    return () => {
-        document.removeEventListener("keydown", handleKeyDown);
-    };
 });
 
 onBeforeUnmount(() => {
@@ -464,7 +57,7 @@ onBeforeUnmount(() => {
         inset 0 0 15px rgba(255, 255, 255, 0.7);
 }
 
-.toolbar-group {
+:deep(.toolbar-group) {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 6px;
@@ -472,21 +65,21 @@ onBeforeUnmount(() => {
     border-right: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.toolbar-group:last-child {
+:deep(.toolbar-group:last-child) {
     border-right: none;
     padding-right: 0;
 }
 
-.saved-views-panel {
+:deep(.saved-views-panel) {
     min-width: 170px;
 }
 
-.saved-views-controls {
+:deep(.saved-views-controls) {
     display: flex;
     gap: 4px;
 }
 
-.saved-views-select {
+:deep(.saved-views-select) {
     height: 36px;
     min-width: 140px;
     border: 1px solid var(--border);
@@ -497,16 +90,16 @@ onBeforeUnmount(() => {
     padding: 0 8px;
 }
 
-.saved-views-select:focus {
+:deep(.saved-views-select:focus) {
     outline: none;
     border-color: rgba(59, 130, 246, 0.9);
 }
 
-.saved-views-select:hover {
+:deep(.saved-views-select:hover) {
     background: var(--muted);
 }
 
-.saved-view-delete {
+:deep(.saved-view-delete) {
     width: 36px;
     height: 36px;
     border: 1px solid var(--border);
@@ -518,17 +111,17 @@ onBeforeUnmount(() => {
     cursor: pointer;
 }
 
-.saved-view-delete:hover {
+:deep(.saved-view-delete:hover) {
     background: rgba(220, 38, 38, 0.12);
     border-color: rgba(220, 38, 38, 0.45);
 }
 
-.saved-view-delete:disabled {
+:deep(.saved-view-delete:disabled) {
     opacity: 0.5;
     cursor: not-allowed;
 }
 
-.toolbar-button {
+:deep(.toolbar-button) {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -560,7 +153,7 @@ onBeforeUnmount(() => {
     }
 }
 
-.button-icon {
+:deep(.button-icon) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -568,12 +161,16 @@ onBeforeUnmount(() => {
     transform-origin: center;
 }
 
-.button-icon.front-icon {
+:deep(.button-icon.front-icon) {
     transform: scale(0.75);
 }
 
-.button-icon.pause-icon {
-    transform: translateY(-2px) scale(1.5);
+:deep(.button-icon.pause-icon) {
+    transform: translateY(-1px) scale(1);
+}
+
+:deep(.button-icon.play-icon) {
+    transform: scale(0.75);
 }
 
 .toolbar.is-dark {
@@ -590,39 +187,43 @@ onBeforeUnmount(() => {
         inset 0 0 15px rgba(255, 255, 255, 0.1);
 }
 
-.toolbar.is-dark .toolbar-group {
+.toolbar.is-dark :deep(.toolbar-group) {
     border-right-color: rgba(255, 255, 255, 0.1);
 }
 
-.toolbar.is-dark .toolbar-button {
+.toolbar.is-dark :deep(.toolbar-button) {
     background: oklch(0.269 0 0);
     border-color: oklch(1 0 0 / 15%);
     color: oklch(0.985 0 0);
 }
 
-.toolbar.is-dark .toolbar-button:hover {
+.toolbar.is-dark :deep(.toolbar-button:hover) {
     background: oklch(0.33 0 0);
     border-color: oklch(1 0 0 / 28%);
 }
 
-.toolbar.is-dark .toolbar-button.active {
+.toolbar.is-dark :deep(.toolbar-button.active) {
     background: rgba(59, 130, 246, 0.9);
     color: white;
     border-color: rgba(59, 130, 246, 1);
 }
 
-.toolbar.is-dark .saved-views-select {
+.toolbar.is-dark :deep(.saved-views-select) {
     background: oklch(0.33 0 0);
     border-color: oklch(1 0 0 / 15%);
     color: oklch(0.985 0 0);
 }
 
-.toolbar.is-dark .saved-views-select:hover {
+.toolbar.is-dark :deep(.saved-views-select:hover) {
     background: oklch(0.33 0 0);
 }
 
-.toolbar.is-dark .saved-view-delete {
+.toolbar.is-dark :deep(.saved-view-delete) {
     border-color: oklch(1 0 0 / 15%);
     color: oklch(0.985 0 0);
+}
+
+:deep(.display-tools-wrapper) {
+    display: contents;
 }
 </style>
