@@ -1,5 +1,5 @@
 <template>
-    <button class="toolbar-button" title="Save Current View" @click="handleClick">
+    <button class="toolbar-button" title="Save Current View (S)" @click="handleClick">
         <span class="button-icon">
             <Save :size="16" :stroke-width="2" aria-hidden="true" />
         </span>

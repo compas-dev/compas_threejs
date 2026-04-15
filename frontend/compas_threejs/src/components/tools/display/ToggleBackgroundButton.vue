@@ -2,7 +2,7 @@
     <button
         class="toolbar-button"
         :class="{ active }"
-        title="Toggle Dark/Light Background"
+        title="Toggle Dark/Light Background (D)"
         @click="handleClick"
     >
         <span class="button-icon">◐</span>

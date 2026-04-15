@@ -41,7 +41,14 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { applySavedView, type SavedView } from "@/viewer/toolbar_actions";
+import {
+    applySavedView,
+    captureCurrentView,
+    saveCurrentCanvasAsPng,
+    toggleBackgroundMode,
+    type SavedView,
+} from "@/viewer/toolbar_actions";
+import { useKeyboardShortcuts } from "@/components/tools/useKeyboardShortcuts";
 import {
     SaveViewButton,
     SavedViewsButton,
@@ -86,6 +93,18 @@ function handleSavedView(view: SavedView) {
     persistSavedViews();
 }
 
+function requestSaveCurrentView() {
+    const defaultName = `View ${savedViews.value.length + 1}`;
+    const requestedName = window.prompt("Name for saved view", defaultName);
+    if (requestedName === null) {
+        return;
+    }
+
+    const name = requestedName.trim() || defaultName;
+    const view = captureCurrentView(name);
+    handleSavedView(view);
+}
+
 function toggleSavedViews() {
     showSavedViewsList.value = !showSavedViewsList.value;
 }
@@ -112,5 +131,17 @@ function deleteSelectedSavedView() {
 
 onMounted(() => {
     loadSavedViewsFromStorage();
+});
+
+useKeyboardShortcuts({
+    s: () => {
+        requestSaveCurrentView();
+    },
+    d: () => {
+        toggleBackgroundMode();
+    },
+    f: () => {
+        saveCurrentCanvasAsPng();
+    },
 });
 </script>
