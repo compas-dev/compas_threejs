@@ -67,6 +67,14 @@ export class PickHelper {
                 }
             }
         });
+
+        pickPosition = { x: 0, y: 0 };
+        window.addEventListener("mousedown", (event) => {
+            if (event.button !== 0) return; // Only proceed if left-click
+            if (tControl.dragging) return; // Don't pick while dragging
+            setPickPosition(event);
+            this.pick(pickPosition, scene);
+        });
     }
 
     getPickedObject(normalizedPosition: { x: number; y: number }) {
@@ -166,14 +174,6 @@ export function initializePicker(picker: PickHelper): PickHelper {
     canvas = document.querySelector<HTMLCanvasElement>("canvas")!;
     const tControlsManager = new TransformControlsManager();
     tControl = tControlsManager.controls;
-
-    pickPosition = { x: 0, y: 0 };
-    window.addEventListener("mousedown", (event) => {
-        if (event.button !== 0) return; // Only proceed if left-click
-        if (tControl.dragging) return; // Don't pick while dragging
-        setPickPosition(event);
-        picker.pick(pickPosition, scene);
-    });
 
     return picker;
 }
