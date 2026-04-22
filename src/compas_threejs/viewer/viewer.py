@@ -14,7 +14,7 @@ from rich.console import Console
 
 from compas_threejs.lights.ambientlight import AmbientLight
 from compas_threejs.lights.sunlight import Sunlight
-from compas_threejs.ui.button import Button
+from compas_threejs.ui import Button
 
 from .server import broadcast, get_server_loop, run_server, stop_server
 
