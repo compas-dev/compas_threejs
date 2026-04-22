@@ -10,14 +10,22 @@ import { pickerEnabled } from "@/store/store";
 export let pickPosition: { x: number; y: number };
 let canvas: HTMLCanvasElement;
 export let tControl: TransformControls;
+let initializedTControls = false;
+let initializedPickHelper = false;
 
 class TransformControlsManager {
     private tControl: TransformControls;
 
     constructor(pickHelper?: PickHelper) {
+        if (initializedTControls) {
+            throw new Error(
+                "TransformControlsManager has already been initialized.",
+            );
+        }
         this.tControl = new TransformControls(camera, renderer.domElement);
         scene.add(this.tControl.getHelper());
         this.setupEventListeners();
+        initializedTControls = true;
     }
 
     private setupEventListeners() {
@@ -54,9 +62,13 @@ export class PickHelper {
     pickedObject: THREE.Object3D | null;
 
     constructor() {
+        if (initializedPickHelper) {
+            throw new Error("PickHelper has already been initialized.");
+        }
         this.raycaster = new THREE.Raycaster();
         this.pickedObject = null;
         this.setupEventListeners();
+        initializedPickHelper = true;
     }
 
     setupEventListeners() {
@@ -67,6 +79,14 @@ export class PickHelper {
                     resetObjectInfoPanel();
                 }
             }
+        });
+
+        pickPosition = { x: 0, y: 0 };
+        window.addEventListener("mousedown", (event) => {
+            if (event.button !== 0) return; // Only proceed if left-click
+            if (tControl.dragging) return; // Don't pick while dragging
+            setPickPosition(event);
+            this.pick(pickPosition, scene);
         });
     }
 
@@ -173,14 +193,6 @@ export function initializePicker(picker: PickHelper): PickHelper {
     canvas = document.querySelector<HTMLCanvasElement>("canvas")!;
     const tControlsManager = new TransformControlsManager();
     tControl = tControlsManager.controls;
-
-    pickPosition = { x: 0, y: 0 };
-    window.addEventListener("mousedown", (event) => {
-        if (event.button !== 0) return; // Only proceed if left-click
-        if (tControl.dragging) return; // Don't pick while dragging
-        setPickPosition(event);
-        picker.pick(pickPosition, scene);
-    });
 
     return picker;
 }
