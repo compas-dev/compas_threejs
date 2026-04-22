@@ -12,6 +12,12 @@ class App:
         self.viewer = Viewer()
         self.viewer.camera_position = Point(20, -20, 20)
         self.objects = []
+        self.box_material = Material(
+            color=Color(0.8, 0.8, 0.8), metalness=0.5, roughness=0.5
+        )
+        self.spehere_material = Material(
+            color=Color(0.8, 0.8, 0.8), metalness=0.5, roughness=0.5
+        )
 
     def add_geomtries(self):
 
@@ -20,50 +26,61 @@ class App:
         bigger_button = Button("Make it bigger", action=self.make_it_bigger)
         smaller_button = Button("Make it smaller", action=self.make_it_smaller)
 
-        box = Box(3, 3, 3, Frame([5, 3, 2], [1, 0, 0], [0, 1, 0]))
+        self.box = Box(3, 3, 3, Frame([5, 3, 2], [1, 0, 0], [0, 1, 0]))
         metadata = Metadata(
             name="Box",
-            width=box.xsize,
-            height=box.ysize,
-            depth=box.zsize,
-            volume=box.volume,
-            area=box.area,
+            width=self.box.xsize,
+            height=self.box.ysize,
+            depth=self.box.zsize,
+            volume=self.box.volume,
+            area=self.box.area,
         )
         self.viewer.add_geometry(
-            box,
+            self.box,
+            self.box_material,
             metadata=metadata,
             actions=[blue_button, red_button, bigger_button, smaller_button],
         )
 
-        sphere = Sphere(2, Frame([-2, -4, 0], [1, 0, 0], [0, 1, 0]))
+        self.sphere = Sphere(2, Frame([-2, -4, 0], [1, 0, 0], [0, 1, 0]))
         metadata = Metadata(
-            name="Sphere", radius=sphere.radius, area=sphere.area, volume=sphere.volume
+            name="Sphere",
+            radius=self.sphere.radius,
+            area=self.sphere.area,
+            volume=self.sphere.volume,
         )
         self.viewer.add_geometry(
-            sphere,
+            self.sphere,
+            material=self.spehere_material,
             metadata=metadata,
             actions=[blue_button, red_button, bigger_button, smaller_button],
         )
 
     def make_it_blue(self, object):
-        self.viewer.remove_object(object)
-        material = Material(color=Color.blue())
-        self.viewer.add_geometry(object, material)
+        if object is self.box:
+            self.box_material.color = Color.blue()
+            self.viewer.update_material(self.box_material)
+
+        elif object is self.sphere:
+            self.spehere_material.color = Color.blue()
+            self.viewer.update_material(self.spehere_material)
 
     def make_it_red(self, object):
-        self.viewer.remove_object(object)
-        material = Material(color=Color.red())
-        self.viewer.add_geometry(object, material)
+        if object is self.box:
+            self.box_material.color = Color.red()
+            self.viewer.update_material(self.box_material)
+
+        elif object is self.sphere:
+            self.spehere_material.color = Color.red()
+            self.viewer.update_material(self.spehere_material)
 
     def make_it_bigger(self, object):
-        self.viewer.remove_object(object)
         object.scale(1.5)
-        self.viewer.add_geometry(object)
+        self.viewer.update_geometry(object)
 
     def make_it_smaller(self, object):
-        self.viewer.remove_object(object)
         object.scale(0.5)
-        self.viewer.add_geometry(object)
+        self.viewer.update_geometry(object)
 
     def start(self):
         self.viewer.start()
