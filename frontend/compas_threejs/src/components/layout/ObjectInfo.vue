@@ -20,7 +20,7 @@
                 :key="action"
                 class="single_data"
             >
-                <Button variant="outline" @click="handleAction(action.guid)">
+                <Button variant="outline" @click="handleObjectAction(action)">
                     {{ action.text }}
                 </Button>
             </div>
@@ -34,7 +34,7 @@ import { objectActionsState } from "../../store/store";
 import { pickerEnabled } from "../../store/store";
 import { Button } from "@/components/ui/button";
 import { hideObjectInfo } from "@/communications/objectInfo";
-import { handleAction } from "@/communications/sidebarStore";
+import { handleObjectAction } from "@/communications/objectInfo";
 
 const geoInformation = objectInfoState.data
     ? Object.fromEntries(

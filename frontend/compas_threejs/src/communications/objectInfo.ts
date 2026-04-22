@@ -1,5 +1,6 @@
 import { objectInfoState } from "../store/store";
 import { objectActionsState } from "../store/store";
+import { sendData } from "@/communications/communication";
 
 export function showObjectInfo() {
     objectInfoState.isVisible = true;
@@ -29,10 +30,27 @@ export function objectActionManager(data: { [key: string]: any }) {
     const action = {
         text: data.text.value,
         guid: data.guid.value,
-        lable: data.label.value,
+        label: data.label.value,
         type: data.type.value,
+        objectGuid: data.object_guid.value,
     };
     objectActionsState.push(action);
+}
+
+export function handleObjectAction(action, value) {
+    console.log(`Object action triggered: ${action}`);
+    const message = {
+        dispatch: "object_action_callback",
+        action_guid: action.guid,
+        value: null,
+        object_guid: action.objectGuid,
+    };
+
+    if (value !== undefined) {
+        message.value = value;
+    }
+
+    sendData(message);
 }
 
 document.addEventListener("keydown", (event) => {

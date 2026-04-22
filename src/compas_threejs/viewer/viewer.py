@@ -571,6 +571,8 @@ class Viewer:
             self.manage_ui_callback(action_dictionary)
         elif action_dictionary.get("dispatch") == "object_picked":
             self.manage_picked_object(action_dictionary)
+        elif action_dictionary.get("dispatch") == "object_action_callback":
+            self.manage_object_action_callback(action_dictionary)
         else:
             console.log(
                 f"[yellow]Received unrecognized message from frontend: {action_dictionary}[/yellow]"
@@ -620,5 +622,18 @@ class Viewer:
             for action in object_actions:
                 message = action.as_dict()
                 message["dispatch"] = "object_action"
+                message["object_guid"] = object_id
                 self._send_dictionary_message(message)
         return
+
+    def manage_object_action_callback(self, action_dictionary):
+        action_id = action_dictionary.get("action_guid")
+        object_id = action_dictionary.get("object_guid")
+        console.log(
+            f"[blue]Received object action callback from frontend. Action ID: {action_id}, Object ID: {object_id}[/blue]"
+        )
+        object = self._geoemetry_registry.get(object_id)
+        if action_id and action_id in self._buttons:
+            self._buttons[action_id](object)
+        else:
+            print(f"Unrecognized action or missing handler for action ID: {action_id}")
