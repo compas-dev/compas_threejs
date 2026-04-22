@@ -84,7 +84,7 @@ export class PickHelper {
         );
     }
 
-    sendMessage(pickedKey: string | undefined) {
+    sendMessage(pickedKey: string) {
         // Sends a message to the backend telling that an object was picked
         const message = {
             dispatch: "object_picked",
@@ -102,10 +102,8 @@ export class PickHelper {
 
         if (picked) {
             // If we picked a new object, restore the previous one's color
-            if (this.pickedObject !== picked) {
-                if (this.pickedObject) {
-                    this.dehighlightObject(this.pickedObject);
-                }
+            if (this.pickedObject !== picked && this.pickedObject !== null) {
+                this.dehighlightObject(this.pickedObject);
             }
 
             // An object was clicked.
@@ -114,7 +112,8 @@ export class PickHelper {
 
             // Find the key of the picked object in SCENE_GEOMETRIES
             const pickedKey = this.getPickedObjectKey(this.pickedObject);
-
+            if (pickedKey) {
+            }
             this.sendMessage(pickedKey);
 
             this.highlightObject(this.pickedObject);
@@ -132,6 +131,8 @@ export class PickHelper {
     dehighlightObject(object: THREE.Object3D) {
         if ((object as any).savedColor) {
             (object as any).material.color.copy((object as any).savedColor);
+            (object as any).material.emissive?.set("black");
+            (object as any).material.emissiveIntensity = 0.0;
         }
     }
 
@@ -139,7 +140,11 @@ export class PickHelper {
         if (!(object as any).savedColor) {
             (object as any).savedColor = (object as any).material.color.clone();
         }
-        (object as any).material.color.set("yellow");
+        (object as any).material.color.set("orange");
+        if ((object as any).material.emissive) {
+            (object as any).material.emissive.set("yellow");
+            (object as any).material.emissiveIntensity = 0.1;
+        }
     }
 }
 
@@ -158,8 +163,7 @@ function setPickPosition(event: MouseEvent) {
 }
 
 export function initializePicker(picker: PickHelper): PickHelper {
-    canvas = document.querySelector("canvas") as HTMLCanvasElement;
-
+    canvas = document.querySelector<HTMLCanvasElement>("canvas")!;
     const tControlsManager = new TransformControlsManager();
     tControl = tControlsManager.controls;
 
