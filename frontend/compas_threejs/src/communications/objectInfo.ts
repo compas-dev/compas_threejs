@@ -38,7 +38,6 @@ export function objectActionManager(data: { [key: string]: any }) {
 }
 
 export function handleObjectAction(action: { [key: string]: any }, value: any) {
-    console.log(`Object action triggered: ${action}`);
     const message = {
         dispatch: "object_action_callback",
         action_guid: action.guid,
