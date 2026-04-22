@@ -8,7 +8,6 @@ import { uiManager } from "./sidebarStore";
 import { textManager } from "../viewer/text_manager";
 import { objectInfoManager } from "./objectInfo";
 import { removeObjectFromScene } from "../viewer/scene_manager";
-import { queueGeometryUpdateIfPaused } from "@/communications/objectMotion";
 
 export function dispatchMessage(message: Uint8Array) {
     const messageUnpacked = unpackMessage(message);
@@ -18,10 +17,6 @@ export function dispatchMessage(message: Uint8Array) {
         analyzeDictionary(obj);
         return;
     } else {
-        if (queueGeometryUpdateIfPaused(obj)) {
-      return;
-        }
-
         geometryManager(obj);
     }
 }

@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { initializePicker, PickHelper } from "./picker";
-import { pickerEnabled } from "@/store/store";
+import { initializePicker, PickHelper, setPickerEnabled } from "./picker";
 import { SCENE_GEOMETRIES } from "./geometry_manager";
 import { GEOMETRY_MATERIALS } from "./material_manager";
 import {
@@ -37,15 +36,6 @@ export type ViewPreset =
   | "front_right"
   | "back_left"
   | "back_right";
-
-export type SavedView = {
-  id: string;
-  name: string;
-  cameraPosition: { x: number; y: number; z: number };
-  target: { x: number; y: number; z: number };
-  zoom: number;
-  fov: number;
-};
 
 export const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -101,9 +91,6 @@ scene.add(axesHelper);
 const picker = new PickHelper();
 initializePicker(picker);
 
-let animationFrameId: number | null = null;
-let sceneAnimationPaused = false;
-
 function renderSceneFrame() {
   controls.update();
   renderer.render(scene, camera);
@@ -111,21 +98,13 @@ function renderSceneFrame() {
 
 subscribeBackgroundMode(() => {
   scene.background = new THREE.Color(getEffectiveBackgroundColor());
-
-  if (sceneAnimationPaused) {
-    renderSceneFrame();
-  }
+  renderSceneFrame();
 });
 
 // The Loop
 function animate() {
-  if (sceneAnimationPaused) {
-    animationFrameId = null;
-    return;
-  }
-
   renderSceneFrame();
-  animationFrameId = requestAnimationFrame(animate);
+  requestAnimationFrame(animate);
 }
 
 animate();
@@ -162,86 +141,6 @@ function applyViewPreset(preset: ViewPreset) {
 
 export function setCameraViewPreset(preset: ViewPreset) {
   applyViewPreset(preset);
-
-  if (sceneAnimationPaused) {
-    renderSceneFrame();
-  }
-}
-
-export function captureCurrentView(name: string): SavedView {
-  return {
-    id: `view-${Date.now()}`,
-    name,
-    cameraPosition: {
-      x: camera.position.x,
-      y: camera.position.y,
-      z: camera.position.z,
-    },
-    target: {
-      x: controls.target.x,
-      y: controls.target.y,
-      z: controls.target.z,
-    },
-    zoom: camera.zoom,
-    fov: camera.fov,
-  };
-}
-
-export function applySavedView(view: SavedView) {
-  camera.position.set(
-    view.cameraPosition.x,
-    view.cameraPosition.y,
-    view.cameraPosition.z,
-  );
-  controls.target.set(view.target.x, view.target.y, view.target.z);
-  camera.zoom = view.zoom;
-  camera.fov = view.fov;
-  camera.updateProjectionMatrix();
-  controls.update();
-
-  if (sceneAnimationPaused) {
-    renderSceneFrame();
-  }
-}
-
-export function saveCurrentCanvasAsPng(fileName?: string) {
-  renderSceneFrame();
-
-  const link = document.createElement("a");
-  link.download =
-    fileName ?? `compas-view-${new Date().toISOString().replace(/[:.]/g, "-")}.png`;
-  link.href = renderer.domElement.toDataURL("image/png");
-  link.click();
-}
-
-export function setSceneAnimationPaused(paused: boolean) {
-  if (sceneAnimationPaused === paused) {
-    return;
-  }
-
-  sceneAnimationPaused = paused;
-
-  if (sceneAnimationPaused) {
-    if (animationFrameId !== null) {
-      cancelAnimationFrame(animationFrameId);
-      animationFrameId = null;
-    }
-    renderSceneFrame();
-    return;
-  }
-
-  if (animationFrameId === null) {
-    animate();
-  }
-}
-
-export function toggleSceneAnimationPaused(): boolean {
-  setSceneAnimationPaused(!sceneAnimationPaused);
-  return sceneAnimationPaused;
-}
-
-export function isSceneAnimationPaused(): boolean {
-  return sceneAnimationPaused;
 }
 
 function getViewPresetFromKey(code: string): ViewPreset | null {
@@ -260,7 +159,7 @@ export function sceneManager(data: { [key: string]: any }) {
       axesHelper.visible = data.show.value;
       break;
     case "picker":
-      pickerEnabled.value = data.enabled.value;
+      setPickerEnabled(data.enabled.value);
       break;
     case "camera_fov":
       camera.fov = data.fov.value;

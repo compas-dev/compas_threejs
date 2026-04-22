@@ -14,8 +14,6 @@ export const sideBarInfoState = reactive({
   data: null,
 });
 
-export const pickerEnabled = reactive({ value: true });
-
 export const themeState = reactive({
   lightBackgroundColor: 0xffffff,
   darkBackgroundColor: 0x000000,

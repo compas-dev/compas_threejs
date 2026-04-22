@@ -1,14 +1,20 @@
-import { geometryManager, SCENE_GEOMETRIES } from "../viewer/geometry_manager";
+import { sendData } from "@/communications/communication";
 import { motionState } from "@/store/store";
 
-const queuedGeometryUpdates: any[] = [];
+function notifyBackendObjectMotionPause(paused: boolean): void {
+  sendData({
+    dispatch: "object_motion_control",
+    paused,
+  });
+}
 
 export function setObjectMotionPaused(paused: boolean): void {
-  motionState.objectMotionPaused = paused;
-
-  if (!paused) {
-    processQueuedGeometryUpdates();
+  if (motionState.objectMotionPaused === paused) {
+    return;
   }
+
+  motionState.objectMotionPaused = paused;
+  notifyBackendObjectMotionPause(paused);
 }
 
 export function toggleObjectMotionPaused(): boolean {
@@ -18,27 +24,4 @@ export function toggleObjectMotionPaused(): boolean {
 
 export function isObjectMotionPaused(): boolean {
   return motionState.objectMotionPaused;
-}
-
-export function queueGeometryUpdateIfPaused(obj: any): boolean {
-  if (!motionState.objectMotionPaused || !obj?.guid) {
-    return false;
-  }
-
-  const existsInScene = obj.guid in SCENE_GEOMETRIES;
-  if (!existsInScene) {
-    return false;
-  }
-
-  queuedGeometryUpdates.push(obj);
-  return true;
-}
-
-function processQueuedGeometryUpdates(): void {
-  if (!queuedGeometryUpdates.length) {
-    return;
-  }
-
-  const updates = queuedGeometryUpdates.splice(0, queuedGeometryUpdates.length);
-  updates.forEach((obj) => geometryManager(obj));
 }

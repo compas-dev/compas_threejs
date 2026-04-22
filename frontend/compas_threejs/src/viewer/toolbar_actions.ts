@@ -1,9 +1,11 @@
 import {
   setCameraViewPreset,
+} from "./scene_manager";
+import {
   captureCurrentView,
   applySavedView,
   saveCurrentCanvasAsPng,
-} from "./scene_manager";
+} from "./scene_view_manager";
 import {
   toggleBackgroundMode,
   subscribeBackgroundMode,
@@ -29,4 +31,4 @@ export {
 };
 
 export type { BackgroundMode };
-export type { SavedView } from "./scene_manager";
+export type { SavedView } from "./scene_view_manager";

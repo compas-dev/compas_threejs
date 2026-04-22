@@ -97,6 +97,7 @@ class Viewer:
         self._buttons = dict()
         self._geoemetry_registry = dict()
         self._metadata_registry = dict()
+        self._object_motion_paused = False
 
     def __enter__(self):
         return self
@@ -340,9 +341,9 @@ class Viewer:
                 while True:
                     time.sleep(self.loop_interval)
                     callback = self.loop
-                    if callback:
+                    if callback and not self._object_motion_paused:
                         callback(i)
-                    i += 1
+                        i += 1
             except KeyboardInterrupt:
                 console.log("[green]Interruption ordered[/green]")
             finally:
@@ -559,6 +560,8 @@ class Viewer:
             self.manage_ui_callback(action_dictionary)
         elif action_dictionary.get("dispatch") == "object_picked":
             self.manage_picked_object(action_dictionary)
+        elif action_dictionary.get("dispatch") == "object_motion_control":
+            self.manage_object_motion_control(action_dictionary)
         else:
             console.log(
                 f"[yellow]Received unrecognized message from frontend: {action_dictionary}[/yellow]"
@@ -600,3 +603,9 @@ class Viewer:
             metadata={"dispatch": "object_infos", "No metadata associated with this object.": ""}
             self._send_dictionary_message(metadata)
         return
+
+    def manage_object_motion_control(self, action_dictionary):
+        paused = bool(action_dictionary.get("paused", False))
+        self._object_motion_paused = paused
+        state = "paused" if paused else "running"
+        console.log(f"[blue]Object motion loop state set to: {state}[/blue]")

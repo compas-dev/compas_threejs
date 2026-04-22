@@ -1,5 +1,5 @@
 <template>
-    <div class="toolbar" :class="{ 'is-dark': isDarkMode }">
+    <div class="toolbar theme" :class="{ 'is-dark': isDarkMode, dark: isDarkMode }">
         <TransformGroup />
         <ViewGroup />
         <DisplayGroup :is-dark-mode="isDarkMode" />
@@ -40,21 +40,8 @@ onBeforeUnmount(() => {
     flex-direction: row;
     gap: 12px;
     z-index: 1001;
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.15) 0%,
-        rgba(255, 255, 255, 0.2) 100%
-    );
-    backdrop-filter: blur(25px) saturate(180%);
-    -webkit-backdrop-filter: blur(25px) saturate(180%);
     border-radius: 10px;
     padding: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-top: 1px solid rgba(255, 255, 255, 0.4);
-    border-left: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow:
-        0 8px 32px 0 rgba(0, 0, 0, 0.3),
-        inset 0 0 15px rgba(255, 255, 255, 0.7);
 }
 
 :deep(.toolbar-group) {
@@ -171,20 +158,6 @@ onBeforeUnmount(() => {
 
 :deep(.button-icon.play-icon) {
     transform: scale(0.75);
-}
-
-.toolbar.is-dark {
-    background: linear-gradient(
-        135deg,
-        rgba(17, 24, 39, 0.15) 0%,
-        rgba(17, 24, 39, 0.2) 100%
-    );
-    border-color: rgba(255, 255, 255, 0.15);
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
-    border-left: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow:
-        0 8px 32px 0 rgba(0, 0, 0, 0.5),
-        inset 0 0 15px rgba(255, 255, 255, 0.1);
 }
 
 .toolbar.is-dark :deep(.toolbar-group) {

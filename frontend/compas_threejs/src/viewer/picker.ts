@@ -4,18 +4,18 @@ import { camera, renderer, scene, controls } from "./scene_manager";
 import { SCENE_GEOMETRIES } from "./geometry_manager";
 import { sendData } from "@/communications/communication";
 import { objectInfoManager } from "@/communications/objectInfo";
-import { pickerEnabled } from "@/store/store";
 
 export let pickPosition: { x: number; y: number };
 let canvas: HTMLCanvasElement;
 export let tControl: TransformControls;
 let initializedTControls = false;
 let initializedPickHelper = false;
+let pickerEnabled = true;
 
 export type TransformMode = "translate" | "rotate" | "scale";
 
 export function setTransformMode(mode: TransformMode) {
-  if (!tControl || !pickerEnabled.value) {
+    if (!tControl) {
     return;
   }
 
@@ -23,7 +23,7 @@ export function setTransformMode(mode: TransformMode) {
 }
 
 export function setPickerEnabled(enabled: boolean) {
-  pickerEnabled.value = enabled;
+    pickerEnabled = enabled;
 
   if (!tControl) {
     return;
@@ -38,12 +38,12 @@ export function setPickerEnabled(enabled: boolean) {
 }
 
 export function togglePickerEnabled(): boolean {
-  setPickerEnabled(!pickerEnabled.value);
-  return pickerEnabled.value;
+    setPickerEnabled(!pickerEnabled);
+    return pickerEnabled;
 }
 
 export function isPickerEnabled(): boolean {
-  return pickerEnabled.value;
+    return pickerEnabled;
 }
 
 class TransformControlsManager {
@@ -160,7 +160,7 @@ export class PickHelper {
     }
 
     pick(normalizedPosition: { x: number; y: number }, scene: any) {
-        if (!pickerEnabled.value) {
+        if (!pickerEnabled) {
             return;
         }
 
@@ -179,8 +179,8 @@ export class PickHelper {
             // Find the key of the picked object in SCENE_GEOMETRIES
             const pickedKey = this.getPickedObjectKey(this.pickedObject);
             if (pickedKey) {
+                this.sendMessage(pickedKey);
             }
-            this.sendMessage(pickedKey);
 
             this.highlightObject(this.pickedObject);
         } else {
@@ -232,7 +232,7 @@ export function initializePicker(picker: PickHelper): PickHelper {
     canvas = document.querySelector<HTMLCanvasElement>("canvas")!;
     const tControlsManager = new TransformControlsManager();
     tControl = tControlsManager.controls;
-  tControl.enabled = pickerEnabled.value;
+        tControl.enabled = pickerEnabled;
 
     return picker;
 }
