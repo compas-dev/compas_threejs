@@ -12,6 +12,16 @@ export let tControl: TransformControls;
 let initializedTControls = false;
 let initializedPickHelper = false;
 
+export type TransformMode = "translate" | "rotate" | "scale";
+
+export function setTransformMode(mode: TransformMode) {
+    if (!tControl) {
+    return;
+  }
+
+  tControl.setMode(mode);
+}
+
 class TransformControlsManager {
     private tControl: TransformControls;
 
@@ -28,23 +38,27 @@ class TransformControlsManager {
     }
 
     private setupEventListeners() {
-        this.tControl.addEventListener("dragging-changed", (event) => {
+        this.tControl.addEventListener("dragging-changed", (event: { value: boolean }) => {
             controls.enabled = !event.value;
         });
 
         window.addEventListener("keydown", (event) => {
-            switch (event.key) {
+            if (event.altKey || event.ctrlKey || event.metaKey) {
+        return;
+      }
+
+      switch (event.key) {
                 case "w":
-                    this.tControl.setMode("translate");
+        setTransformMode("translate");
                     break;
                 case "e":
-                    this.tControl.setMode("rotate");
+        setTransformMode("rotate");
                     break;
                 case "r":
-                    this.tControl.setMode("scale");
+        setTransformMode("scale");
                     break;
                 case "Escape":
-                    this.tControl.detach();
+        this.tControl.detach();
                     objectInfoManager({} as any);
                     break;
             }

@@ -1,5 +1,6 @@
 <template>
     <div class="app-container">
+        <Toolbar />
         <Sidebar v-if="sideBarInfoState.isVisible" />
         <div ref="threeContainer" class="three-container"></div>
         <ObjectInfo v-if="objectInfoState.isVisible" />
@@ -9,6 +10,7 @@
 <script setup lang="ts">
 // 1. Make sure to import `ref` and `onMounted` from 'vue'
 import { ref, onMounted } from "vue";
+import Toolbar from "./components/layout/Toolbar.vue";
 import Sidebar from "./components/layout/Sidebar.vue";
 import ObjectInfo from "./components/layout/ObjectInfo.vue";
 import { renderer } from "./viewer/scene_manager";
