@@ -1,5 +1,5 @@
 <template>
-    <div class="fixed-sidebar" :class="{ 'is-hidden': !isVisible }">
+    <div class="fixed-sidebar theme" :class="{ 'is-hidden': !isVisible }">
         <!-- Dynamically render components from the store -->
         <div
             v-for="item in sidebarComponents"
@@ -100,23 +100,6 @@ div.fixed-sidebar {
     flex-direction: column;
     gap: 15px; /* Adjust spacing */
     align-items: left;
-
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.15) 0%,
-        rgba(255, 255, 255, 0.2) 100%
-    );
-
-    backdrop-filter: blur(25px) saturate(180%);
-    -webkit-backdrop-filter: blur(25px) saturate(180%);
-
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-top: 1px solid rgba(255, 255, 255, 0.4);
-    border-left: 1px solid rgba(255, 255, 255, 0.3);
-
-    box-shadow:
-        0 8px 32px 0 rgba(0, 0, 0, 0.3),
-        inset 0 0 15px rgba(255, 255, 255, 0.7);
 
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); /* Smooth sliding effect */
     will-change: transform;

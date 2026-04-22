@@ -1,5 +1,5 @@
 <template>
-    <div class="toolbar">
+    <div class="toolbar theme">
         <TransformGroup />
         <ViewGroup />
     </div>
