@@ -9,14 +9,22 @@ import { pickerEnabled } from "@/store/store";
 export let pickPosition: { x: number; y: number };
 let canvas: HTMLCanvasElement;
 export let tControl: TransformControls;
+let initializedTControls = false;
+let initializedPickHelper = false;
 
 class TransformControlsManager {
     private tControl: TransformControls;
 
     constructor(pickHelper?: PickHelper) {
+        if (initializedTControls) {
+            throw new Error(
+                "TransformControlsManager has already been initialized.",
+            );
+        }
         this.tControl = new TransformControls(camera, renderer.domElement);
         scene.add(this.tControl.getHelper());
         this.setupEventListeners();
+        initializedTControls = true;
     }
 
     private setupEventListeners() {
@@ -53,9 +61,13 @@ export class PickHelper {
     pickedObject: THREE.Object3D | null;
 
     constructor() {
+        if (initializedPickHelper) {
+            throw new Error("PickHelper has already been initialized.");
+        }
         this.raycaster = new THREE.Raycaster();
         this.pickedObject = null;
         this.setupEventListeners();
+        initializedPickHelper = true;
     }
 
     setupEventListeners() {
