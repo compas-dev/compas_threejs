@@ -13,13 +13,28 @@
                 </p>
             </div>
         </div>
+        <div class="metadata">
+            <h1>FUNCTIONS</h1>
+            <div
+                v-for="action in objectActionsState"
+                :key="action"
+                class="single_data"
+            >
+                <Button variant="outline" @click="handleAction(action.guid)">
+                    {{ action.text }}
+                </Button>
+            </div>
+        </div>
     </div>
 </template>
 
 <script setup>
 import { objectInfoState } from "../../store/store";
+import { objectActionsState } from "../../store/store";
+import { pickerEnabled } from "../../store/store";
 import { Button } from "@/components/ui/button";
 import { hideObjectInfo } from "@/communications/objectInfo";
+import { handleAction } from "@/communications/sidebarStore";
 
 const geoInformation = objectInfoState.data
     ? Object.fromEntries(
@@ -28,6 +43,12 @@ const geoInformation = objectInfoState.data
           ),
       )
     : {};
+function pickerEnabler() {
+    const infoPanel = document.getElementById("info-panel");
+    const onPanel = infoPanel && infoPanel.matches(":hover");
+    pickerEnabled.value = !onPanel;
+}
+window.addEventListener("mousemove", pickerEnabler);
 </script>
 
 <style scoped>

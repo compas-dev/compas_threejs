@@ -19,6 +19,7 @@ from .server import broadcast, get_server_loop, run_server, stop_server
 
 console = Console()
 
+
 class CameraView(IntEnum):
     """Numpad-compatible camera view presets."""
 
@@ -32,6 +33,7 @@ class CameraView(IntEnum):
     BACK_LEFT = 7
     BACK = 8
     BACK_RIGHT = 9
+
 
 class Viewer:
     class Viewer:
@@ -97,6 +99,7 @@ class Viewer:
         self._buttons = dict()
         self._geoemetry_registry = dict()
         self._metadata_registry = dict()
+        self._object_actions_registry = dict()
 
     def __enter__(self):
         return self
@@ -372,7 +375,9 @@ class Viewer:
 
     # ---- GEOMETRY --------------------------------------------------------------------------------
 
-    def add_geometry(self, geometry, material=None, metadata=None):
+    def add_geometry(
+        self, geometry, material=None, metadata=None, actions: list = None
+    ):
         """
         Adds a geometry object to the viewer. Optionally, a material can be associated with the geometry.
 
@@ -382,6 +387,9 @@ class Viewer:
             The geometry object to be added to the viewer. It must have a unique GUID.
         material : compas_threejs.material.Material, optional
             An optional material to be associated with the geometry.
+        metadata: compas_threejs.metadata.Metadata, optional
+            An optional metadata object to be associated with the geometry. This metadata can be sent back to the frontend when the geometry is picked, allowing for interactive exploration of object properties.
+        actions: list
 
         Returns
         -------
@@ -404,9 +412,13 @@ class Viewer:
             else:
                 self.queued_messages.append((material_data, str(uuid4())))
 
-
         if metadata:
             self._metadata_registry[str(obj_id)] = metadata
+
+        if actions:
+            self._object_actions_registry[str(obj_id)] = actions
+            for action in actions:
+                self._buttons[str(action.guid)] = action.action
 
         # send geometry
         if loop:
@@ -593,10 +605,20 @@ class Viewer:
         )
         metadata = self._metadata_registry.get(object_id)
         if metadata:
-            metadata['dispatch'] = "object_infos"
+            metadata["dispatch"] = "object_infos"
             console.log(f"[blue]Metadata associated with the object: {metadata}[/blue]")
             self._send_dictionary_message(metadata.metadata)
         else:
-            metadata={"dispatch": "object_infos", "No metadata associated with this object.": ""}
+            metadata = {
+                "dispatch": "object_infos",
+                "No metadata associated with this object.": "",
+            }
             self._send_dictionary_message(metadata)
+
+        object_actions = self._object_actions_registry.get(object_id)
+        if object_actions:
+            for action in object_actions:
+                message = action.as_dict()
+                message["dispatch"] = "object_action"
+                self._send_dictionary_message(message)
         return

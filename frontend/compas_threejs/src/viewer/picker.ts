@@ -4,6 +4,7 @@ import { camera, renderer, scene, controls } from "./scene_manager";
 import { SCENE_GEOMETRIES } from "./geometry_manager";
 import { sendData } from "@/communications/communication";
 import { objectInfoManager } from "@/communications/objectInfo";
+import { objectActionsState } from "@/store/store";
 import { pickerEnabled } from "@/store/store";
 
 export let pickPosition: { x: number; y: number };
@@ -37,7 +38,7 @@ class TransformControlsManager {
                     break;
                 case "Escape":
                     this.tControl.detach();
-                    objectInfoManager({} as any);
+                    resetObjectInfoPanel();
                     break;
             }
         });
@@ -63,7 +64,7 @@ export class PickHelper {
             if (event.key === "Escape") {
                 if (this.pickedObject) {
                     this.dehighlightObject(this.pickedObject);
-                    objectInfoManager({} as any);
+                    resetObjectInfoPanel();
                 }
             }
         });
@@ -104,6 +105,7 @@ export class PickHelper {
             // If we picked a new object, restore the previous one's color
             if (this.pickedObject !== picked && this.pickedObject !== null) {
                 this.dehighlightObject(this.pickedObject);
+                resetObjectInfoPanel();
             }
 
             // An object was clicked.
@@ -123,7 +125,7 @@ export class PickHelper {
                 this.dehighlightObject(this.pickedObject);
                 this.pickedObject = null;
                 tControl.detach();
-                objectInfoManager({} as any);
+                resetObjectInfoPanel();
             }
         }
     }
@@ -146,6 +148,11 @@ export class PickHelper {
             (object as any).material.emissiveIntensity = 0.1;
         }
     }
+}
+
+function resetObjectInfoPanel() {
+    objectInfoManager({} as any);
+    objectActionsState.length = 0; // Clear actions
 }
 
 function getCanvasRelativePosition(event: MouseEvent) {
