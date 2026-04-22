@@ -634,6 +634,12 @@ class Viewer:
         )
         object = self._geoemetry_registry.get(object_id)
         if action_id and action_id in self._buttons:
-            self._buttons[action_id](object)
+            function = self._buttons[action_id]
+            if function.__code__.co_argcount == 2:
+                self._buttons[action_id](object)
+            elif function.__code__.co_argcount == 3:
+                value = action_dictionary.get("value")
+                console.log(f"[blue]Value associated with the action: {value}[/blue]")
+                self._buttons[action_id](object, value)
         else:
             print(f"Unrecognized action or missing handler for action ID: {action_id}")

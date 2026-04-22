@@ -20,7 +20,12 @@
                 :key="action"
                 class="single_data"
             >
-                <Button variant="outline" @click="handleObjectAction(action)">
+                <Button
+                    v-if="action.type === 'button'"
+                    variant="outline"
+                    @click="handleObjectAction(action)"
+                    class="w-full"
+                >
                     {{ action.text }}
                 </Button>
             </div>
@@ -33,6 +38,7 @@ import { objectInfoState } from "../../store/store";
 import { objectActionsState } from "../../store/store";
 import { pickerEnabled } from "../../store/store";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { hideObjectInfo } from "@/communications/objectInfo";
 import { handleObjectAction } from "@/communications/objectInfo";
 

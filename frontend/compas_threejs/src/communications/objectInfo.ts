@@ -28,16 +28,16 @@ export function objectInfoManager(data: { [key: string]: any } | null) {
 export function objectActionManager(data: { [key: string]: any }) {
     console.log("Received object action:", data);
     const action = {
-        text: data.text.value,
         guid: data.guid.value,
         label: data.label.value,
         type: data.type.value,
         objectGuid: data.object_guid.value,
+        text: data.text.value,
     };
     objectActionsState.push(action);
 }
 
-export function handleObjectAction(action, value) {
+export function handleObjectAction(action: { [key: string]: any }, value: any) {
     console.log(`Object action triggered: ${action}`);
     const message = {
         dispatch: "object_action_callback",
