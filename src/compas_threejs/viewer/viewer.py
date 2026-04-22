@@ -4,7 +4,7 @@ import threading
 import time
 import webbrowser
 from enum import IntEnum
-from typing import Union
+from typing import Optional, Union
 from uuid import uuid4
 
 import compas_pb
@@ -14,6 +14,7 @@ from rich.console import Console
 
 from compas_threejs.lights.ambientlight import AmbientLight
 from compas_threejs.lights.sunlight import Sunlight
+from compas_threejs.ui.button import Button
 
 from .server import broadcast, get_server_loop, run_server, stop_server
 
@@ -376,7 +377,11 @@ class Viewer:
     # ---- GEOMETRY --------------------------------------------------------------------------------
 
     def add_geometry(
-        self, geometry, material=None, metadata=None, actions: list = None
+        self,
+        geometry,
+        material=None,
+        metadata=None,
+        actions: Optional[list[Button]] = None,
     ):
         """
         Adds a geometry object to the viewer. Optionally, a material can be associated with the geometry.
@@ -389,7 +394,9 @@ class Viewer:
             An optional material to be associated with the geometry.
         metadata: compas_threejs.metadata.Metadata, optional
             An optional metadata object to be associated with the geometry. This metadata can be sent back to the frontend when the geometry is picked, allowing for interactive exploration of object properties.
-        actions: list
+        actions: list of compas_threejs.ui.Button, optional
+            An optional list of Button objects representing actions that can be performed on the geometry.
+            The function associated with the button need to accept `object` parameter.
 
         Returns
         -------
