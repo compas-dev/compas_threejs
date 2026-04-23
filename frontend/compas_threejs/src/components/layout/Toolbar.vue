@@ -1,5 +1,6 @@
 <template>
     <div class="toolbar theme">
+        <h1 class="text-lg font-bold">COMPAS ThreeJs</h1>
         <TransformGroup />
         <ViewGroup />
     </div>
@@ -12,16 +13,16 @@ import ViewGroup from "@/components/tools/views/ViewGroup.vue";
 
 <style scoped>
 .toolbar {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
+    position: relative;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     gap: 12px;
     z-index: 1001;
     border-radius: 10px;
     padding: 12px;
+    margin: 0px;
+    height: auto;
+    width: 100%;
 }
 
 :deep(.toolbar-group) {

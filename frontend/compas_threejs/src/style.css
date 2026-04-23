@@ -119,22 +119,26 @@
     }
 }
 
-
 :root {
-  font-family: Inter, sans-serif;
-  font-feature-settings: 'liga' 1, 'calt' 1; /* fix for Chrome */
+    font-family: Inter, sans-serif;
+    font-feature-settings:
+        "liga" 1,
+        "calt" 1; /* fix for Chrome */
 }
 @supports (font-variation-settings: normal) {
-  :root { font-family: InterVariable, sans-serif; }
+    :root {
+        font-family: InterVariable, sans-serif;
+    }
 }
 
-div#app{
+div#app {
     margin: 0px;
     padding: 0px;
     /*overflow: hidden;*/
 }
 
-body, html {
+body,
+html {
     margin: 0px;
     padding: 0px;
     overflow: hidden;
@@ -155,4 +159,9 @@ body, html {
     box-shadow:
         0 8px 32px 0 rgba(0, 0, 0, 0.3),
         inset 0 0 15px rgba(255, 255, 255, 0.7);
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #888 transparent;
 }
