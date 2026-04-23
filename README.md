@@ -45,6 +45,10 @@ View shortcuts (numpad):
 - `9`: Back-right perspective
 - `0`: Bottom view
 
+Display shortcuts:
+- `S`: Save current view
+- `F`: Save screenshot as PNG
+
 UI shortcuts:
 - `I`: Show/hide the metadata bar
 - `Q`: Show/hide the buttons and sliders bar
