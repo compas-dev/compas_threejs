@@ -1,5 +1,6 @@
 <template>
     <div class="toolbar theme">
+        <h1 class="text-lg font-bold">COMPAS ThreeJs</h1>
         <TransformGroup />
         <ViewGroup />
     </div>
@@ -12,16 +13,16 @@ import ViewGroup from "@/components/tools/views/ViewGroup.vue";
 
 <style scoped>
 .toolbar {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
+    position: relative;
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     gap: 12px;
     z-index: 1001;
     border-radius: 10px;
     padding: 12px;
+    margin: 0px;
+    height: auto;
+    width: 100%;
 }
 
 :deep(.toolbar-group) {
@@ -36,38 +37,6 @@ import ViewGroup from "@/components/tools/views/ViewGroup.vue";
 :deep(.toolbar-group:last-child) {
     border-right: none;
     padding-right: 0;
-}
-
-:deep(.toolbar-button) {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--secondary);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--secondary-foreground);
-
-    &:hover {
-        background: var(--muted);
-        border-color: var(--input);
-        transform: translateY(-1px);
-    }
-
-    &:active {
-        transform: translateY(0);
-    }
-
-    &.active {
-        background: rgba(59, 130, 246, 0.9);
-        color: white;
-        border-color: rgba(59, 130, 246, 1);
-    }
 }
 
 :deep(.button-icon) {
