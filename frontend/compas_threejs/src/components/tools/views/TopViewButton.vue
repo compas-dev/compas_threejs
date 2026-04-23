@@ -1,14 +1,34 @@
 <template>
-    <button class="toolbar-button" title="Top View (5)" @click="handleClick">
-        <span class="button-icon">
-            <RectangleVertical :size="16" :stroke-width="2" aria-hidden="true" />
-        </span>
-    </button>
+    <TooltipProvider :delay-duration="600">
+        <Tooltip>
+            <TooltipTrigger>
+                <Button
+                    variant="secondary"
+                    size="icon"
+                    class="toolbar-button"
+                    @click="handleClick"
+                >
+                    <RectangleVertical />
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent class="z-1000" side="bottom">
+                <p>Top view <Kbd>5</Kbd></p>
+            </TooltipContent>
+        </Tooltip>
+    </TooltipProvider>
 </template>
 
 <script setup lang="ts">
 import { RectangleVertical } from "lucide-vue-next";
 import { setCameraViewPreset } from "@/viewer/toolbar_actions";
+import { Button } from "@/components/ui/button";
+import { Kbd } from "@/components/ui/kbd";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+    TooltipProvider,
+} from "@/components/ui/tooltip";
 
 function handleClick() {
     setCameraViewPreset("top");

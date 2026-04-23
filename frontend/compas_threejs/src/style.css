@@ -74,6 +74,7 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
+    --button-hover: oklch(1 0 0 / 0%);
 }
 
 .dark {
@@ -164,4 +165,16 @@ html {
 * {
     scrollbar-width: thin;
     scrollbar-color: #888 transparent;
+}
+
+Button {
+    &:hover {
+        box-shadow: 3px 3px 10px 0px rgba(0, 0, 0, 0.3);
+    }
+
+    &.active {
+        box-shadow:
+            3px 3px 2px 1px rgba(0, 0, 0, 0.5) inset,
+            -3px -3px 2px 2px rgba(255, 255, 255) inset;
+    }
 }

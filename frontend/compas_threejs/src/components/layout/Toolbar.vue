@@ -39,38 +39,6 @@ import ViewGroup from "@/components/tools/views/ViewGroup.vue";
     padding-right: 0;
 }
 
-:deep(.toolbar-button) {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--secondary);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--secondary-foreground);
-
-    &:hover {
-        background: var(--muted);
-        border-color: var(--input);
-        transform: translateY(-1px);
-    }
-
-    &:active {
-        transform: translateY(0);
-    }
-
-    &.active {
-        background: rgba(59, 130, 246, 0.9);
-        color: white;
-        border-color: rgba(59, 130, 246, 1);
-    }
-}
-
 :deep(.button-icon) {
     display: inline-flex;
     align-items: center;

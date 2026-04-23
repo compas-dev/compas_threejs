@@ -50,7 +50,7 @@
             class="mb-4"
             @click="toggleSideBar()"
         >
-            {{ isVisible ? "<<" : ">>" }}
+            <ArrowBigLeftDash />
         </Button>
     </div>
 
@@ -61,7 +61,7 @@
         @click="toggleSideBar()"
         :class="{ 'is-hidden': !isVisible }"
     >
-        >>
+        <ArrowBigRightDash />
     </Button>
 </template>
 
@@ -71,6 +71,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { ref } from "vue"; // Import ref
 import { sidebarComponents, handleAction } from "@/communications/sidebarStore";
+import { ArrowBigLeftDash, ArrowBigRightDash } from "lucide-vue-next";
 
 const isVisible = ref(true);
 
@@ -139,9 +140,9 @@ Button.mb-4 {
 }
 Button.mb-5 {
     position: fixed;
-    bottom: 20px;
-    left: 20px;
-    z-index: 1001; /* Ensure it appears above the sidebar */
+    bottom: 22px;
+    left: 40px;
+    z-index: 1; /* Ensure it appears above the sidebar */
     opacity: 0; /* Slightly transparent for better aesthetics */
 }
 
