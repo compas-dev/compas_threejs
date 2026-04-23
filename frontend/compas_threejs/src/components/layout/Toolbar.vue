@@ -3,12 +3,14 @@
         <h1 class="text-lg font-bold">COMPAS ThreeJs</h1>
         <TransformGroup />
         <ViewGroup />
+        <DisplayGroup />
     </div>
 </template>
 
 <script setup lang="ts">
 import TransformGroup from "@/components/tools/transforms/TransformGroup.vue";
 import ViewGroup from "@/components/tools/views/ViewGroup.vue";
+import DisplayGroup from "@/components/tools/display/DisplayGroup.vue";
 </script>
 
 <style scoped>
@@ -31,12 +33,6 @@ import ViewGroup from "@/components/tools/views/ViewGroup.vue";
     grid-auto-columns: max-content;
     gap: 6px;
     padding-right: 6px;
-    border-right: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-:deep(.toolbar-group:last-child) {
-    border-right: none;
-    padding-right: 0;
 }
 
 :deep(.button-icon) {
@@ -53,5 +49,74 @@ import ViewGroup from "@/components/tools/views/ViewGroup.vue";
 
 :deep(.display-tools-wrapper) {
     display: contents;
+}
+
+:deep(.saved-views-panel) {
+    min-width: 170px;
+}
+
+:deep(.saved-views-controls) {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+:deep(.saved-views-select) {
+    height: 36px;
+    min-width: 120px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--secondary);
+    color: var(--secondary-foreground);
+    font-size: 12px;
+    padding: 0 8px;
+}
+
+:deep(.saved-views-select:focus) {
+    outline: none;
+    border-color: var(--border);
+}
+
+:deep(.saved-views-select--selected),
+:deep(.saved-views-select--selected:focus) {
+    border-color: var(--border);
+    box-shadow:
+        3px 3px 2px 1px rgba(0, 0, 0, 0.5) inset,
+        -3px -3px 2px 2px rgba(255, 255, 255) inset;
+}
+
+:deep(.saved-views-select:hover) {
+    background: var(--muted);
+}
+
+:deep(.saved-view-delete) {
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    display: inline-flex;
+    align-self: center;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--secondary-foreground);
+    cursor: pointer;
+}
+
+:deep(.saved-view-delete svg) {
+    width: 13px;
+    height: 13px;
+    stroke-width: 2.25;
+}
+
+:deep(.saved-view-delete:hover) {
+    background: rgba(220, 38, 38, 0.12);
+    border-color: rgba(220, 38, 38, 0.45);
+}
+
+:deep(.saved-view-delete:disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 </style>
