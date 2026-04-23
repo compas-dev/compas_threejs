@@ -5,7 +5,21 @@ type ShortcutHandler = (event: KeyboardEvent) => void;
 type ShortcutMap = Record<string, ShortcutHandler>;
 
 function shouldIgnoreShortcut(event: KeyboardEvent) {
-    return event.ctrlKey || event.metaKey || event.altKey;
+    if (event.ctrlKey || event.metaKey || event.altKey) {
+        return true;
+    }
+
+    const target = event.target as HTMLElement | null;
+    if (!target) {
+        return false;
+    }
+
+    const tag = target.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") {
+        return true;
+    }
+
+    return target.isContentEditable;
 }
 
 export function useKeyboardShortcuts(shortcuts: ShortcutMap) {

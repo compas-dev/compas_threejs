@@ -5,38 +5,13 @@
                 :default-name="`View ${savedViews.length + 1}`"
                 @saved="handleSavedView"
             />
-            <SavedViewsButton @toggle="toggleSavedViews" />
+            <SavedViewsButton
+                :views="savedViews"
+                :selected-view-id="selectedSavedViewId"
+                @select="selectSavedView"
+                @delete="deleteSavedView"
+            />
             <SaveScreenshotButton />
-        </div>
-
-        <div v-if="showSavedViewsList" class="saved-views-panel">
-            <div class="saved-views-controls">
-                <select
-                    v-model="selectedSavedViewId"
-                    :class="[
-                        'saved-views-select',
-                        { 'saved-views-select--selected': selectedSavedViewId !== '' },
-                    ]"
-                    @change="applySelectedSavedView"
-                >
-                    <option disabled value="">Select view</option>
-                    <option
-                        v-for="view in savedViews"
-                        :key="view.id"
-                        :value="view.id"
-                    >
-                        {{ view.name }}
-                    </option>
-                </select>
-                <button
-                    class="saved-view-delete"
-                    title="Delete selected view"
-                    :disabled="!selectedSavedViewId"
-                    @click="deleteSelectedSavedView"
-                >
-                    <X />
-                </button>
-            </div>
         </div>
     </div>
 </template>
@@ -55,13 +30,11 @@ import {
     SavedViewsButton,
     SaveScreenshotButton,
 } from "./index";
-import { X } from "lucide-vue-next";
 
 const SAVED_VIEWS_STORAGE_KEY = "compas_threejs_saved_views";
 
 const savedViews = ref<SavedView[]>([]);
 const selectedSavedViewId = ref<string>("");
-const showSavedViewsList = ref(false);
 
 function persistSavedViews() {
     localStorage.setItem(SAVED_VIEWS_STORAGE_KEY, JSON.stringify(savedViews.value));
@@ -86,7 +59,6 @@ function loadSavedViewsFromStorage() {
 function handleSavedView(view: SavedView) {
     savedViews.value = [...savedViews.value, view];
     selectedSavedViewId.value = view.id;
-    showSavedViewsList.value = true;
     persistSavedViews();
 }
 
@@ -102,12 +74,10 @@ function requestSaveCurrentView() {
     handleSavedView(view);
 }
 
-function toggleSavedViews() {
-    showSavedViewsList.value = !showSavedViewsList.value;
-}
+function selectSavedView(id: string) {
+    selectedSavedViewId.value = id;
 
-function applySelectedSavedView() {
-    const selected = savedViews.value.find((view) => view.id === selectedSavedViewId.value);
+    const selected = savedViews.value.find((view) => view.id === id);
     if (!selected) {
         return;
     }
@@ -115,14 +85,14 @@ function applySelectedSavedView() {
     applySavedView(selected);
 }
 
-function deleteSelectedSavedView() {
-    if (!selectedSavedViewId.value) {
-        return;
+function deleteSavedView(id: string) {
+    const nextViews = savedViews.value.filter((view) => view.id !== id);
+    savedViews.value = nextViews;
+
+    if (selectedSavedViewId.value === id) {
+        selectedSavedViewId.value = nextViews[0]?.id ?? "";
     }
 
-    const nextViews = savedViews.value.filter((view) => view.id !== selectedSavedViewId.value);
-    savedViews.value = nextViews;
-    selectedSavedViewId.value = nextViews[0]?.id ?? "";
     persistSavedViews();
 }
 
