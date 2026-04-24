@@ -5,25 +5,26 @@
                 <Button
                     variant="secondary"
                     size="icon"
-                    :class="{
-                        active: pickerMode.value == 'rotate',
-                        disabled: !pickerEnabled.value,
-                    }"
-                    @click="handleClick"
-                    :disabled="!pickerEnabled.value"
+                    @click="togglePicker"
+                    :class="{ active: !pointerEnabled }"
                 >
-                    <Rotate3d :size="16" :stroke-width="2" aria-hidden="true" />
+                    <span v-if="pointerEnabled">
+                        <Pointer />
+                    </span>
+                    <span v-else>
+                        <PointerOff />
+                    </span>
                 </Button>
             </TooltipTrigger>
             <TooltipContent class="z-1000" side="bottom">
-                <p>Rotate mode <Kbd>E</Kbd></p>
+                <p>Enable/Disable object selection</p>
             </TooltipContent>
         </Tooltip>
     </TooltipProvider>
 </template>
 
 <script setup lang="ts">
-import { Rotate3d } from "lucide-vue-next";
+import { Pointer, PointerOff } from "lucide-vue-next";
 import { setTransformMode } from "@/viewer/toolbar_actions";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
@@ -34,10 +35,12 @@ import {
     TooltipProvider,
 } from "@/components/ui/tooltip";
 import { pickerEnabled } from "@/store/store.ts";
-import { pickerMode } from "@/store/store.ts";
+import { ref } from "vue";
 
-function handleClick() {
-    setTransformMode("rotate");
-    pickerMode.value = "rotate";
+const pointerEnabled = ref(pickerEnabled.value);
+
+function togglePicker() {
+    pointerEnabled.value = !pointerEnabled.value;
+    pickerEnabled.value = !pickerEnabled.value;
 }
 </script>

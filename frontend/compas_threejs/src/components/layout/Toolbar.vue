@@ -54,4 +54,17 @@ import ViewGroup from "@/components/tools/views/ViewGroup.vue";
 :deep(.display-tools-wrapper) {
     display: contents;
 }
+
+:deep(Button) {
+    &.active {
+        box-shadow:
+            3px 3px 2px 1px rgba(0, 0, 0, 0.5) inset,
+            -3px -3px 2px 2px rgba(255, 255, 255) inset;
+    }
+
+    &.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+}
 </style>

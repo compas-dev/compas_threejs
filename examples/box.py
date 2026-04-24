@@ -6,7 +6,7 @@ from compas.geometry import Box, Frame, Sphere, Vector
 from compas_threejs.lights import PointLight, RectLight, SpotLight, Sunlight
 from compas_threejs.materials import Material
 from compas_threejs.ui import Button, Slider
-from compas_threejs.viewer import Viewer, CameraView
+from compas_threejs.viewer import CameraView, Viewer
 
 viz = Viewer()
 

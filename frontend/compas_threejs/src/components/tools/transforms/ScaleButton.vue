@@ -6,8 +6,12 @@
                     variant="secondary"
                     size="icon"
                     class="toolbar-button"
-                    :class="{ active }"
+                    :class="{
+                        active: pickerMode.value == 'scale',
+                        disabled: !pickerEnabled.value,
+                    }"
                     @click="handleClick"
+                    :disabled="!pickerEnabled.value"
                 >
                     <span class="button-icon">
                         <Scale3d
@@ -36,6 +40,9 @@ import {
     TooltipTrigger,
     TooltipProvider,
 } from "@/components/ui/tooltip";
+import { pickerEnabled } from "@/store/store.ts";
+import { pickerMode } from "@/store/store.ts";
+
 defineProps<{
     active: boolean;
 }>();
@@ -46,6 +53,6 @@ const emit = defineEmits<{
 
 function handleClick() {
     setTransformMode("scale");
-    emit("activated");
+    pickerMode.value = "scale";
 }
 </script>

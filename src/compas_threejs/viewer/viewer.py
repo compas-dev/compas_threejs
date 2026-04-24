@@ -19,6 +19,7 @@ from .server import broadcast, get_server_loop, run_server, stop_server
 
 console = Console()
 
+
 class CameraView(IntEnum):
     """Numpad-compatible camera view presets."""
 
@@ -32,6 +33,7 @@ class CameraView(IntEnum):
     BACK_LEFT = 7
     BACK = 8
     BACK_RIGHT = 9
+
 
 class Viewer:
     class Viewer:
@@ -404,7 +406,6 @@ class Viewer:
             else:
                 self.queued_messages.append((material_data, str(uuid4())))
 
-
         if metadata:
             self._metadata_registry[str(obj_id)] = metadata
 
@@ -593,10 +594,13 @@ class Viewer:
         )
         metadata = self._metadata_registry.get(object_id)
         if metadata:
-            metadata['dispatch'] = "object_infos"
+            metadata["dispatch"] = "object_infos"
             console.log(f"[blue]Metadata associated with the object: {metadata}[/blue]")
             self._send_dictionary_message(metadata.metadata)
         else:
-            metadata={"dispatch": "object_infos", "No metadata associated with this object.": ""}
+            metadata = {
+                "dispatch": "object_infos",
+                "No metadata associated with this object.": "",
+            }
             self._send_dictionary_message(metadata)
         return
