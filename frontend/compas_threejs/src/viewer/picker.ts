@@ -4,7 +4,7 @@ import { camera, renderer, scene, controls } from "./scene_manager";
 import { SCENE_GEOMETRIES } from "./geometry_manager";
 import { sendData } from "@/communications/communication";
 import { objectInfoManager } from "@/communications/objectInfo";
-import { pickerEnabled } from "@/store/store";
+import { pickerMode, pickerEnabled } from "@/store/store";
 
 export let pickPosition: { x: number; y: number };
 let canvas: HTMLCanvasElement;
@@ -16,10 +16,10 @@ export type TransformMode = "translate" | "rotate" | "scale";
 
 export function setTransformMode(mode: TransformMode) {
     if (!tControl) {
-    return;
-  }
+        return;
+    }
 
-  tControl.setMode(mode);
+    tControl.setMode(mode);
 }
 
 class TransformControlsManager {
@@ -38,27 +38,45 @@ class TransformControlsManager {
     }
 
     private setupEventListeners() {
-        this.tControl.addEventListener("dragging-changed", (event: { value: boolean }) => {
-            controls.enabled = !event.value;
-        });
+        this.tControl.addEventListener(
+            "dragging-changed",
+            (event: { value: boolean }) => {
+                controls.enabled = !event.value;
+            },
+        );
 
         window.addEventListener("keydown", (event) => {
             if (event.altKey || event.ctrlKey || event.metaKey) {
-        return;
-      }
+                return;
+            }
 
-      switch (event.key) {
+            switch (event.key) {
                 case "w":
-        setTransformMode("translate");
+                    if (!pickerEnabled.value) {
+                        break;
+                    }
+                    setTransformMode("translate");
+                    pickerMode.value = "translate";
                     break;
                 case "e":
-        setTransformMode("rotate");
+                    if (!pickerEnabled.value) {
+                        break;
+                    }
+                    setTransformMode("rotate");
+                    pickerMode.value = "rotate";
                     break;
                 case "r":
-        setTransformMode("scale");
+                    if (!pickerEnabled.value) {
+                        break;
+                    }
+                    setTransformMode("scale");
+                    pickerMode.value = "scale";
+                    break;
+                case "p":
+                    pickerEnabled.value = !pickerEnabled.value;
                     break;
                 case "Escape":
-        this.tControl.detach();
+                    this.tControl.detach();
                     objectInfoManager({} as any);
                     break;
             }

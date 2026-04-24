@@ -1,8 +1,22 @@
 <template>
     <div class="toolbar-group">
-        <MoveButton :active="activeTransform === 'move'" @activated="setActiveTransform('move')" />
-        <RotateButton :active="activeTransform === 'rotate'" @activated="setActiveTransform('rotate')" />
-        <ScaleButton :active="activeTransform === 'scale'" @activated="setActiveTransform('scale')" />
+        <EnablePicker
+            :active="activeTransform === 'move'"
+            @activated="setActiveTransform('move')"
+        />
+
+        <MoveButton
+            :active="activeTransform === 'move'"
+            @activated="setActiveTransform('move')"
+        />
+        <RotateButton
+            :active="activeTransform === 'rotate'"
+            @activated="setActiveTransform('rotate')"
+        />
+        <ScaleButton
+            :active="activeTransform === 'scale'"
+            @activated="setActiveTransform('scale')"
+        />
     </div>
 </template>
 
@@ -10,7 +24,7 @@
 import { ref } from "vue";
 import { setTransformMode } from "@/viewer/toolbar_actions";
 import { useKeyboardShortcuts } from "@/components/tools/useKeyboardShortcuts";
-import { MoveButton, RotateButton, ScaleButton } from "./index";
+import { EnablePicker, MoveButton, RotateButton, ScaleButton } from "./index";
 
 type TransformTool = "move" | "rotate" | "scale";
 

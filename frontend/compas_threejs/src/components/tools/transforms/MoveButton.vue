@@ -5,8 +5,12 @@
                 <Button
                     variant="secondary"
                     size="icon"
-                    :class="{ active }"
+                    :class="{
+                        active: pickerMode.value == 'translate',
+                        disabled: !pickerEnabled.value,
+                    }"
                     @click="handleClick"
+                    :disabled="!pickerEnabled.value"
                 >
                     <Move3d />
                 </Button>
@@ -20,9 +24,13 @@
 
 <script setup lang="ts">
 import { Move3d } from "lucide-vue-next";
-import { setTransformMode } from "@/viewer/toolbar_actions";
+import { setTransformMode } from "@/viewer/picker";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
+// You don't need `ref` here because you are using the store's ref directly
+import { pickerEnabled } from "@/store/store.ts";
+import { pickerMode } from "@/store/store.ts";
+
 import {
     Tooltip,
     TooltipContent,
@@ -30,16 +38,8 @@ import {
     TooltipProvider,
 } from "@/components/ui/tooltip";
 
-defineProps<{
-    active: boolean;
-}>();
-
-const emit = defineEmits<{
-    (e: "activated"): void;
-}>();
-
 function handleClick() {
     setTransformMode("translate");
-    emit("activated");
+    pickerMode.value = "translate";
 }
 </script>
