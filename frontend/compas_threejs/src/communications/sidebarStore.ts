@@ -35,8 +35,24 @@ interface SliderComponent {
     action: string; // GUID for value change action
 }
 
+interface NumberFieldComponent {
+    id: number;
+    component: "NumberField";
+    label?: string;
+    props: {
+        min: number;
+        max: number;
+        step: number;
+        value: number[];
+    };
+    action: string; // GUID for value change action
+}
+
 // --- The main type is now a union of all supported components ---
-export type DynamicComponent = ButtonComponent | SliderComponent;
+export type DynamicComponent =
+    | ButtonComponent
+    | SliderComponent
+    | NumberFieldComponent;
 export const sidebarComponents = reactive<DynamicComponent[]>([]);
 
 export function uiManager(data: { [key: string]: any }) {
@@ -48,6 +64,10 @@ export function uiManager(data: { [key: string]: any }) {
             break;
         case "slider":
             addSlider(data);
+            sideBarInfoState.isVisible = true;
+            break;
+        case "number_field":
+            addNumberField(data);
             sideBarInfoState.isVisible = true;
             break;
         default:
@@ -87,10 +107,25 @@ export function addSlider(data: { [key: string]: any }) {
     sidebarComponents.push(newSlider);
 }
 
+export function addNumberField(data: { [key: string]: any }) {
+    const newNumberField: NumberFieldComponent = {
+        id: Date.now(),
+        component: "NumberField",
+        label: data.label?.value,
+        props: {
+            min: data.min.value,
+            max: data.max.value,
+            step: data.step.value,
+            value: data.value.value,
+        },
+        action: data.guid.value,
+    };
+    sidebarComponents.push(newNumberField);
+}
+
 // --- Updated Action Handler ---
 // It now accepts a payload, which will be the slider's value.
 export function handleAction(actionGuid: string, value?: any) {
-    console.log(`Action triggered: ${actionGuid} with value:`, value);
     const message = {
         dispatch: "ui_callback",
         action: actionGuid,

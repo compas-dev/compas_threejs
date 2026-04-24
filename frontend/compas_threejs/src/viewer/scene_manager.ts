@@ -21,7 +21,7 @@ export const camera = new THREE.PerspectiveCamera(
 camera.position.set(8, -15, 15);
 camera.zoom = 1;
 
-type ViewPreset =
+export type ViewPreset =
   | "top"
   | "bottom"
   | "front"
@@ -123,6 +123,10 @@ function applyViewPreset(preset: ViewPreset) {
 
   camera.position.copy(target.clone().add(direction.multiplyScalar(distance)));
   controls.update();
+}
+
+export function setCameraViewPreset(preset: ViewPreset) {
+    applyViewPreset(preset);
 }
 
 function getViewPresetFromKey(code: string): ViewPreset | null {

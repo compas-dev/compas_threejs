@@ -562,6 +562,11 @@ class Viewer:
         element : compas_threejs.ui.UIElement
             The UI element to be added to the viewer. It must have a unique GUID and an
         """
+        if element.action is None:
+            console.log(
+                f"[yellow]Warning: UI element with GUID {element.guid} has no associated action.[/yellow]"
+            )
+
         # register the function with the id
         self._buttons[element.guid] = element.action
         self._send_dictionary_message(element.as_dict())
@@ -599,11 +604,21 @@ class Viewer:
         action_id = action_dictionary.get("action")
         console.log(f"[blue]Received message from frontend: {action_dictionary}[/blue]")
         value = action_dictionary.get("value")
+
+        callable_function = self._buttons[action_id]
+
+        if not callable(callable_function):
+            console.log(
+                f"[yellow]Warning: The action associated with ID {action_id} did not return a callable function.[/yellow]"
+            )
+            return
+
         if value is not None and action_id and action_id in self._buttons:
             console.log(f"[blue]Value associated with the action: {value}[/blue]")
-            self._buttons[action_id](value[0])
+            self._buttons[action_id](value)
         elif action_id and action_id in self._buttons:
             self._buttons[action_id]()
+
         else:
             print(f"Unrecognized action or missing handler for action ID: {action_id}")
 
