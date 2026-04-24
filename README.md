@@ -47,7 +47,7 @@ View shortcuts (numpad):
 
 Display shortcuts:
 - `S`: Save current view
-- `F`: Save screenshot as PNG
+- `F`: Save screenshot as image
 
 UI shortcuts:
 - `I`: Show/hide the metadata bar

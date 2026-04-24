@@ -136,7 +136,3 @@ export function saveCurrentCanvasImage(options: ScreenshotOptions = {}) {
 
   triggerDownload(dataUrl, fileName);
 }
-
-export function saveCurrentCanvasAsPng(fileName?: string) {
-  saveCurrentCanvasImage({ format: "png", fileName });
-}

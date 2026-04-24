@@ -21,7 +21,7 @@ import { onMounted, ref } from "vue";
 import {
     applySavedView,
     captureCurrentView,
-    saveCurrentCanvasAsPng,
+    saveCurrentCanvasImage,
     type SavedView,
 } from "@/viewer/toolbar_actions";
 import { useKeyboardShortcuts } from "@/components/tools/useKeyboardShortcuts";
@@ -105,7 +105,7 @@ useKeyboardShortcuts({
         requestSaveCurrentView();
     },
     f: () => {
-        saveCurrentCanvasAsPng();
+        saveCurrentCanvasImage({ format: "png" });
     },
 });
 

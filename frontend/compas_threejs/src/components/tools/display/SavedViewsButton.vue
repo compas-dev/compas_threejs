@@ -11,44 +11,39 @@
             side="bottom"
             align="start"
         >
-            <div class="grid gap-1">
-                <p
-                    v-if="views.length === 0"
-                    class="px-3 py-2 text-xs text-muted-foreground"
+            <div class="flex h-8 items-stretch overflow-hidden rounded-lg border border-input bg-secondary">
+                <select
+                    v-model="selectedId"
+                    class="h-full flex-1 border-0 bg-transparent px-3 py-1 text-sm text-secondary-foreground outline-none"
+                    @change="handleSelect"
                 >
-                    No saved views
-                </p>
-
-                <div
-                    v-for="view in views"
-                    :key="view.id"
-                    class="grid grid-cols-[1fr_auto] items-center gap-1"
-                >
-                    <button
-                        class="h-8 rounded-lg border border-input bg-secondary px-3 text-left text-xs text-secondary-foreground transition-colors hover:bg-muted"
-                        :class="{
-                            'saved-views-select--selected': selectedViewId === view.id,
-                        }"
-                        @click="handleSelect(view.id)"
+                    <option v-if="views.length === 0" disabled value="">
+                        No saved views
+                    </option>
+                    <option
+                        v-for="view in views"
+                        :key="view.id"
+                        :value="view.id"
                     >
                         {{ view.name }}
-                    </button>
+                    </option>
+                </select>
 
-                    <button
-                        class="saved-view-delete"
-                        title="Delete saved view"
-                        @click.stop="handleDelete(view.id)"
-                    >
-                        <X />
-                    </button>
-                </div>
+                <button
+                    class="inline-flex h-full w-8 items-center justify-center border-l border-input text-secondary-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                    title="Delete saved view"
+                    :disabled="!selectedId"
+                    @click.stop="handleDelete"
+                >
+                    <X class="h-3 w-3" />
+                </button>
             </div>
         </PopoverContent>
     </Popover>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { ClipboardList, X } from "lucide-vue-next";
 import type { SavedView } from "@/viewer/toolbar_actions";
 import { Button } from "@/components/ui/button";
@@ -58,7 +53,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 
-defineProps<{
+const props = defineProps<{
     views: SavedView[];
     selectedViewId: string;
 }>();
@@ -69,13 +64,29 @@ const emit = defineEmits<{
 }>();
 
 const isOpen = ref(false);
+const selectedId = ref("");
 
-function handleSelect(id: string) {
-    emit("select", id);
-    isOpen.value = false;
+watch(
+    () => props.selectedViewId,
+    (id) => {
+        selectedId.value = id;
+    },
+    { immediate: true },
+);
+
+function handleSelect() {
+    if (!selectedId.value) {
+        return;
+    }
+
+    emit("select", selectedId.value);
 }
 
-function handleDelete(id: string) {
-    emit("delete", id);
+function handleDelete() {
+    if (!selectedId.value) {
+        return;
+    }
+
+    emit("delete", selectedId.value);
 }
 </script>
