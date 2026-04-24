@@ -32,7 +32,7 @@
                     :default-value="item.props.defaultValue"
                     v-model="item.props.defaultValue"
                     @update:model-value="
-                        (value) => handleAction(item.action, value)
+                        (value) => handleAction(item.action, value[0])
                     "
                     class="w-[80%]"
                 >
@@ -42,7 +42,31 @@
                 </span>
             </div>
 
-            <!-- You could add more v-if blocks here for other components like Sliders -->
+            <!-- Render a NumberField -->
+            <div
+                v-else-if="item.component === 'NumberField'"
+                class="number-field-container"
+            >
+                <NumberField
+                    :min="item.props.min"
+                    :max="item.props.max"
+                    :step="item.props.step"
+                    :default-value="item.props.value"
+                    v-model="item.props.value"
+                    @update:model-value="
+                        (value) => handleAction(item.action, value)
+                    "
+                    class="w-full"
+                >
+                    <NumberFieldContent>
+                        <NumberFieldDecrement />
+                        <NumberFieldInput />
+                        <NumberFieldIncrement />
+                    </NumberFieldContent>
+                </NumberField>
+
+                <!-- You could add more v-if blocks here for other components like Sliders -->
+            </div>
         </div>
         <Button
             variant="secondary"
@@ -69,6 +93,13 @@
 import { watchEffect, toRaw } from "vue"; // 1. Import watchEffect and toRaw
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import {
+    NumberField,
+    NumberFieldContent,
+    NumberFieldDecrement,
+    NumberFieldInput,
+    NumberFieldIncrement,
+} from "@/components/ui/number-field";
 import { ref } from "vue"; // Import ref
 import { sidebarComponents, handleAction } from "@/communications/sidebarStore";
 
