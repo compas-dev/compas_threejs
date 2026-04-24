@@ -42,9 +42,10 @@
                     <Tooltip>
                         <TooltipTrigger as-child>
                             <Button
-                                variant="destructive"
+                                variant="secondary"
                                 size="icon-sm"
-                                class="h-full w-8 rounded-none border-l border-input"
+                                class="h-full w-8 rounded-none border-l border-input transition-[background-color,color,box-shadow]"
+                                :class="{ 'saved-view-delete-pressed': deletePressed }"
                                 :disabled="!selectedId"
                                 @click.stop="handleDelete"
                             >
@@ -62,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { onBeforeUnmount, ref, watch } from "vue";
 import { ClipboardList, Trash2 } from "lucide-vue-next";
 import type { SavedView } from "@/viewer/toolbar_actions";
 import { Button } from "@/components/ui/button";
@@ -90,6 +91,8 @@ const emit = defineEmits<{
 
 const isOpen = ref(false);
 const selectedId = ref("");
+const deletePressed = ref(false);
+let deletePressedTimeout: ReturnType<typeof setTimeout> | null = null;
 
 watch(
     () => [props.selectedViewId, props.views] as const,
@@ -118,6 +121,31 @@ function handleDelete() {
         return;
     }
 
+    deletePressed.value = true;
+    if (deletePressedTimeout) {
+        clearTimeout(deletePressedTimeout);
+    }
+    deletePressedTimeout = setTimeout(() => {
+        deletePressed.value = false;
+        deletePressedTimeout = null;
+    }, 160);
+
     emit("delete", selectedId.value);
 }
+
+onBeforeUnmount(() => {
+    if (deletePressedTimeout) {
+        clearTimeout(deletePressedTimeout);
+    }
+});
 </script>
+
+<style scoped>
+.saved-view-delete-pressed {
+    color: white;
+    background: color-mix(in srgb, var(--destructive) 85%, black);
+    box-shadow:
+        2px 2px 2px rgba(0, 0, 0, 0.35) inset,
+        -1px -1px 1px rgba(255, 255, 255, 0.2) inset;
+}
+</style>
