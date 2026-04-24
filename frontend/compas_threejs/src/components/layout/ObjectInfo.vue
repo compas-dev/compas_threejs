@@ -36,7 +36,7 @@
 <script setup>
 import { objectInfoState } from "../../store/store";
 import { objectActionsState } from "../../store/store";
-import { pickerEnabled } from "../../store/store";
+import { blockPicker, pickerEnabled } from "../../store/store";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { hideObjectInfo } from "@/communications/objectInfo";
@@ -50,11 +50,17 @@ const geoInformation = objectInfoState.data
           ),
       )
     : {};
+
 function pickerEnabler() {
     const infoPanel = document.getElementById("info-panel");
     const onPanel = infoPanel && infoPanel.matches(":hover");
-    pickerEnabled.value = !onPanel;
+    if (onPanel) {
+        blockPicker.value = true;
+    } else {
+        blockPicker.value = false;
+    }
 }
+
 window.addEventListener("mousemove", pickerEnabler);
 </script>
 

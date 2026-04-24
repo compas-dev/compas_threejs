@@ -6,8 +6,8 @@ import { GEOMETRY_MATERIALS, SCENE_MATERIALS } from "./material_manager";
 import { sendData } from "@/communications/communication";
 import { objectInfoManager } from "@/communications/objectInfo";
 import { objectActionsState } from "@/store/store";
-import { pickerEnabled } from "@/store/store";
-import { pickerMode, pickerEnabled } from "@/store/store";
+import { blockPicker, pickerEnabled } from "@/store/store";
+import { pickerMode } from "@/store/store";
 
 export let pickPosition: { x: number; y: number };
 let canvas: HTMLCanvasElement;
@@ -157,6 +157,10 @@ export class PickHelper {
 
     pick(normalizedPosition: { x: number; y: number }, scene: any) {
         if (!pickerEnabled.value) {
+            return;
+        }
+
+        if (blockPicker.value) {
             return;
         }
 
