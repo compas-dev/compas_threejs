@@ -50,4 +50,16 @@ import DisplayGroup from "@/components/tools/display/DisplayGroup.vue";
 :deep(.display-tools-wrapper) {
     display: contents;
 }
+
+:deep(Button) {
+    &:hover {
+        box-shadow: 3px 3px 10px 0px rgba(0, 0, 0, 0.3);
+    }
+
+    &.active {
+        box-shadow:
+            3px 3px 2px 1px rgba(0, 0, 0, 0.5) inset,
+            -3px -3px 2px 2px rgba(255, 255, 255) inset;
+    }
+}
 </style>

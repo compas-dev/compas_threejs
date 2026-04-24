@@ -32,7 +32,7 @@
                     :default-value="item.props.defaultValue"
                     v-model="item.props.defaultValue"
                     @update:model-value="
-                        (value) => handleAction(item.action, value)
+                        (value) => handleAction(item.action, value[0])
                     "
                     class="w-[80%]"
                 >
@@ -40,6 +40,30 @@
                 <span v-if="item.props.defaultValue" class="slider-value">
                     {{ item.props.defaultValue[0] }}
                 </span>
+            </div>
+
+            <!-- Render a NumberField -->
+            <div
+                v-else-if="item.component === 'NumberField'"
+                class="number-field-container"
+            >
+                <NumberField
+                    :min="item.props.min"
+                    :max="item.props.max"
+                    :step="item.props.step"
+                    :default-value="item.props.value"
+                    v-model="item.props.value"
+                    @update:model-value="
+                        (value) => handleAction(item.action, value)
+                    "
+                    class="w-full"
+                >
+                    <NumberFieldContent>
+                        <NumberFieldDecrement />
+                        <NumberFieldInput />
+                        <NumberFieldIncrement />
+                    </NumberFieldContent>
+                </NumberField>
             </div>
 
             <!-- You could add more v-if blocks here for other components like Sliders -->
@@ -72,6 +96,13 @@ import { Slider } from "@/components/ui/slider";
 import { ref } from "vue"; // Import ref
 import { sidebarComponents, handleAction } from "@/communications/sidebarStore";
 import { ArrowBigLeftDash, ArrowBigRightDash } from "lucide-vue-next";
+import {
+    NumberField,
+    NumberFieldContent,
+    NumberFieldDecrement,
+    NumberFieldIncrement,
+    NumberFieldInput,
+} from "@/components/ui/number-field";
 
 const isVisible = ref(true);
 
