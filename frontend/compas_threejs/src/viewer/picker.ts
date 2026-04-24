@@ -52,17 +52,28 @@ class TransformControlsManager {
 
             switch (event.key) {
                 case "w":
+                    if (!pickerEnabled.value) {
+                        break;
+                    }
                     setTransformMode("translate");
                     pickerMode.value = "translate";
                     break;
                 case "e":
+                    if (!pickerEnabled.value) {
+                        break;
+                    }
                     setTransformMode("rotate");
-                    pickerMode.value = "rotate";
                     pickerMode.value = "rotate";
                     break;
                 case "r":
+                    if (!pickerEnabled.value) {
+                        break;
+                    }
                     setTransformMode("scale");
                     pickerMode.value = "scale";
+                    break;
+                case "p":
+                    pickerEnabled.value = !pickerEnabled.value;
                     break;
                 case "Escape":
                     this.tControl.detach();

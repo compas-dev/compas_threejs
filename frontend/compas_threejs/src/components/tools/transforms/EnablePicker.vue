@@ -6,9 +6,9 @@
                     variant="secondary"
                     size="icon"
                     @click="togglePicker"
-                    :class="{ active: !pointerEnabled }"
+                    :class="{ active: !pickerEnabled.value }"
                 >
-                    <span v-if="pointerEnabled">
+                    <span v-if="pickerEnabled.value">
                         <Pointer />
                     </span>
                     <span v-else>
@@ -17,7 +17,7 @@
                 </Button>
             </TooltipTrigger>
             <TooltipContent class="z-1000" side="bottom">
-                <p>Enable/Disable object selection</p>
+                <p>Enable/Disable object selection <Kbd>P</Kbd></p>
             </TooltipContent>
         </Tooltip>
     </TooltipProvider>
@@ -35,12 +35,8 @@ import {
     TooltipProvider,
 } from "@/components/ui/tooltip";
 import { pickerEnabled } from "@/store/store.ts";
-import { ref } from "vue";
-
-const pointerEnabled = ref(pickerEnabled.value);
 
 function togglePicker() {
-    pointerEnabled.value = !pointerEnabled.value;
     pickerEnabled.value = !pickerEnabled.value;
 }
 </script>
