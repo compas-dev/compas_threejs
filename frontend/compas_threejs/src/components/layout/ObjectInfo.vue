@@ -41,6 +41,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { hideObjectInfo } from "@/communications/objectInfo";
 import { handleObjectAction } from "@/communications/objectInfo";
+import { handleAction } from "@/communications/sidebarStore";
 
 const geoInformation = objectInfoState.data
     ? Object.fromEntries(
