@@ -9,7 +9,7 @@ export type SavedView = {
   fov: number;
 };
 
-export type ScreenshotFormat = "png" | "jpg" | "svg";
+export type ScreenshotFormat = "png" | "jpg" | "webp";
 
 export type ScreenshotOptions = {
   width?: number;
@@ -118,19 +118,15 @@ export function saveCurrentCanvasImage(options: ScreenshotOptions = {}) {
   const height = sanitizeDimension(options.height ?? fallbackHeight, fallbackHeight);
   const exportCanvas = createExportCanvas(width, height, format);
 
-  if (format === "svg") {
-    const rasterData = exportCanvas.toDataURL("image/png");
-    const svg = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><image href="${rasterData}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid meet" /></svg>`;
-    const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
-    const objectUrl = URL.createObjectURL(blob);
-    triggerDownload(objectUrl, options.fileName ?? buildDefaultFileName("svg"));
-    setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
-    return;
-  }
-
-  const mimeType = format === "jpg" ? "image/jpeg" : "image/png";
+  const mimeType =
+    format === "jpg"
+      ? "image/jpeg"
+      : format === "webp"
+        ? "image/webp"
+        : "image/png";
   const quality = format === "jpg" ? (options.quality ?? 0.92) : undefined;
-  const extension = format === "jpg" ? "jpg" : "png";
+  const extension =
+    format === "jpg" ? "jpg" : format === "webp" ? "webp" : "png";
   const fileName = options.fileName ?? buildDefaultFileName(extension);
   const dataUrl = exportCanvas.toDataURL(mimeType, quality);
 

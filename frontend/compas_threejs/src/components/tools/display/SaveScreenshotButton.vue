@@ -1,72 +1,83 @@
 <template>
-    <Popover v-model:open="isOpen" :modal="true">
-        <PopoverTrigger as-child>
-            <Button variant="secondary" size="icon" title="Save Screenshot">
-                <ImageDown />
-            </Button>
-        </PopoverTrigger>
+    <TooltipProvider :delay-duration="600">
+        <Popover v-model:open="isOpen" :modal="true">
+            <PopoverTrigger as-child>
+                <Button variant="secondary" size="icon">
+                    <Tooltip>
+                        <TooltipTrigger as-child>
+                            <span class="inline-flex h-full w-full items-center justify-center">
+                                <ImageDown />
+                            </span>
+                        </TooltipTrigger>
+                        <TooltipContent class="z-1000" side="bottom">
+                            <p>Save screenshot <Kbd>F</Kbd></p>
+                        </TooltipContent>
+                    </Tooltip>
+                </Button>
+            </PopoverTrigger>
 
-        <PopoverContent
-            class="theme z-[4000] w-84 rounded-xl p-5 text-secondary-foreground"
-            side="bottom"
-            align="start"
-        >
-            <div class="grid gap-5">
-                <div class="space-y-2">
-                    <h4 class="font-medium leading-none">
-                        Export Screenshot
-                    </h4>
-                    <p class="text-sm text-muted-foreground">
-                        Set width, height, and image format.
-                    </p>
-                </div>
-
-                <div class="grid gap-3">
-                    <div class="grid grid-cols-3 items-center gap-4">
-                        <label for="screenshot-width" class="text-sm">Width</label>
-                        <input
-                            id="screenshot-width"
-                            v-model.number="width"
-                            type="number"
-                            min="64"
-                            max="8192"
-                            class="col-span-2 h-8 rounded-lg border border-input bg-secondary px-3 py-1 text-sm text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                        />
+            <PopoverContent
+                class="theme z-[4000] w-84 rounded-xl p-5 text-secondary-foreground"
+                side="bottom"
+                align="start"
+            >
+                <div class="grid gap-5">
+                    <div class="space-y-2">
+                        <h4 class="font-medium leading-none">
+                            Export Screenshot
+                        </h4>
+                        <p class="text-sm text-muted-foreground">
+                            Set width, height, and image format.
+                        </p>
                     </div>
 
-                    <div class="grid grid-cols-3 items-center gap-4">
-                        <label for="screenshot-height" class="text-sm">Height</label>
-                        <input
-                            id="screenshot-height"
-                            v-model.number="height"
-                            type="number"
-                            min="64"
-                            max="8192"
-                            class="col-span-2 h-8 rounded-lg border border-input bg-secondary px-3 py-1 text-sm text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                        />
+                    <div class="grid gap-3">
+                        <div class="grid grid-cols-3 items-center gap-4">
+                            <label for="screenshot-width" class="text-sm">Width</label>
+                            <input
+                                id="screenshot-width"
+                                v-model.number="width"
+                                type="number"
+                                min="64"
+                                max="8192"
+                                class="col-span-2 h-8 rounded-lg border border-input bg-secondary px-3 py-1 text-sm text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                            />
+                        </div>
+
+                        <div class="grid grid-cols-3 items-center gap-4">
+                            <label for="screenshot-height" class="text-sm">Height</label>
+                            <input
+                                id="screenshot-height"
+                                v-model.number="height"
+                                type="number"
+                                min="64"
+                                max="8192"
+                                class="col-span-2 h-8 rounded-lg border border-input bg-secondary px-3 py-1 text-sm text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                            />
+                        </div>
+
+                        <div class="grid grid-cols-3 items-center gap-4">
+                            <label for="screenshot-format" class="text-sm">Format</label>
+                            <select
+                                id="screenshot-format"
+                                v-model="format"
+                                class="col-span-2 h-8 rounded-lg border border-input bg-secondary px-3 py-1 text-sm text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                            >
+                                <option value="png">PNG</option>
+                                <option value="jpg">JPG</option>
+                                <option value="webp">WEBP</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="grid grid-cols-3 items-center gap-4">
-                        <label for="screenshot-format" class="text-sm">Format</label>
-                        <select
-                            id="screenshot-format"
-                            v-model="format"
-                            class="col-span-2 h-8 rounded-lg border border-input bg-secondary px-3 py-1 text-sm text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
-                        >
-                            <option value="png">PNG</option>
-                            <option value="jpg">JPG</option>
-                            <option value="svg">SVG</option>
-                        </select>
+                    <div class="flex justify-end gap-2">
+                        <Button variant="secondary" size="sm" @click="isOpen = false">Cancel</Button>
+                        <Button variant="secondary" size="sm" @click="handleSave">Save</Button>
                     </div>
                 </div>
-
-                <div class="flex justify-end gap-2">
-                    <Button variant="secondary" size="sm" @click="isOpen = false">Cancel</Button>
-                    <Button variant="secondary" size="sm" @click="handleSave">Save</Button>
-                </div>
-            </div>
-        </PopoverContent>
-    </Popover>
+            </PopoverContent>
+        </Popover>
+    </TooltipProvider>
 </template>
 
 <script setup lang="ts">
@@ -83,6 +94,13 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
+import { Kbd } from "@/components/ui/kbd";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const isOpen = ref(false);
 const width = ref(1920);
