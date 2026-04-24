@@ -74,6 +74,7 @@
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
+    --button-hover: oklch(1 0 0 / 0%);
 }
 
 .dark {
@@ -119,24 +120,50 @@
     }
 }
 
-
 :root {
-  font-family: Inter, sans-serif;
-  font-feature-settings: 'liga' 1, 'calt' 1; /* fix for Chrome */
+    font-family: Inter, sans-serif;
+    font-feature-settings:
+        "liga" 1,
+        "calt" 1; /* fix for Chrome */
 }
 @supports (font-variation-settings: normal) {
-  :root { font-family: InterVariable, sans-serif; }
+    :root {
+        font-family: InterVariable, sans-serif;
+    }
 }
 
-div#app{
+div#app {
     margin: 0px;
     padding: 0px;
     /*overflow: hidden;*/
 }
 
-body, html {
+body,
+html {
     margin: 0px;
     padding: 0px;
     overflow: hidden;
     font-family: Inter, sans-serif;
+}
+
+.theme {
+    background: linear-gradient(
+        135deg,
+        rgba(255, 255, 255, 0.15) 0%,
+        rgba(255, 255, 255, 0.2) 100%
+    );
+    -webkit-backdrop-filter: blur(25px) saturate(180%);
+    backdrop-filter: blur(25px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-bottom: -3px solid rgba(220, 220, 220, 0.4);
+    border-right: -3px solid rgba(225, 225, 225, 0.3);
+    box-shadow:
+        0 8px 32px 0 rgba(0, 0, 0, 0.3),
+        inset 4px 4px 10px 2px rgba(255, 255, 255, 0.7),
+        inset -4px -4px 10px 2px rgba(0, 0, 0, 0.1);
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #888 transparent;
 }
