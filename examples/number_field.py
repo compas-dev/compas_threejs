@@ -41,17 +41,32 @@ class GridMaker:
     def setup_ui(self):
         self.view.add_ui_element(
             NumberField(
-                label="nx", value=self.nx, min=1, max=5, step=1, action=self.update_nx
+                label="Extent X",
+                value=self.nx,
+                min=1,
+                max=5,
+                step=1,
+                action=self.update_nx,
             )
         )
         self.view.add_ui_element(
             NumberField(
-                label="ny", value=self.nx, min=1, max=5, step=1, action=self.update_ny
+                label="Extent Y",
+                value=self.nx,
+                min=1,
+                max=5,
+                step=1,
+                action=self.update_ny,
             )
         )
         self.view.add_ui_element(
             NumberField(
-                label="nz", value=self.nx, min=1, max=5, step=1, action=self.update_nz
+                label="Extent Zs",
+                value=self.nx,
+                min=1,
+                max=5,
+                step=1,
+                action=self.update_nz,
             )
         )
 
