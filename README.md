@@ -29,6 +29,7 @@ viz.start()
 The viewer includes a toolbar and quick keyboard shortcuts for navigation and interaction.
 
 Object transform shortcuts:
+- `P`: Enable/Disable selection
 - `W`: Move
 - `E`: Rotate
 - `R`: Scale
