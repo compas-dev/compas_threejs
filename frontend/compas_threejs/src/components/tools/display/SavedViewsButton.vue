@@ -67,9 +67,15 @@ const isOpen = ref(false);
 const selectedId = ref("");
 
 watch(
-    () => props.selectedViewId,
-    (id) => {
-        selectedId.value = id;
+    () => [props.selectedViewId, props.views] as const,
+    ([id, views]) => {
+        if (views.length === 0) {
+            selectedId.value = "";
+            return;
+        }
+
+        const hasSelected = views.some((view) => view.id === id);
+        selectedId.value = hasSelected ? id : views[0].id;
     },
     { immediate: true },
 );
