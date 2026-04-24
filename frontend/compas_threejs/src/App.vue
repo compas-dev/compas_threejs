@@ -1,7 +1,8 @@
 <template>
     <div class="app-container">
-        <Toolbar />
-        <Sidebar v-if="sideBarInfoState.isVisible" />
+        <!-- <Toolbar />
+        <Openbar v-if="sideBarInfoState.isVisible" /> -->
+        <Sidebar />
         <div ref="threeContainer" class="three-container"></div>
         <ObjectInfo v-if="objectInfoState.isVisible" />
     </div>
@@ -11,13 +12,14 @@
 // 1. Make sure to import `ref` and `onMounted` from 'vue'
 import { ref, onMounted } from "vue";
 import Toolbar from "./components/layout/Toolbar.vue";
-import Sidebar from "./components/layout/Sidebar.vue";
+import Openbar from "./components/layout/Openbar.vue";
 import ObjectInfo from "./components/layout/ObjectInfo.vue";
 import { renderer } from "./viewer/scene_manager";
 import { initializeWebSocketConnection } from "./communications/communication";
 import { Button } from "@/components/ui/button"; // Make sure this path is correct
 import { objectInfoState } from "./store/store.ts";
 import { sideBarInfoState } from "./store/store.ts";
+import Sidebar from "@/components/layout/Sidebar.vue";
 
 // 2. Declare the ref at the top level of the script, initialized to null.
 const threeContainer = ref<HTMLDivElement | null>(null);
