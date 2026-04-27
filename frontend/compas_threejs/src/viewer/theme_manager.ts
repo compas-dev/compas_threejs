@@ -59,7 +59,7 @@ export function getEffectiveBackgroundColor(): number {
   }
 
   if (themeState.backgroundOverrideMode === "light") {
-    return themeState.lightBackgroundColor;
+    return themeState.defaultBackgroundColor;
   }
 
   return themeState.defaultBackgroundColor;

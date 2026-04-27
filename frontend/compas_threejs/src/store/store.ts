@@ -19,9 +19,9 @@ export const pickerEnabled = reactive({ value: true });
 export const pickerMode = reactive({ value: "translate" });
 
 export const themeState = reactive({
-  lightBackgroundColor: 0xffffff,
+  lightBackgroundColor: 0xe6e6e6,
   darkBackgroundColor: 0x000000,
-  defaultBackgroundColor: 0xffffff,
+  defaultBackgroundColor: 0xe6e6e6,
   backgroundOverrideMode: "none" as "none" | BackgroundMode,
   backgroundMode: "light" as BackgroundMode,
 });
