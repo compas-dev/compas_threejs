@@ -1,6 +1,10 @@
 <template>
     <div class="display-tools-wrapper">
         <div class="toolbar-group">
+            <ToggleMovementButton
+                :active="!motionPaused"
+                @toggled="setMotionPaused"
+            />
             <SaveViewButton
                 :default-name="`View ${savedViews.length + 1}`"
                 @saved="handleSavedView"
@@ -19,6 +23,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import {
+    toggleObjectMotionPaused,
     applySavedView,
     captureCurrentView,
     saveCurrentCanvasImage,
@@ -26,15 +31,20 @@ import {
 } from "@/viewer/toolbar_actions";
 import { useKeyboardShortcuts } from "@/components/tools/useKeyboardShortcuts";
 import {
+    ToggleMovementButton,
     SaveViewButton,
     SavedViewsButton,
     SaveScreenshotButton,
 } from "./index";
 
 const SAVED_VIEWS_STORAGE_KEY = "compas_threejs_saved_views";
-
+const motionPaused = ref(false);
 const savedViews = ref<SavedView[]>([]);
 const selectedSavedViewId = ref<string>("");
+
+function setMotionPaused(paused: boolean) {
+    motionPaused.value = paused;
+}
 
 function persistSavedViews() {
     localStorage.setItem(SAVED_VIEWS_STORAGE_KEY, JSON.stringify(savedViews.value));
@@ -106,6 +116,9 @@ useKeyboardShortcuts({
     },
     f: () => {
         saveCurrentCanvasImage({ format: "png" });
+    },
+    " ": () => {
+        setMotionPaused(toggleObjectMotionPaused());
     },
 });
 

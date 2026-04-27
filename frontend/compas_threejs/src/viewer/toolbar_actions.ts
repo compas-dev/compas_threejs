@@ -1,5 +1,6 @@
 import { setCameraViewPreset } from "./scene_manager";
 import { setTransformMode } from "./picker";
+import { toggleObjectMotionPaused } from "@/communications/objectMotion";
 import {
   saveCurrentCanvasImage,
   applySavedView,
@@ -13,6 +14,7 @@ export {
   setCameraViewPreset,
 
   // Group 3: view management and export
+  toggleObjectMotionPaused,
   captureCurrentView,
   applySavedView,
   saveCurrentCanvasImage,

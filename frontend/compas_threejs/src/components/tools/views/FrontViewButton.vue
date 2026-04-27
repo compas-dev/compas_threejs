@@ -3,7 +3,7 @@
         <Tooltip>
             <TooltipTrigger>
                 <Button variant="secondary" size="icon" @click="handleClick">
-                    <Square />
+                    <Square class="button-icon front-icon" />
                 </Button>
             </TooltipTrigger>
             <TooltipContent class="z-1000" side="bottom">

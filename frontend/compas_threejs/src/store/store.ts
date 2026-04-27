@@ -15,3 +15,7 @@ export const sideBarInfoState = reactive({
 export const pickerEnabled = reactive({ value: true });
 
 export const pickerMode = reactive({ value: "translate" });
+
+export const motionState = reactive({
+  objectMotionPaused: false,
+});

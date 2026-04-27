@@ -33,6 +33,7 @@ Object transform shortcuts:
 - `W`: Move
 - `E`: Rotate
 - `R`: Scale
+- `spacebar`: Play/Pause object motion
 
 View shortcuts (numpad):
 - `5`: Top view
