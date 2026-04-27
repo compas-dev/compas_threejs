@@ -167,3 +167,18 @@ html {
     scrollbar-width: thin;
     scrollbar-color: #888 transparent;
 }
+
+.dark .theme,
+.theme.is-dark {
+    background: linear-gradient(
+        135deg,
+        rgba(17, 24, 39, 0.15) 0%,
+        rgba(17, 24, 39, 0.2) 100%
+    );
+    border-color: rgba(255, 255, 255, 0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow:
+        0 8px 32px 0 rgba(0, 0, 0, 0.5),
+        inset 0 0 15px rgba(255, 255, 255, 0.1);
+}

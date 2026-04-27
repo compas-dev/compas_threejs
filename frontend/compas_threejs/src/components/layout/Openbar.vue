@@ -1,5 +1,5 @@
 <template>
-    <div id="openbar" class="theme" :class="{ 'is-hidden': !isVisible }">
+    <div id="openbar" class="fixed-openbar theme" :class="{ 'is-hidden': !isVisible }">
         <!-- Dynamically render components from the store -->
         <div
             v-for="item in sidebarComponents"
@@ -77,23 +77,23 @@
             <ArrowBigLeftDash />
         </Button>
     </div>
-
-    <Button
-        variant="secondary"
-        size="icon"
-        class="mb-5"
-        @click="toggleSideBar()"
-        :class="{ 'is-hidden': !isVisible }"
-    >
-        <ArrowBigRightDash />
-    </Button>
+    <div>
+        <Button
+            variant="secondary"
+            size="icon"
+            class="mb-5"
+            @click="toggleSideBar()"
+            :class="{ 'is-hidden': !isVisible }"
+        >
+            <ArrowBigRightDash />
+        </Button>
+    </div>
 </template>
 
 <script setup lang="ts">
-import { watchEffect, toRaw } from "vue"; // 1. Import watchEffect and toRaw
+import { onBeforeUnmount, onMounted, ref } from "vue";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { ref } from "vue"; // Import ref
 import { sidebarComponents, handleAction } from "@/communications/sidebarStore";
 import { ArrowBigLeftDash, ArrowBigRightDash } from "lucide-vue-next";
 import {
@@ -110,10 +110,18 @@ function toggleSideBar() {
     isVisible.value = !isVisible.value;
 }
 
-document.addEventListener("keydown", (event) => {
+function handleKeyDown(event: KeyboardEvent) {
     if (event.key === "Q" || event.key === "q") {
         toggleSideBar();
     }
+}
+
+onMounted(() => {
+    document.addEventListener("keydown", handleKeyDown);
+});
+
+onBeforeUnmount(() => {
+    document.removeEventListener("keydown", handleKeyDown);
 });
 </script>
 
@@ -164,6 +172,11 @@ div#openbar.is-hidden {
     color: #333;
     padding: 0;
 }
+
+.slider-value {
+    color: #333;
+}
+
 Button.mb-4 {
     position: relative;
     margin: 0px;

@@ -4,6 +4,11 @@ import { initializePicker, PickHelper } from "./picker";
 import { pickerEnabled } from "@/store/store";
 import { SCENE_GEOMETRIES } from "./geometry_manager";
 import { GEOMETRY_MATERIALS } from "./material_manager";
+import {
+  getEffectiveBackgroundColor,
+  setDefaultBackgroundColor,
+  subscribeBackgroundMode,
+} from "./theme_manager";
 
 // Change the default UP vector for all objects
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
@@ -87,11 +92,20 @@ scene.add(axesHelper);
 const picker = new PickHelper();
 initializePicker(picker);
 
-// The Loop
-function animate() {
-  requestAnimationFrame(animate);
+function renderSceneFrame() {
   controls.update();
   renderer.render(scene, camera);
+}
+
+subscribeBackgroundMode(() => {
+  scene.background = new THREE.Color(getEffectiveBackgroundColor());
+  renderSceneFrame();
+});
+
+// The Loop
+function animate() {
+  renderSceneFrame();
+  requestAnimationFrame(animate);
 }
 animate();
 
@@ -180,6 +194,7 @@ function updateSceneBackgroundColor(data: { [key: string]: any }) {
   color = color.replace("#", "0x");
   color = parseInt(color);
   scene.background = new THREE.Color(color);
+  setDefaultBackgroundColor(color);
 }
 
 export function removeObjectFromScene(data: { [key: string]: any }) {
