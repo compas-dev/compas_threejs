@@ -33,7 +33,6 @@ Object transform shortcuts:
 - `W`: Move
 - `E`: Rotate
 - `R`: Scale
-- `spacebar`: Play/Pause object motion
 
 View shortcuts (numpad):
 - `5`: Top view
@@ -48,6 +47,7 @@ View shortcuts (numpad):
 - `0`: Bottom view
 
 Display shortcuts:
+- `spacebar`: Play/Pause object motion
 - `S`: Save current view
 - `F`: Save screenshot as image
 
