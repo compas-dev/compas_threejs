@@ -170,14 +170,19 @@ Button.mb-4 {
     margin-top: auto;
 }
 Button.mb-5 {
+    margin: 0px;
     position: fixed;
-    bottom: 22px;
+    bottom: 40px;
     left: 40px;
     z-index: 1; /* Ensure it appears above the sidebar */
     opacity: 0; /* Slightly transparent for better aesthetics */
+    display: flex;
+    visibility: hidden;
+    transition: visibility 1s;
 }
 
 Button.mb-5.is-hidden {
-    opacity: 1; /* Fully visible when the sidebar is hidden */
+    opacity: 1;
+    visibility: visible;
 }
 </style>
