@@ -3,6 +3,20 @@ import { themeState, type BackgroundMode } from "@/store/store";
 type BackgroundModeListener = (mode: BackgroundMode) => void;
 
 const backgroundModeListeners = new Set<BackgroundModeListener>();
+const DARK_LIGHTNESS_THRESHOLD = 0.5;
+
+function getColorLightness(color: number): number {
+  const r8 = (color >> 16) & 255;
+  const g8 = (color >> 8) & 255;
+  const b8 = color & 255;
+
+  // Lightweight threshold approximation for UI mode switching.
+  return (r8 + g8 + b8) / (3 * 255);
+}
+
+function isDarkBackgroundColor(color: number): boolean {
+  return getColorLightness(color) < DARK_LIGHTNESS_THRESHOLD;
+}
 
 function syncBackgroundModeState() {
   if (themeState.backgroundOverrideMode !== "none") {
@@ -10,10 +24,8 @@ function syncBackgroundModeState() {
     return;
   }
 
-  themeState.backgroundMode =
-    themeState.defaultBackgroundColor === themeState.darkBackgroundColor
-      ? "dark"
-      : "light";
+  // In neutral mode, light is the default.
+  themeState.backgroundMode = "light";
 }
 
 function notifyBackgroundModeChanged() {
@@ -49,7 +61,14 @@ export function getBackgroundMode(): BackgroundMode {
 }
 
 export function setDefaultBackgroundColor(color: number): void {
-  themeState.defaultBackgroundColor = color;
+  if (isDarkBackgroundColor(color)) {
+    themeState.darkBackgroundColor = color;
+    themeState.backgroundOverrideMode = "dark";
+  } else {
+    themeState.lightBackgroundColor = color;
+    themeState.backgroundOverrideMode = "light";
+  }
+
   notifyBackgroundModeChanged();
 }
 
@@ -58,9 +77,5 @@ export function getEffectiveBackgroundColor(): number {
     return themeState.darkBackgroundColor;
   }
 
-  if (themeState.backgroundOverrideMode === "light") {
-    return themeState.defaultBackgroundColor;
-  }
-
-  return themeState.defaultBackgroundColor;
+  return themeState.lightBackgroundColor;
 }

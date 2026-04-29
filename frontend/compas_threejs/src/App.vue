@@ -26,7 +26,6 @@ import { Moon, SunMedium } from "lucide-vue-next";
 import ObjectInfo from "./components/layout/ObjectInfo.vue";
 import { renderer } from "./viewer/scene_manager";
 import { initializeWebSocketConnection } from "./communications/communication";
-import { Button } from "@/components/ui/button"; // Make sure this path is correct
 import { sideBarInfoState, type BackgroundMode } from "./store/store.ts";
 import Sidebar from "@/components/layout/Sidebar.vue";
 import { subscribeBackgroundMode } from "./viewer/theme_manager";

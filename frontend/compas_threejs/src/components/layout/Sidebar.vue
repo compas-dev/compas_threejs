@@ -1,5 +1,5 @@
 <template>
-    <div id="sidebar" :class="{ 'is-dark': isDarkMode, dark: isDarkMode }">
+    <div id="sidebar" :class="{ 'is-dark': isDarkMode }">
         <Toolbar />
         <Openbar v-if="sideBarInfoState.isVisible" />
     </div>
@@ -21,7 +21,6 @@ onMounted(() => {
 
         // Popovers render in a portal outside Sidebar, so mirror dark mode globally.
         document.documentElement.classList.toggle("dark", isDarkMode.value);
-        document.body.classList.toggle("dark", isDarkMode.value);
     });
 });
 
@@ -32,7 +31,6 @@ onBeforeUnmount(() => {
     }
 
     document.documentElement.classList.remove("dark");
-    document.body.classList.remove("dark");
 });
 </script>
 
