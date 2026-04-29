@@ -9,6 +9,7 @@
                 v-if="showThemeIndicator"
                 :key="themeIndicatorKey"
                 class="theme-indicator"
+                :class="{ 'is-dark': themeIndicatorMode === 'dark' }"
                 aria-hidden="true"
             >
                 <Moon v-if="themeIndicatorMode === 'dark'" class="theme-indicator-icon" />
@@ -118,6 +119,13 @@ div.three-container {
     border: 1px solid color-mix(in oklab, var(--foreground) 14%, transparent);
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
     backdrop-filter: blur(10px);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-indicator.is-dark {
+    background: oklch(0.269 0 0);
+    border-color: oklch(1 0 0 / 15%);
 }
 
 .theme-indicator-icon {
@@ -128,20 +136,19 @@ div.three-container {
 
 .theme-indicator-enter-active,
 .theme-indicator-leave-active {
-    transition:
-        opacity 240ms ease,
-        transform 240ms ease;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .theme-indicator-enter-from,
 .theme-indicator-leave-to {
     opacity: 0;
-    transform: translateY(-6px) scale(0.92);
+    transform: translateX(150%);
 }
 
 .theme-indicator-enter-to,
 .theme-indicator-leave-from {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateX(0);
 }
 </style>
