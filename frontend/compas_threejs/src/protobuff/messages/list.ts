@@ -18,11 +18,7 @@ export class List {
     }
 
     get asList(): any[] {
-        let list: any[] = [];
-        for (let i = 0; i < this.data.items.length; i++) {
-            list.push(this.data.items[i].value);
-        }
-        return list;
+        return this.data.items.map(item => item.value);
     }
 }
 
