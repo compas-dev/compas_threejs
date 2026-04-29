@@ -29,6 +29,7 @@ viz.start()
 The viewer includes a toolbar and quick keyboard shortcuts for navigation and interaction.
 
 Object transform shortcuts:
+- `P`: Enable/Disable selection
 - `W`: Move
 - `E`: Rotate
 - `R`: Scale
@@ -44,6 +45,10 @@ View shortcuts (numpad):
 - `7`: Back-left perspective
 - `9`: Back-right perspective
 - `0`: Bottom view
+
+Display shortcuts:
+- `S`: Save current view
+- `F`: Save screenshot as image
 
 UI shortcuts:
 - `I`: Show/hide the metadata bar

@@ -462,6 +462,21 @@ class Viewer:
         message = {"dispatch": "remove_object", "guid": str(obj_id)}
         self._send_dictionary_message(message)
 
+    # ---- METADATA ----------------------------------------------------------------------------
+    def update_metadata(self, metadata):
+        """
+        Updates the metadata associated with a geometry object in the viewer.
+
+        Parameters
+        ----------
+        metadata : compas_threejs.metadata.Metadata
+            The metadata object containing updated information. It must have a `guid` attribute that matches the geometry's GUID.
+        """
+        for key, value in self._metadata_registry.items():
+            if value.guid == metadata.guid:
+                self._metadata_registry[key] = metadata
+                break
+
     # ---- TEXT --------------------------------------------------------------------------------
 
     def add_text(self, text, material=None):
