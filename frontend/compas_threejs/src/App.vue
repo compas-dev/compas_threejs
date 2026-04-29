@@ -15,7 +15,7 @@
                 <SunMedium v-else class="theme-indicator-icon" />
             </div>
         </Transition>
-        <ObjectInfo v-if="objectInfoState.isVisible" />
+        <ObjectInfo />
     </div>
 </template>
 
@@ -25,7 +25,8 @@ import { Moon, SunMedium } from "lucide-vue-next";
 import ObjectInfo from "./components/layout/ObjectInfo.vue";
 import { renderer } from "./viewer/scene_manager";
 import { initializeWebSocketConnection } from "./communications/communication";
-import { objectInfoState, type BackgroundMode } from "./store/store.ts";
+import { Button } from "@/components/ui/button"; // Make sure this path is correct
+import { sideBarInfoState, type BackgroundMode } from "./store/store.ts";
 import Sidebar from "@/components/layout/Sidebar.vue";
 import { subscribeBackgroundMode } from "./viewer/theme_manager";
 
