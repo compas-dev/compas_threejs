@@ -4,7 +4,7 @@
         <Openbar v-if="sideBarInfoState.isVisible" /> -->
         <Sidebar />
         <div ref="threeContainer" class="three-container"></div>
-        <ObjectInfo v-if="objectInfoState.isVisible" />
+        <ObjectInfo />
     </div>
 </template>
 
@@ -17,7 +17,6 @@ import ObjectInfo from "./components/layout/ObjectInfo.vue";
 import { renderer } from "./viewer/scene_manager";
 import { initializeWebSocketConnection } from "./communications/communication";
 import { Button } from "@/components/ui/button"; // Make sure this path is correct
-import { objectInfoState } from "./store/store.ts";
 import { sideBarInfoState } from "./store/store.ts";
 import Sidebar from "@/components/layout/Sidebar.vue";
 
