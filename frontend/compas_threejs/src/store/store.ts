@@ -1,6 +1,6 @@
 import { reactive } from "vue";
 
-export const objectInfoState = reactive({
+export const objectBarData = reactive({
     title: "Object Infos",
     isVisible: false,
     data: null,
