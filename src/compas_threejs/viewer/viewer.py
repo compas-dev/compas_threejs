@@ -4,7 +4,7 @@ import threading
 import time
 import webbrowser
 from enum import IntEnum
-from typing import Union
+from typing import Optional, Union
 from uuid import uuid4
 
 import compas_pb
@@ -567,6 +567,48 @@ class Viewer:
         # register the function with the id
         self._buttons[element.guid] = element.action
         self._send_dictionary_message(element.as_dict())
+
+    # ---- DISPLAYS ----------------------------------------------------------------------------------
+
+    def display_message(self, message: str, description: Optional[str] = None):
+        self._send_dictionary_message(
+            {
+                "dispatch": "display_message",
+                "type": "message",
+                "message": message,
+                "description": description,
+            }
+        )
+
+    def display_warning(self, message: str, description: Optional[str] = None):
+        self._send_dictionary_message(
+            {
+                "dispatch": "display_message",
+                "type": "warning",
+                "message": message,
+                "description": description,
+            }
+        )
+
+    def display_error(self, message: str, description: Optional[str] = None):
+        self._send_dictionary_message(
+            {
+                "dispatch": "display_message",
+                "type": "error",
+                "message": message,
+                "description": description,
+            }
+        )
+
+    def display_success(self, message: str, description: Optional[str] = None):
+        self._send_dictionary_message(
+            {
+                "dispatch": "display_message",
+                "type": "success",
+                "message": message,
+                "description": description,
+            }
+        )
 
     # ---- MESSAGES ----------------------------------------------------------------------------------
 

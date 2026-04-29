@@ -1,4 +1,5 @@
 <template>
+    <Toaster position="top-center" richColors />
     <div class="app-container">
         <!-- <Toolbar />
         <Openbar v-if="sideBarInfoState.isVisible" /> -->
@@ -19,6 +20,8 @@ import { initializeWebSocketConnection } from "./communications/communication";
 import { Button } from "@/components/ui/button"; // Make sure this path is correct
 import { sideBarInfoState } from "./store/store.ts";
 import Sidebar from "@/components/layout/Sidebar.vue";
+import { Toaster } from "@/components/ui/sonner";
+import "vue-sonner/style.css";
 
 // 2. Declare the ref at the top level of the script, initialized to null.
 const threeContainer = ref<HTMLDivElement | null>(null);
@@ -52,5 +55,9 @@ div.three-container {
     flex: 1; /* Take up remaining space */
     position: fixed; /* Ensure it can contain absolutely positioned children if needed */
     overflow: hidden; /* Hide any overflow from the Three.js canvas */
+}
+
+Toaster {
+    z-index: 1000;
 }
 </style>
