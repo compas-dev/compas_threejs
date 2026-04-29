@@ -98,7 +98,7 @@ class Viewer:
         # Registry
         self.queued_messages = []
         self._buttons = dict()
-        self._geoemetry_registry = dict()
+        self._geometry_registry = dict()
         self._metadata_registry = dict()
         self._object_actions_registry = dict()
 
@@ -434,7 +434,7 @@ class Viewer:
             self.queued_messages.append((binary_data, obj_id))
 
         # save the geometry for furture reference
-        self._geoemetry_registry[str(obj_id)] = geometry
+        self._geometry_registry[str(obj_id)] = geometry
 
     def add_geometries(self, geometries: list, material=None):
         for geo in geometries:
@@ -669,7 +669,7 @@ class Viewer:
         console.log(
             f"[blue]Received object action callback from frontend. Action ID: {action_id}, Object ID: {object_id}[/blue]"
         )
-        object = self._geoemetry_registry.get(object_id)
+        object = self._geometry_registry.get(object_id)
         if action_id and action_id in self._buttons:
             function = self._buttons[action_id]
             if function.__code__.co_argcount == 2:

@@ -42,6 +42,7 @@ import { Slider } from "@/components/ui/slider";
 import { hideObjectInfo } from "@/communications/objectInfo";
 import { handleObjectAction } from "@/communications/objectInfo";
 import { handleAction } from "@/communications/sidebarStore";
+import { onMounted, onUnmounted } from "vue";
 
 const geoInformation = objectInfoState.data
     ? Object.fromEntries(
@@ -61,7 +62,13 @@ function pickerEnabler() {
     }
 }
 
-window.addEventListener("mousemove", pickerEnabler);
+onMounted(() => {
+    window.addEventListener("mousemove", pickerEnabler);
+});
+
+onUnmounted(() => {
+    window.removeEventListener("mousemove", pickerEnabler);
+});
 </script>
 
 <style scoped>

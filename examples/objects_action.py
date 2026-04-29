@@ -19,7 +19,7 @@ class App:
             color=Color(0.8, 0.8, 0.8), metalness=0.5, roughness=0.5
         )
 
-    def add_geomtries(self):
+    def add_geometries(self):
 
         blue_button = Button("Make it blue", action=self.make_it_blue)
         red_button = Button("Make it red", action=self.make_it_red)
@@ -87,5 +87,5 @@ class App:
 
 
 app = App()
-app.add_geomtries()
+app.add_geometries()
 app.start()

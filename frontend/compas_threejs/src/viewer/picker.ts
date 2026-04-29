@@ -211,7 +211,7 @@ export class PickHelper {
 
 function resetObjectInfoPanel() {
     objectInfoManager({} as any);
-    objectActionsState.length = 0; // Clear actions
+    objectActionsState.splice(0);
 }
 
 function getCanvasRelativePosition(event: MouseEvent) {
