@@ -10,6 +10,7 @@ viz = Viewer()
 viz.world_axis = False
 viz.picker = True
 viz.default_lighting = True
+viz.show_edges = True
 
 
 U = 3
