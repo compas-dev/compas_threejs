@@ -93,6 +93,7 @@ class Viewer:
         self._camera_zoom = 1
         self._camera_position = Point(8, -15, 15)
         self._camera_target = Point(0, 0, 0)
+        self._show_edges = False
 
         # Registry
         self.queued_messages = []
@@ -258,6 +259,21 @@ class Viewer:
             "x": point.x,
             "y": point.y,
             "z": point.z,
+        }
+        self._send_dictionary_message(dict)
+
+    @property
+    def show_edges(self) -> bool:
+        """Get or set if edges of the mesh should be shown."""
+        return self._show_edges
+
+    @show_edges.setter
+    def show_edges(self, value: bool):
+        self._show_edges = value
+        dict = {
+            "dispatch": "scene",
+            "type": "show_edges",
+            "show": value,
         }
         self._send_dictionary_message(dict)
 
