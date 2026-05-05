@@ -124,6 +124,14 @@ h1.section-title {
         -1px -1px 3px 0px oklch(1 0 0 /0.9) inset;
 }
 
+.dark h1.section-title {
+    background: rgba(40, 40, 40, 0.6);
+    box-shadow:
+        1px 1px 3px 0px rgba(0,0,0,0.6) inset,
+        -1px -1px 3px 0px rgba(255,255,255,0.06) inset;
+    color: rgba(255,255,255,0.95);
+}
+
 div.data-entry {
     margin-bottom: 8px;
     padding: 0 0 0 10px;

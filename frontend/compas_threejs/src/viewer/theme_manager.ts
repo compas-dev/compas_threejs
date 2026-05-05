@@ -32,6 +32,10 @@ function notifyBackgroundModeChanged() {
   syncBackgroundModeState();
   const mode = themeState.backgroundMode;
   backgroundModeListeners.forEach((listener) => listener(mode));
+
+  if (typeof document !== "undefined" && document.documentElement) {
+    document.documentElement.classList.toggle("dark", mode === "dark");
+  }
 }
 
 export function subscribeBackgroundMode(listener: BackgroundModeListener) {

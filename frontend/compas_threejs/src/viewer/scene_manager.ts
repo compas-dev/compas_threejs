@@ -6,9 +6,9 @@ import { SCENE_GEOMETRIES } from "./geometry_manager";
 import { GEOMETRY_MATERIALS } from "./material_manager";
 import { showEdges } from "@/store/store";
 import {
-  getEffectiveBackgroundColor,
-  setDefaultBackgroundColor,
-  subscribeBackgroundMode,
+    getEffectiveBackgroundColor,
+    setDefaultBackgroundColor,
+    setBackgroundMode,
 } from "./theme_manager";
 
 // Change the default UP vector for all objects
@@ -96,13 +96,12 @@ initializePicker(picker);
 
 function renderSceneFrame() {
   controls.update();
-  renderer.render(scene, camera);
+    // Ensure background color is up-to-date on every frame so
+    // theme/background changes are reflected automatically.
+    scene.background = new THREE.Color(getEffectiveBackgroundColor());
+    renderer.render(scene, camera);
 }
 
-subscribeBackgroundMode(() => {
-  scene.background = new THREE.Color(getEffectiveBackgroundColor());
-  renderSceneFrame();
-});
 
 // The Loop
 function animate() {
@@ -191,6 +190,10 @@ export function sceneManager(data: { [key: string]: any }) {
         case "show_edges":
             showEdges.value = data.show.value;
             break;
+            case "background_mode":
+                // mode.value expected to be 'dark' or 'light'
+                setBackgroundMode(data.mode.value);
+                break;
         default:
             console.warn("Unknown scene type:", data.type.value);
     }
