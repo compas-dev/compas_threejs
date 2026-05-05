@@ -16,6 +16,8 @@ export const pickerEnabled = reactive({ value: true });
 
 export const pickerMode = reactive({ value: "translate" });
 
+export const showEdges = reactive({ value: false });
+
 export const motionState = reactive({
   objectMotionPaused: false,
 });
