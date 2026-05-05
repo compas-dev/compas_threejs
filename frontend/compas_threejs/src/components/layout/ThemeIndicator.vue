@@ -15,12 +15,12 @@
 <script setup lang="ts">
 import { ref, watch, onBeforeUnmount, onMounted } from "vue";
 import { Moon, SunMedium } from "lucide-vue-next";
-import { themeState } from "@/store/store";
+import { theme } from "@/store/store";
 import type { BackgroundMode } from "@/store/store";
 
-// Use the centralized reactive `themeState` so components don't manage DOM class toggles.
+// Use the centralized reactive `theme` so components don't manage DOM class toggles.
 const showThemeIndicator = ref(false);
-const themeIndicatorMode = ref<BackgroundMode>(themeState.backgroundMode);
+const themeIndicatorMode = ref<BackgroundMode>(theme.value);
 const themeIndicatorKey = ref(0);
 
 let themeIndicatorTimer: ReturnType<typeof window.setTimeout> | null = null;
@@ -42,7 +42,7 @@ function triggerThemeIndicator(mode: BackgroundMode) {
 }
 
 const stopWatch = watch(
-    () => themeState.backgroundMode,
+    () => theme.value,
     (mode) => {
         if (isInitialMode) {
             themeIndicatorMode.value = mode;

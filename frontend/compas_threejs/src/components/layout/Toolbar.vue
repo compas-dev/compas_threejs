@@ -53,13 +53,11 @@ import DisplayGroup from "@/components/tools/display/DisplayGroup.vue";
 
 :deep(Button) {
     &:hover {
-        box-shadow: 3px 3px 10px 0px rgba(0, 0, 0, 0.3);
+        box-shadow: var(--toolbar-button-hover-shadow);
     }
 
     &.active {
-        box-shadow:
-            3px 3px 2px 1px rgba(0, 0, 0, 0.5) inset,
-            -3px -3px 2px 2px rgba(255, 255, 255) inset;
+        box-shadow: var(--toolbar-button-active-shadow);
     }
 }
 </style>

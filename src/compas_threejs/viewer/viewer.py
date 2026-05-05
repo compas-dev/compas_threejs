@@ -226,7 +226,7 @@ class Viewer:
     def dark_mode(self, value: bool):
         self._dark_mode = bool(value)
         dict = {
-            "dispatch": "scene",
+            "dispatch": "theme",
             "type": "background_mode",
             "mode": "dark" if self._dark_mode else "light",
         }

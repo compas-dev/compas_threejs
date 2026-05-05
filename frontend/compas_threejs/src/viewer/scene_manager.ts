@@ -8,7 +8,8 @@ import { showEdges } from "@/store/store";
 import {
     getEffectiveBackgroundColor,
     setDefaultBackgroundColor,
-    setBackgroundMode,
+    subscribeBackgroundMode,
+    handleThemeMessage,
 } from "./theme_manager";
 
 // Change the default UP vector for all objects
@@ -95,18 +96,23 @@ const picker = new PickHelper();
 initializePicker(picker);
 
 function renderSceneFrame() {
-  controls.update();
-    // Ensure background color is up-to-date on every frame so
-    // theme/background changes are reflected automatically.
-    scene.background = new THREE.Color(getEffectiveBackgroundColor());
+    controls.update();
     renderer.render(scene, camera);
 }
 
+function applyBackgroundFromTheme() {
+    scene.background = new THREE.Color(getEffectiveBackgroundColor());
+}
+
+subscribeBackgroundMode(() => {
+    applyBackgroundFromTheme();
+    renderSceneFrame();
+});
 
 // The Loop
 function animate() {
-  renderSceneFrame();
-  requestAnimationFrame(animate);
+    requestAnimationFrame(animate);
+    renderSceneFrame();
 }
 animate();
 
@@ -151,6 +157,9 @@ function getViewPresetFromKey(code: string): ViewPreset | null {
 }
 
 export function sceneManager(data: { [key: string]: any }) {
+    if (handleThemeMessage(data)) {
+        return;
+    }
     switch (data.type.value) {
         case "background_color":
             updateSceneBackgroundColor(data);
@@ -190,10 +199,6 @@ export function sceneManager(data: { [key: string]: any }) {
         case "show_edges":
             showEdges.value = data.show.value;
             break;
-            case "background_mode":
-                // mode.value expected to be 'dark' or 'light'
-                setBackgroundMode(data.mode.value);
-                break;
         default:
             console.warn("Unknown scene type:", data.type.value);
     }
@@ -203,8 +208,7 @@ function updateSceneBackgroundColor(data: { [key: string]: any }) {
     let color = data.color.value;
     color = color.replace("#", "0x");
     color = parseInt(color);
-    scene.background = new THREE.Color(color);
-  setDefaultBackgroundColor(color);
+        setDefaultBackgroundColor(color);
 }
 
 export function removeObjectFromScene(data: { [key: string]: any }) {

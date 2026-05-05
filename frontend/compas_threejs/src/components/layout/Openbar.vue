@@ -91,7 +91,8 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import { ref } from "vue";
+import { useEventListener } from "@vueuse/core";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { sidebarComponents, handleAction } from "@/communications/sidebarStore";
@@ -116,13 +117,7 @@ function handleKeyDown(event: KeyboardEvent) {
     }
 }
 
-onMounted(() => {
-    document.addEventListener("keydown", handleKeyDown);
-});
-
-onBeforeUnmount(() => {
-    document.removeEventListener("keydown", handleKeyDown);
-});
+useEventListener(document, "keydown", handleKeyDown);
 </script>
 
 <style scoped>

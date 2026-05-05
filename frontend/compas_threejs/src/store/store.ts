@@ -20,9 +20,6 @@ export const pickerMode = reactive({ value: "translate" });
 
 export const showEdges = reactive({ value: false });
 
-export const themeState = reactive({
-  lightBackgroundColor: 0xe6e6e6,
-  darkBackgroundColor: 0x000000,
-  backgroundOverrideMode: "none" as "none" | BackgroundMode,
-  backgroundMode: "light" as BackgroundMode,
+export const theme = reactive({
+    value: "light" as BackgroundMode,
 });

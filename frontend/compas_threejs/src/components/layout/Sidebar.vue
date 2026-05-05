@@ -29,51 +29,7 @@ div#sidebar {
     min-width: 250px;
 }
 
-.dark div#sidebar :deep(.toolbar-group) {
-    border-right-color: rgba(255, 255, 255, 0.1);
-}
-
 div#sidebar :deep(.toolbar) {
     color: var(--foreground);
-}
-
-.dark div#sidebar :deep(.toolbar Button) {
-    background: oklch(0.269 0 0);
-    border-color: oklch(1 0 0 / 15%);
-    color: oklch(0.985 0 0);
-}
-
-.dark div#sidebar :deep(.toolbar Button:hover) {
-    background: oklch(0.33 0 0);
-    border-color: oklch(1 0 0 / 28%);
-}
-
-.dark div#sidebar :deep(.toolbar Button.active) {
-    box-shadow:
-        3px 3px 2px 1px rgba(0, 0, 0, 0.65) inset,
-        -2px -2px 2px 1px rgba(255, 255, 255, 0.12) inset;
-}
-
-.dark div#sidebar :deep(.saved-views-select) {
-    background: oklch(0.33 0 0);
-    border-color: oklch(1 0 0 / 15%);
-    color: oklch(0.985 0 0);
-}
-
-.dark div#sidebar :deep(.saved-views-select:hover) {
-    background: oklch(0.33 0 0);
-}
-
-.dark div#sidebar :deep(.saved-view-delete) {
-    border-color: oklch(1 0 0 / 15%);
-    color: oklch(0.985 0 0);
-}
-
-.dark div#sidebar :deep(#openbar .dynamic-label) {
-    color: rgba(255, 255, 255, 0.85);
-}
-
-.dark div#sidebar :deep(#openbar .slider-value) {
-    color: rgba(255, 255, 255, 0.9);
 }
 </style>
