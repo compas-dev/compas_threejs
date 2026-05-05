@@ -18,6 +18,8 @@ export const pickerEnabled = reactive({ value: true });
 
 export const pickerMode = reactive({ value: "translate" });
 
+export const showEdges = reactive({ value: false });
+
 export const themeState = reactive({
   lightBackgroundColor: 0xe6e6e6,
   darkBackgroundColor: 0x000000,
