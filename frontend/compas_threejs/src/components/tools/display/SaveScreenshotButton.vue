@@ -40,7 +40,7 @@
                                 type="number"
                                 min="64"
                                 max="8192"
-                                class="col-span-2 h-8 rounded-lg border border-input bg-secondary px-3 py-1 text-sm text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                                class="themed-number col-span-2 h-8 rounded-lg border border-input bg-secondary px-3 py-1 text-sm text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                             />
                         </div>
 
@@ -52,7 +52,7 @@
                                 type="number"
                                 min="64"
                                 max="8192"
-                                class="col-span-2 h-8 rounded-lg border border-input bg-secondary px-3 py-1 text-sm text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
+                                class="themed-number col-span-2 h-8 rounded-lg border border-input bg-secondary px-3 py-1 text-sm text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                             />
                         </div>
 
@@ -145,3 +145,21 @@ watch(isOpen, (open) => {
     }
 });
 </script>
+
+<style scoped>
+.themed-number {
+    color: var(--foreground);
+    caret-color: var(--foreground);
+    accent-color: var(--foreground);
+    color-scheme: light;
+}
+
+.dark .themed-number {
+    color-scheme: dark;
+}
+
+.themed-number::-webkit-inner-spin-button,
+.themed-number::-webkit-outer-spin-button {
+    color: inherit;
+}
+</style>
