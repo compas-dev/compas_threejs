@@ -10,6 +10,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 authors = [
   { name = "Eric Gozzi", email = "eric.gozzi@arch.ethz.ch" },
+  { name = "Nicolas Benjamin Boscoboinik", email = "boscoboinik@arch.ethz.ch" }
 ]
 keywords = ["compas", "viewer", "threejs", "protobuf"]
 dependencies = [

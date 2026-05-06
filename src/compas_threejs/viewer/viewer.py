@@ -3,6 +3,8 @@ import json
 import threading
 import time
 import webbrowser
+from enum import IntEnum
+from typing import Union
 from uuid import uuid4
 
 import compas_pb
@@ -16,6 +18,21 @@ from compas_threejs.lights.sunlight import Sunlight
 from .server import broadcast, get_server_loop, run_server, stop_server
 
 console = Console()
+
+
+class CameraView(IntEnum):
+    """Numpad-compatible camera view presets."""
+
+    BOTTOM = 0
+    FRONT_LEFT = 1
+    FRONT = 2
+    FRONT_RIGHT = 3
+    LEFT = 4
+    TOP = 5
+    RIGHT = 6
+    BACK_LEFT = 7
+    BACK = 8
+    BACK_RIGHT = 9
 
 
 class Viewer:
@@ -74,11 +91,15 @@ class Viewer:
         self._picker = True
         self._camera_fov = 60
         self._camera_zoom = 1
+        self._camera_position = Point(8, -15, 15)
+        self._camera_target = Point(0, 0, 0)
+        self._show_edges = False
 
         # Registry
         self.queued_messages = []
         self._buttons = dict()
         self._geoemetry_registry = dict()
+        self._metadata_registry = dict()
 
     def __enter__(self):
         return self
@@ -205,6 +226,93 @@ class Viewer:
         }
         self._send_dictionary_message(dict)
 
+    @property
+    def camera_position(self) -> Point:
+        """Set or get the camera position in world coordinates."""
+        return self._camera_position
+
+    @camera_position.setter
+    def camera_position(self, value):
+        point = value if isinstance(value, Point) else Point(*value)
+        self._camera_position = point
+        dict = {
+            "dispatch": "scene",
+            "type": "camera_position",
+            "x": point.x,
+            "y": point.y,
+            "z": point.z,
+        }
+        self._send_dictionary_message(dict)
+
+    @property
+    def camera_target(self) -> Point:
+        """Set or get the camera target point used by orbit controls."""
+        return self._camera_target
+
+    @camera_target.setter
+    def camera_target(self, value):
+        point = value if isinstance(value, Point) else Point(*value)
+        self._camera_target = point
+        dict = {
+            "dispatch": "scene",
+            "type": "camera_target",
+            "x": point.x,
+            "y": point.y,
+            "z": point.z,
+        }
+        self._send_dictionary_message(dict)
+
+    @property
+    def show_edges(self) -> bool:
+        """Get or set if edges of the mesh should be shown."""
+        return self._show_edges
+
+    @show_edges.setter
+    def show_edges(self, value: bool):
+        self._show_edges = value
+        dict = {
+            "dispatch": "scene",
+            "type": "show_edges",
+            "show": value,
+        }
+        self._send_dictionary_message(dict)
+
+    def set_view(self, view: Union[CameraView, Point, tuple, list], target=None):
+        """Set camera view from a preset or explicit point.
+
+        Parameters
+        ----------
+        view : CameraView | Point | tuple | list
+            Either a CameraView preset or an XYZ camera position.
+        target : Point | tuple | list, optional
+            Target point for the camera to look at when `view` is an explicit position.
+            If omitted, the current camera target is kept.
+        """
+        if isinstance(view, (Point, tuple, list)):
+            camera_point = view if isinstance(view, Point) else Point(*view)
+            self.camera_position = camera_point
+            if target is not None:
+                target_point = target if isinstance(target, Point) else Point(*target)
+                self.camera_target = target_point
+            return
+
+        if not isinstance(view, CameraView):
+            raise ValueError(
+                "Invalid view. Use CameraView for presets or Point/xyz for position"
+            )
+
+        dict = {
+            "dispatch": "scene",
+            "type": "camera_view",
+            "preset": view.name.lower(),
+        }
+        self._send_dictionary_message(dict)
+
+    def _send_default_view(self):
+        self.camera_position = self.camera_position
+        self.camera_target = self.camera_target
+        console.log("[green]Default view sent![/green]")
+
     # ---- SERVER ---------------------------------------------------------------------------------
 
     def _initialize_server(self):
@@ -228,6 +336,7 @@ class Viewer:
         # Update viewer settings
         self.background_color = self.background_color
         self.camera_damping = self.camera_damping
+        self._send_default_view()
 
         # Send default lighting
         if self._default_lighting:
@@ -281,7 +390,7 @@ class Viewer:
 
     # ---- GEOMETRY --------------------------------------------------------------------------------
 
-    def add_geometry(self, geometry, material=None):
+    def add_geometry(self, geometry, material=None, metadata=None):
         """
         Adds a geometry object to the viewer. Optionally, a material can be associated with the geometry.
 
@@ -313,6 +422,9 @@ class Viewer:
             else:
                 self.queued_messages.append((material_data, str(uuid4())))
 
+        if metadata:
+            self._metadata_registry[str(obj_id)] = metadata
+
         # send geometry
         if loop:
             asyncio.run_coroutine_threadsafe(broadcast(binary_data, obj_id), loop)
@@ -342,6 +454,26 @@ class Viewer:
             asyncio.run_coroutine_threadsafe(broadcast(binary_data, obj_id), loop)
         else:
             self.queued_messages.append((binary_data, obj_id))
+
+    def remove_object(self, geometry):
+        obj_id = geometry.guid
+        message = {"dispatch": "remove_object", "guid": str(obj_id)}
+        self._send_dictionary_message(message)
+
+    # ---- METADATA ----------------------------------------------------------------------------
+    def update_metadata(self, metadata):
+        """
+        Updates the metadata associated with a geometry object in the viewer.
+
+        Parameters
+        ----------
+        metadata : compas_threejs.metadata.Metadata
+            The metadata object containing updated information. It must have a `guid` attribute that matches the geometry's GUID.
+        """
+        for key, value in self._metadata_registry.items():
+            if value.guid == metadata.guid:
+                self._metadata_registry[key] = metadata
+                break
 
     def transform(self, geometry, matrix):
         """
@@ -471,6 +603,11 @@ class Viewer:
         element : compas_threejs.ui.UIElement
             The UI element to be added to the viewer. It must have a unique GUID and an
         """
+        if element.action is None:
+            console.log(
+                f"[yellow]Warning: UI element with GUID {element.guid} has no associated action.[/yellow]"
+            )
+
         # register the function with the id
         self._buttons[element.guid] = element.action
         self._send_dictionary_message(element.as_dict())
@@ -506,11 +643,21 @@ class Viewer:
         action_id = action_dictionary.get("action")
         console.log(f"[blue]Received message from frontend: {action_dictionary}[/blue]")
         value = action_dictionary.get("value")
+
+        callable_function = self._buttons[action_id]
+
+        if not callable(callable_function):
+            console.log(
+                f"[yellow]Warning: The action associated with ID {action_id} did not return a callable function.[/yellow]"
+            )
+            return
+
         if value is not None and action_id and action_id in self._buttons:
             console.log(f"[blue]Value associated with the action: {value}[/blue]")
-            self._buttons[action_id](value[0])
+            self._buttons[action_id](value)
         elif action_id and action_id in self._buttons:
             self._buttons[action_id]()
+
         else:
             print(f"Unrecognized action or missing handler for action ID: {action_id}")
 
@@ -519,16 +666,15 @@ class Viewer:
         console.log(
             f"[blue]Received object picked message from frontend. Object ID: {object_id}[/blue]"
         )
-        geometry = self._geoemetry_registry.get(object_id)
-        if not geometry:
-            return
-        message = dict()
-        try:
-            for key in geometry.__data__.keys():
-                message[key] = str(geometry.__data__[key])
-            message["dispatch"] = "object_infos"
-            self._send_dictionary_message(message)
-        except Exception as e:
-            console.log(
-                f"[yellow]Error while processing picked object information: {e}[/yellow]"
-            )
+        metadata = self._metadata_registry.get(object_id)
+        if metadata:
+            metadata["dispatch"] = "object_infos"
+            console.log(f"[blue]Metadata associated with the object: {metadata}[/blue]")
+            self._send_dictionary_message(metadata.metadata)
+        else:
+            metadata = {
+                "dispatch": "object_infos",
+                "No metadata associated with this object.": "",
+            }
+            self._send_dictionary_message(metadata)
+        return

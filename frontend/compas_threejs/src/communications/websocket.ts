@@ -1,4 +1,3 @@
-import { infoState } from "../store/store";
 import { updateObjectInfo, showObjectInfo, hideObjectInfo } from "./objectInfo";
 import { trajectoryState } from "../store/store"; //
 
