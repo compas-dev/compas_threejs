@@ -1,6 +1,6 @@
 <template>
     <div class="toolbar theme">
-        <h1 class="text-lg font-bold">COMPAS ThreeJs</h1>
+        <h1 class="text-lg font-bold" :class="{ dark: theme.value === 'dark' }">COMPAS ThreeJs</h1>
         <TransformGroup />
         <ViewGroup />
         <DisplayGroup />
@@ -11,6 +11,7 @@
 import TransformGroup from "@/components/tools/transforms/TransformGroup.vue";
 import ViewGroup from "@/components/tools/views/ViewGroup.vue";
 import DisplayGroup from "@/components/tools/display/DisplayGroup.vue";
+import { theme } from "@/store/store";
 </script>
 
 <style scoped>
@@ -59,5 +60,8 @@ import DisplayGroup from "@/components/tools/display/DisplayGroup.vue";
     &.active {
         box-shadow: var(--toolbar-button-active-shadow);
     }
+}
+h1 {
+    color: var(--foreground);
 }
 </style>

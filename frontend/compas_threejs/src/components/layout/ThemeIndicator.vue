@@ -2,7 +2,6 @@
     <Transition name="theme-indicator">
         <div
             v-if="showThemeIndicator"
-            :key="themeIndicatorKey"
             class="theme-indicator"
             aria-hidden="true"
         >
@@ -21,14 +20,12 @@ import type { BackgroundMode } from "@/store/store";
 // Use the centralized reactive `theme` so components don't manage DOM class toggles.
 const showThemeIndicator = ref(false);
 const themeIndicatorMode = ref<BackgroundMode>(theme.value);
-const themeIndicatorKey = ref(0);
 
 let themeIndicatorTimer: ReturnType<typeof window.setTimeout> | null = null;
 let isInitialMode = true;
 
 function triggerThemeIndicator(mode: BackgroundMode) {
     themeIndicatorMode.value = mode;
-    themeIndicatorKey.value += 1;
     showThemeIndicator.value = true;
 
     if (themeIndicatorTimer) {
@@ -47,6 +44,10 @@ const stopWatch = watch(
         if (isInitialMode) {
             themeIndicatorMode.value = mode;
             isInitialMode = false;
+            return;
+        }
+
+        if (mode === themeIndicatorMode.value) {
             return;
         }
 

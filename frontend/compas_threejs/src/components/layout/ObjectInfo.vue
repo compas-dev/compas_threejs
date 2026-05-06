@@ -7,7 +7,12 @@
         >
             <div id="data-container">
                 <div class="metadata item">
-                    <h1 class="text-lg font-bold section-title">METADATA</h1>
+                    <h1
+                        class="text-lg font-bold section-title"
+                        :class="{ dark: theme.value === 'dark' }"
+                    >
+                        METADATA
+                    </h1>
                     <div
                         v-for="(value, key) in objectBarData.data"
                         :key="key"
@@ -46,6 +51,7 @@ import { objectBarData } from "../../store/store";
 import { Button } from "@/components/ui/button";
 import { hideObjectInfo } from "@/communications/objectInfo";
 import { ArrowBigLeftDash, ArrowBigRightDash } from "lucide-vue-next";
+import { theme } from "@/store/store";
 
 const geoInformation = objectBarData.data
     ? Object.fromEntries(
@@ -124,12 +130,12 @@ h1.section-title {
         -1px -1px 3px 0px oklch(1 0 0 /0.9) inset;
 }
 
-.dark h1.section-title {
-    background: rgba(40, 40, 40, 0.6);
+h1.section-title {
+    background: color-mix(in oklab, var(--background) 80%, transparent);
     box-shadow:
-        1px 1px 3px 0px rgba(0,0,0,0.6) inset,
-        -1px -1px 3px 0px rgba(255,255,255,0.06) inset;
-    color: rgba(255,255,255,0.95);
+        1px 1px 3px 0px var(--theme-inset-shadow) inset,
+        -1px -1px 3px 0px var(--theme-inset-highlight) inset;
+    color: var(--foreground);
 }
 
 div.data-entry {

@@ -29,7 +29,4 @@ div#sidebar {
     min-width: 250px;
 }
 
-div#sidebar :deep(.toolbar) {
-    color: var(--foreground);
-}
 </style>

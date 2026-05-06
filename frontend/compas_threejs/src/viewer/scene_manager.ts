@@ -1,16 +1,11 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { initializePicker, PickHelper } from "./picker";
-import { pickerEnabled } from "@/store/store";
+import { pickerEnabled, theme } from "@/store/store";
 import { SCENE_GEOMETRIES } from "./geometry_manager";
 import { GEOMETRY_MATERIALS } from "./material_manager";
 import { showEdges } from "@/store/store";
-import {
-    getEffectiveBackgroundColor,
-    setDefaultBackgroundColor,
-    subscribeBackgroundMode,
-    handleThemeMessage,
-} from "./theme_manager";
+import { goDarkMode, goLightMode, setUserBackgroundColor } from "./theme_manager";
 
 // Change the default UP vector for all objects
 THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
@@ -95,24 +90,18 @@ scene.add(axesHelper);
 const picker = new PickHelper();
 initializePicker(picker);
 
-function renderSceneFrame() {
-    controls.update();
-    renderer.render(scene, camera);
+// Ensure the initial scene background matches the current theme value.
+if (theme.value === "dark") {
+    goDarkMode();
+} else {
+    goLightMode();
 }
-
-function applyBackgroundFromTheme() {
-    scene.background = new THREE.Color(getEffectiveBackgroundColor());
-}
-
-subscribeBackgroundMode(() => {
-    applyBackgroundFromTheme();
-    renderSceneFrame();
-});
 
 // The Loop
 function animate() {
     requestAnimationFrame(animate);
-    renderSceneFrame();
+    controls.update();
+    renderer.render(scene, camera);
 }
 animate();
 
@@ -157,9 +146,6 @@ function getViewPresetFromKey(code: string): ViewPreset | null {
 }
 
 export function sceneManager(data: { [key: string]: any }) {
-    if (handleThemeMessage(data)) {
-        return;
-    }
     switch (data.type.value) {
         case "background_color":
             updateSceneBackgroundColor(data);
@@ -208,7 +194,7 @@ function updateSceneBackgroundColor(data: { [key: string]: any }) {
     let color = data.color.value;
     color = color.replace("#", "0x");
     color = parseInt(color);
-        setDefaultBackgroundColor(color);
+    setUserBackgroundColor(color);
 }
 
 export function removeObjectFromScene(data: { [key: string]: any }) {

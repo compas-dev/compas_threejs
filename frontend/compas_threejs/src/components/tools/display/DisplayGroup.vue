@@ -22,7 +22,7 @@ import {
     applySavedView,
     captureCurrentView,
     saveCurrentCanvasImage,
-    toggleBackgroundMode,
+    toggleTheme,
     type SavedView,
 } from "@/viewer/toolbar_actions";
 import { useKeyboardShortcuts } from "@/components/tools/useKeyboardShortcuts";
@@ -109,7 +109,7 @@ useKeyboardShortcuts({
         saveCurrentCanvasImage({ format: "png" });
     },
     d: () => {
-        toggleBackgroundMode();
+        toggleTheme();
     },
 });
 

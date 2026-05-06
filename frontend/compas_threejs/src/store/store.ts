@@ -1,7 +1,5 @@
 import { reactive } from "vue";
 
-export type BackgroundMode = "light" | "dark";
-
 export const objectBarData = reactive({
     title: "Object Infos",
     isVisible: false,
@@ -21,5 +19,5 @@ export const pickerMode = reactive({ value: "translate" });
 export const showEdges = reactive({ value: false });
 
 export const theme = reactive({
-    value: "light" as BackgroundMode,
+    value: "light",
 });

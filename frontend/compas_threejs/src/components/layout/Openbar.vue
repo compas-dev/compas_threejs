@@ -7,8 +7,8 @@
             class="dynamic-item"
         >
             <!-- Add a label if it exists -->
-            <label v-if="item.label" class="dynamic-label">{{
-                item.label
+            <label v-if="item.label" class="dynamic-label" :class="{ dark: theme.value === 'dark' }">{{
+            item.label
             }}</label>
 
             <!-- Render a Button -->
@@ -104,6 +104,7 @@ import {
     NumberFieldIncrement,
     NumberFieldInput,
 } from "@/components/ui/number-field";
+import { theme } from "@/store/store";
 
 const isVisible = ref(true);
 
@@ -164,12 +165,12 @@ div#openbar.is-hidden {
 .dynamic-label {
     font-weight: 500;
     font-size: 15px;
-    color: #333;
+    color: var(--foreground);
     padding: 0;
 }
 
 .slider-value {
-    color: #333;
+    color: var(--foreground);
 }
 
 Button.mb-4 {

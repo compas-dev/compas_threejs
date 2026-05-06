@@ -1,5 +1,5 @@
 <template>
-    <div class="app-container">
+    <div class="app-container" :class="{ dark: theme.value === 'dark' }">
         <!-- <Toolbar />
         <Openbar v-if="sideBarInfoState.isVisible" /> -->
         <Sidebar />
@@ -16,6 +16,7 @@ import { renderer } from "./viewer/scene_manager";
 import { initializeWebSocketConnection } from "./communications/communication";
 import Sidebar from "@/components/layout/Sidebar.vue";
 import ThemeIndicator from "@/components/layout/ThemeIndicator.vue";
+import { theme } from "@/store/store";
 
 const threeContainer = ref<HTMLDivElement | null>(null);
 
