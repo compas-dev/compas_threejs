@@ -475,6 +475,34 @@ class Viewer:
                 self._metadata_registry[key] = metadata
                 break
 
+    def transform(self, geometry, matrix):
+        """
+        Updates only the 4x4 transformation matrix of an existing object.
+
+        Parameters
+        ----------
+        geometry : compas.geometry.Geometry | str
+            The geometry object to be transformed, or its unique GUID string.
+        matrix : compas.geometry.Transformation | list
+            The 4x4 transformation matrix.
+        """
+        obj_id = getattr(geometry, 'guid', geometry)
+
+        if hasattr(matrix, 'list'):
+            flat_matrix = matrix.list
+        else:
+            if isinstance(matrix[0], (list, tuple)):
+                flat_matrix = [item for sublist in matrix for item in sublist]
+            else:
+                flat_matrix = list(matrix)
+
+        message = {
+            "dispatch": "transform",
+            "guid": str(obj_id),
+            "matrix": flat_matrix
+        }
+        self._send_dictionary_message(message)
+
     # ---- TEXT --------------------------------------------------------------------------------
 
     def add_text(self, text, material=None):

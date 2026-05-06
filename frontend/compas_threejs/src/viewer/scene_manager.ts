@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { initializePicker, PickHelper } from "./picker";
-import { pickerEnabled } from "@/store/store";
+import { pickerEnabled, trajectoryState } from "@/store/store";
 import { SCENE_GEOMETRIES } from "./geometry_manager";
 import { GEOMETRY_MATERIALS } from "./material_manager";
 import { showEdges } from "@/store/store";
@@ -89,11 +89,57 @@ scene.add(axesHelper);
 const picker = new PickHelper();
 initializePicker(picker);
 
-// The Loop
+// ==========================================
+// --- DYNAMIC CAMERA ENGINE ---
+// ==========================================
+let trackingTarget: THREE.Object3D | null = null;
+let followOffset: THREE.Vector3 | null = null;
+let previousMode: string = 'free';
+
 function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    renderer.render(scene, camera);
+  requestAnimationFrame(animate);
+  
+  const currentMode = trajectoryState.cameraMode;
+
+  if (currentMode !== 'free') {
+    // 1. Find the TCP Triad (Red Cylinder) if we haven't already
+    if (!trackingTarget) {
+      scene.traverse((child) => {
+        if (child instanceof THREE.Mesh && child.material && child.material.color) {
+          if (child.material.color.r === 1 && child.material.color.g === 0 && child.material.color.b === 0) {
+            trackingTarget = child;
+          }
+        }
+      });
+    }
+
+    if (trackingTarget) {
+      const targetPos = new THREE.Vector3();
+      trackingTarget.getWorldPosition(targetPos);
+
+      if (currentMode === 'look') {
+        controls.target.lerp(targetPos, 0.08);
+        followOffset = null;
+      } 
+
+      else if (currentMode === 'follow') {
+        if (previousMode !== 'follow' || !followOffset) {
+          followOffset = new THREE.Vector3().subVectors(camera.position, controls.target);
+        }
+        controls.target.lerp(targetPos, 0.08);
+        const desiredCameraPos = new THREE.Vector3().addVectors(controls.target, followOffset);
+        camera.position.lerp(desiredCameraPos, 0.08);
+      }
+    }
+  } else {
+    trackingTarget = null; 
+    followOffset = null;
+  }
+
+  previousMode = currentMode;
+
+  controls.update();
+  renderer.render(scene, camera);
 }
 animate();
 

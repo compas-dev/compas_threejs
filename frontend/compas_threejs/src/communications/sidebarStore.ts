@@ -2,6 +2,7 @@ import { reactive } from "vue";
 import { sendData } from "@/communications/communication";
 import type { Dictionary } from "../protobuff/messages";
 import { sideBarInfoState } from "../store/store";
+import { trajectoryState } from "../store/store";
 
 // Define a type for the components we want to add.
 // This can be expanded later (e.g., to include different component types).
@@ -70,7 +71,10 @@ export function uiManager(data: { [key: string]: any }) {
             addNumberField(data);
             sideBarInfoState.isVisible = true;
             break;
-        default:
+        case "timeline":
+            setupTimeline(data);
+            break;
+    default:
             console.warn("Unknown component type:", type);
     }
 }
@@ -123,6 +127,18 @@ export function addNumberField(data: { [key: string]: any }) {
     sidebarComponents.push(newNumberField);
 }
 
+// --- Function to add a Timeline ---
+export function setupTimeline(data: { [key: string]: any }) {
+  trajectoryState.id = data.guid.value;
+  trajectoryState.totalTime = data.total_time.value;
+  trajectoryState.step = data.step.value;
+  
+  if (data.value && data.value.value !== undefined) {
+    trajectoryState.currentTime = [data.value.value];
+  }
+  trajectoryState.isVisible = true;
+  console.log("⏱️ Timeline intercepted! Total time:", trajectoryState.totalTime);
+}
 // --- Updated Action Handler ---
 // It now accepts a payload, which will be the slider's value.
 export function handleAction(actionGuid: string, value?: any) {

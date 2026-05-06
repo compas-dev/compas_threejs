@@ -67,6 +67,7 @@ export function geometryManager(obj: any) {
 
         // INITIAL CREATION
         // Since it's already a Mesh, we can just add it
+        newMesh.name = guid;
         scene.add(newMesh);
         SCENE_GEOMETRIES[guid] = newMesh;
 
@@ -99,15 +100,15 @@ function abstractGeometryManager(obj: any) {
         return;
     }
 
-    // GEOMETRY
-    if (geometry instanceof THREE.Line || geometry instanceof THREE.Points) {
-        geometry.material = material;
-    } else if (
-        geometry instanceof THREE.ArrowHelper ||
-        geometry instanceof THREE.PlaneHelpers
-    ) {
-        geometry.setColor(material.color);
-    }
+  // GEOMETRY
+  if (geometry instanceof THREE.Line || geometry instanceof THREE.Points) {
+    geometry.material = material;
+  } else if (
+    geometry instanceof THREE.ArrowHelper ||
+    geometry instanceof THREE.PlaneHelper
+  ) {
+    geometry.setColor(material.color);
+  }
 
     scene.add(geometry);
     SCENE_GEOMETRIES[guid] = geometry;
@@ -128,10 +129,10 @@ export function updateMaterial(
         return;
     }
 
-    if (
-        object instanceof THREE.ArrowHelper ||
-        object instanceof THREE.PlaneHelpers
-    ) {
-        object.setColor(material.color);
-    }
+  if (
+    object instanceof THREE.ArrowHelper ||
+    object instanceof THREE.PlaneHelper
+  ) {
+    object.setColor(material.color);
+  }
 }

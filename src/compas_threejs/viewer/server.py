@@ -20,15 +20,22 @@ viewer_instance = None
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     clients.add(websocket)
-    current_state = scene_state.copy()
-    for guid, buffer in current_state.items():
-        await websocket.send_bytes(buffer)
+    try:
+        current_state = scene_state.copy()
+        for guid, buffer in current_state.items():
+            await websocket.send_bytes(buffer)
+    except (WebSocketDisconnect, ConnectionAbortedError):
+        clients.discard(websocket)
+        return
     try:
         while True:
             data = await websocket.receive_bytes()
             if viewer_instance:
                 viewer_instance.on_message(data)
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, ConnectionAbortedError):
+        clients.discard(websocket)
+    except Exception as e:
+        print(f"Unexpected error: {e}")
         clients.discard(websocket)
 
 

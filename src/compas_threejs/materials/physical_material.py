@@ -15,6 +15,7 @@ class PhysicalMaterial(Material):
         emissive: Color = Color.black(),
         emissive_intensity: float = 0,
         flat_shading: bool = False,
+        opacity: float = 1.0,
         wireframe: bool = False,
         anisotropy: float = 0.0,
         anisotropy_rotation: float = 0.0,
@@ -44,6 +45,7 @@ class PhysicalMaterial(Material):
         self.emissive = emissive
         self.emissive_intensity = emissive_intensity
         self.flat_shading = flat_shading
+        self.opacity = opacity
         self.wireframe = wireframe
         self.anisotropy = anisotropy
         self.anisotropy_rotation = anisotropy_rotation
@@ -79,6 +81,7 @@ class PhysicalMaterial(Material):
             "emissive": self.emissive.hex,
             "emissive_intensity": self.emissive_intensity,
             "flat_shading": self.flat_shading,
+            "opacity": self.opacity,
             "wireframe": self.wireframe,
             "anisotropy": self.anisotropy,
             "anisotropy_rotation": self.anisotropy_rotation,
@@ -247,7 +250,7 @@ class PhysicalMaterial(Material):
                 "iridescence_thickness_range minimum value must not exceed maximum value"
             )
         self._iridescence_thickness_range = value
-
+        
     @property
     def reflectivity(self) -> float:
         """Degree of reflectivity, from 0.0 to 1.0. Default is 0.5, which corresponds to an index-of-refraction of 1.5.

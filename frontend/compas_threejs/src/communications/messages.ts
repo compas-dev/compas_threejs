@@ -1,6 +1,7 @@
 import { scene } from "../viewer/scene_builder";
 import { unpackMessageToGeometry, unpackMessage } from "../protobuff/analyzers";
 import type { AnyData } from "../protobuff/generated/compas_pb/data/message";
+import { transformManager } from "../viewer/transform_manager";
 import { Dictionary } from "../protobuff/messages";
 import * as THREE from "three";
 import { lightManager } from "../viewer/light_manager";
@@ -51,7 +52,10 @@ function analyzeDictionary(dictionary: Dictionary) {
         case "remove_object":
             removeObjectFromScene(data);
             break;
-        default:
+        case "transform":
+            transformManager(data);
+            break;
+    default:
             console.warn("Unknown dispatch value:", data.dispatch.value);
     }
 }

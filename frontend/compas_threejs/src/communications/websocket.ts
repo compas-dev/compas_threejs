@@ -1,4 +1,5 @@
 import { updateObjectInfo, showObjectInfo, hideObjectInfo } from "./objectInfo";
+import { trajectoryState } from "../store/store"; //
 
 const WEBSOCKET_URL = "ws://localhost:8765"; // Default WebSocket server URL for Python backend
 

@@ -15,8 +15,9 @@ class LineMaterial(GenericMaterial):
         The color of the line. Default is blue.
     """
 
-    def __init__(self, color: Color = Color.blue(), linewidth: int = 2):
+    def __init__(self, color: Color = Color.blue(), linewidth: int = 2, opacity: float = 1.0):
         self.color = color
+        self.opacity = opacity
         self._geometry_guid = ""
         self.guid = str(uuid4())
 
@@ -26,5 +27,6 @@ class LineMaterial(GenericMaterial):
             "type": "line_material",
             "geometry_guid": self._geometry_guid,
             "color": self.color.hex,
+            "opacity": self.opacity,
             "guid": self.guid,
         }

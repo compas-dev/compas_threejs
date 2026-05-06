@@ -35,6 +35,7 @@ class Material(GenericMaterial):
         emissive: Color = Color.black(),
         emissive_intensity: float = 0,
         flat_shading: bool = False,
+        opacity: float = 1,
         wireframe: bool = False,
         **kwargs,
     ):
@@ -46,6 +47,7 @@ class Material(GenericMaterial):
         self.emissive_intensity = emissive_intensity
         self.flat_shading = flat_shading
         self.wireframe = wireframe
+        self.opacity = opacity
         self._geometry_guid = ""
         self.guid = str(uuid4())
 
@@ -60,6 +62,7 @@ class Material(GenericMaterial):
             "emissive": self.emissive.hex,
             "emissive_intensity": self.emissive_intensity,
             "flat_shading": self.flat_shading,
+            "opacity": self.opacity,
             "wireframe": self.wireframe,
             "guid": self.guid,
         }
@@ -123,6 +126,16 @@ class Material(GenericMaterial):
         if not isinstance(value, bool):
             raise TypeError("flat_shading must be a boolean")
         self._flat_shading = value
+
+    @property
+    def opacity(self) -> float:
+        return self._opacity
+
+    @opacity.setter
+    def opacity(self, value: float):
+        if not (0.0 <= value <= 1.0):
+            raise ValueError("Opacity must be between 0 and 1")
+        self._opacity = value
 
     @property
     def wireframe(self) -> bool:

@@ -6,6 +6,8 @@
         <div ref="threeContainer" class="three-container"></div>
         <ObjectInfo />
     </div>
+
+    <TrajectoryTimeline />
 </template>
 
 <script setup lang="ts">
@@ -13,6 +15,7 @@
 import { ref, onMounted } from "vue";
 import Toolbar from "./components/layout/Toolbar.vue";
 import Openbar from "./components/layout/Openbar.vue";
+import TrajectoryTimeline from './components/layout/TrajectoryTimeline.vue'; 
 import ObjectInfo from "./components/layout/ObjectInfo.vue";
 import { renderer } from "./viewer/scene_manager";
 import { initializeWebSocketConnection } from "./communications/communication";
