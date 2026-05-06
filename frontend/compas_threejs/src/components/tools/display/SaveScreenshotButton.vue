@@ -220,5 +220,7 @@ watch(isOpen, (open) => {
     line-height: 1;
     color: var(--destructive-foreground, #fff);
     background: color-mix(in srgb, var(--destructive) 80%, transparent);
+    cursor: default;
+    user-select: none;
 }
 </style>
