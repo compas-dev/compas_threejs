@@ -9,7 +9,7 @@
                     @click="handleClick"
                 >
                     <span class="button-icon">
-                        <Cuboid
+                        <Box
                             :size="16"
                             :stroke-width="2"
                             aria-hidden="true"
@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import { Cuboid } from "lucide-vue-next";
+import { Box } from "lucide-vue-next";
 import { setCameraViewPreset } from "@/viewer/toolbar_actions";
 import { Button } from "@/components/ui/button";
 
