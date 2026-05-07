@@ -3,7 +3,7 @@
         <Tooltip>
             <TooltipTrigger>
                 <Button variant="secondary" size="icon" @click="handleClick">
-                    <Square />
+                    <House />
                 </Button>
             </TooltipTrigger>
             <TooltipContent class="z-1000" side="bottom">
@@ -14,7 +14,7 @@
 </template>
 
 <script setup lang="ts">
-import { Square } from "lucide-vue-next";
+import { House } from "lucide-vue-next";
 import { setCameraViewPreset } from "@/viewer/toolbar_actions";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
