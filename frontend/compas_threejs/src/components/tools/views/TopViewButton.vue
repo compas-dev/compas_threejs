@@ -8,7 +8,7 @@
                     class="toolbar-button"
                     @click="handleClick"
                 >
-                    <RectangleVertical />
+                    <Plane />
                 </Button>
             </TooltipTrigger>
             <TooltipContent class="z-1000" side="bottom">
@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import { RectangleVertical } from "lucide-vue-next";
+import { Plane } from "lucide-vue-next";
 import { setCameraViewPreset } from "@/viewer/toolbar_actions";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";

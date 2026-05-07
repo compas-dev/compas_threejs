@@ -9,7 +9,7 @@
                     @click="handleClick"
                 >
                     <span class="button-icon">
-                        <RectangleHorizontal
+                        <Rabbit
                             :size="16"
                             :stroke-width="2"
                             aria-hidden="true"
@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import { RectangleHorizontal } from "lucide-vue-next";
+import { Rabbit } from "lucide-vue-next";
 import { setCameraViewPreset } from "@/viewer/toolbar_actions";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
