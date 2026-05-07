@@ -5,9 +5,8 @@
                 <Button
                     variant="secondary"
                     size="icon"
-                    :class="{ active, disabled }"
+                    :class="{ active }"
                     @click="handleClick"
-                    :disabled="disabled"
                 >
                     <Play v-if="active" class="button-icon" :size="16" />
                     <Pause v-else class="button-icon" :size="16" />
@@ -34,7 +33,6 @@ import {
 
 const props = defineProps<{
     active: boolean;
-    disabled?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -42,10 +40,6 @@ const emit = defineEmits<{
 }>();
 
 function handleClick() {
-    if (props.disabled) {
-        return;
-    }
-
     const paused = toggleObjectMotionPaused();
     emit("toggled", paused);
 }

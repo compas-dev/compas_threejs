@@ -2,8 +2,8 @@
     <div class="display-tools-wrapper">
         <div class="toolbar-group">
             <ToggleMovementButton
-                :active="motionAvailable ? !motionPaused : false"
-                :disabled="!motionAvailable"
+                v-if="motionAvailable"
+                :active="!motionPaused"
                 @toggled="setMotionPaused"
             />
             <SaveViewButton
