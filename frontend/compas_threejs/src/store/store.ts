@@ -20,4 +20,7 @@ export const showEdges = reactive({ value: false });
 
 export const theme = reactive({ value: "light" });
 
-export const motionState = reactive({ objectMotionPaused: false });
+export const motionState = reactive({
+    objectMotionPaused: false,
+    objectMotionAvailable: false,
+});

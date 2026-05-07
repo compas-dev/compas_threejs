@@ -5,8 +5,9 @@
                 <Button
                     variant="secondary"
                     size="icon"
-                    :class="{ active }"
+                    :class="{ active, disabled }"
                     @click="handleClick"
+                    :disabled="disabled"
                 >
                     <Play v-if="active" class="button-icon" :size="16" />
                     <Pause v-else class="button-icon" :size="16" />
@@ -31,8 +32,9 @@ import {
     TooltipProvider,
 } from "@/components/ui/tooltip";
 
-defineProps<{
+const props = defineProps<{
     active: boolean;
+    disabled?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -40,6 +42,10 @@ const emit = defineEmits<{
 }>();
 
 function handleClick() {
+    if (props.disabled) {
+        return;
+    }
+
     const paused = toggleObjectMotionPaused();
     emit("toggled", paused);
 }

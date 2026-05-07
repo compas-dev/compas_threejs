@@ -12,6 +12,7 @@ import { uiManager } from "./sidebarStore";
 import { textManager } from "../viewer/text_manager";
 import { objectInfoManager } from "./objectInfo";
 import { removeObjectFromScene } from "../viewer/scene_manager";
+import { objectMotionManager } from "./objectMotion";
 
 const SCENE_GEOMETRIES: { [guid: string]: THREE.Object3D } = {};
 
@@ -54,6 +55,9 @@ function analyzeDictionary(dictionary: Dictionary) {
             return;
         case "remove_object":
             removeObjectFromScene(data);
+            break;
+        case "object_motion":
+            objectMotionManager(data);
             break;
         default:
             console.warn("Unknown dispatch value:", data.dispatch.value);

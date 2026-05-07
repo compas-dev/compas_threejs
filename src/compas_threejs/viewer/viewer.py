@@ -119,6 +119,7 @@ class Viewer:
     @loop.setter
     def loop(self, callback: callable):
         self._loop = callback
+        self._send_object_motion_state()
 
     @property
     def loop_interval(self) -> float:
@@ -360,6 +361,7 @@ class Viewer:
         # Ensure frontend receives current dark mode state on start
         self.dark_mode = self._dark_mode
         self.camera_damping = self.camera_damping
+        self._send_object_motion_state()
         self._send_default_view()
 
         # Send default lighting
@@ -411,6 +413,14 @@ class Viewer:
         else:
             # Queue the message if the server is not running yet
             self.queued_messages.append((binary_data, ""))
+
+    def _send_object_motion_state(self):
+        message = {
+            "dispatch": "object_motion",
+            "type": "availability",
+            "enabled": bool(self._loop),
+        }
+        self._send_dictionary_message(message)
 
     # ---- GEOMETRY --------------------------------------------------------------------------------
 

@@ -2,7 +2,8 @@
     <div class="display-tools-wrapper">
         <div class="toolbar-group">
             <ToggleMovementButton
-                :active="!motionPaused"
+                :active="motionAvailable ? !motionPaused : false"
+                :disabled="!motionAvailable"
                 @toggled="setMotionPaused"
             />
             <SaveViewButton
@@ -21,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import {
     toggleObjectMotionPaused,
     applySavedView,
@@ -31,6 +32,7 @@ import {
     type SavedView,
 } from "@/viewer/toolbar_actions";
 import { useKeyboardShortcuts } from "@/components/tools/useKeyboardShortcuts";
+import { motionState } from "@/store/store";
 import {
     ToggleMovementButton,
     SaveViewButton,
@@ -39,12 +41,13 @@ import {
 } from "./index";
 
 const SAVED_VIEWS_STORAGE_KEY = "compas_threejs_saved_views";
-const motionPaused = ref(false);
+const motionPaused = computed(() => motionState.objectMotionPaused);
+const motionAvailable = computed(() => motionState.objectMotionAvailable);
 const savedViews = ref<SavedView[]>([]);
 const selectedSavedViewId = ref<string>("");
 
 function setMotionPaused(paused: boolean) {
-    motionPaused.value = paused;
+    motionState.objectMotionPaused = paused;
 }
 
 function persistSavedViews() {
@@ -122,6 +125,10 @@ useKeyboardShortcuts({
         toggleTheme();
     },
     " ": () => {
+        if (!motionAvailable.value) {
+            return;
+        }
+
         setMotionPaused(toggleObjectMotionPaused());
     },
 });
