@@ -1,5 +1,9 @@
 <template>
-    <div id="openbar" class="fixed-openbar theme" :class="{ 'is-hidden': !isVisible }">
+    <div
+        id="openbar"
+        class="fixed-openbar theme"
+        :class="{ 'is-hidden': !isVisible }"
+    >
         <!-- Dynamically render components from the store -->
         <div
             v-for="item in sidebarComponents"
@@ -7,9 +11,12 @@
             class="dynamic-item"
         >
             <!-- Add a label if it exists -->
-            <label v-if="item.label" class="dynamic-label" :class="{ dark: theme.value === 'dark' }">{{
-            item.label
-            }}</label>
+            <label
+                v-if="item.label"
+                class="dynamic-label"
+                :class="{ dark: theme.value === 'dark' }"
+                >{{ item.label }}</label
+            >
 
             <!-- Render a Button -->
             <Button
@@ -77,15 +84,15 @@
             <ArrowBigLeftDash />
         </Button>
     </div>
-        <Button
-            variant="secondary"
-            size="icon"
-            class="mb-5"
-            @click="toggleSideBar()"
-            :class="{ 'is-hidden': !isVisible }"
-        >
-            <ArrowBigRightDash />
-        </Button>
+    <Button
+        variant="secondary"
+        size="icon"
+        class="mb-5"
+        @click="toggleSideBar()"
+        :class="{ 'is-hidden': !isVisible }"
+    >
+        <ArrowBigRightDash />
+    </Button>
 </template>
 
 <script setup lang="ts">
@@ -103,6 +110,9 @@ import {
     NumberFieldInput,
 } from "@/components/ui/number-field";
 import { theme } from "@/store/store";
+import { useHover } from "@/composables/useHover";
+import { watchEffect } from "vue";
+import { blockPicker, pickerEnabled } from "../../store/store";
 
 const isVisible = ref(true);
 
@@ -114,6 +124,12 @@ document.addEventListener("keydown", (event) => {
     if (event.key === "Q" || event.key === "q") {
         toggleSideBar();
     }
+});
+
+const { isHovered } = useHover("openbar");
+
+watchEffect(() => {
+    blockPicker.value = isHovered.value;
 });
 </script>
 

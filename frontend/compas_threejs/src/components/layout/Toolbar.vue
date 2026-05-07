@@ -1,6 +1,8 @@
 <template>
-    <div class="toolbar theme">
-        <h1 class="text-lg font-bold" :class="{ dark: theme.value === 'dark' }">COMPAS ThreeJs</h1>
+    <div class="toolbar theme" id="toolbar">
+        <h1 class="text-lg font-bold" :class="{ dark: theme.value === 'dark' }">
+            COMPAS ThreeJs
+        </h1>
         <TransformGroup />
         <ViewGroup />
         <DisplayGroup />
@@ -12,6 +14,15 @@ import TransformGroup from "@/components/tools/transforms/TransformGroup.vue";
 import ViewGroup from "@/components/tools/views/ViewGroup.vue";
 import DisplayGroup from "@/components/tools/display/DisplayGroup.vue";
 import { theme } from "@/store/store";
+import { blockPicker, pickerEnabled } from "../../store/store";
+import { useHover } from "@/composables/useHover";
+import { watchEffect } from "vue";
+
+const { isHovered } = useHover("toolbar");
+
+watchEffect(() => {
+    blockPicker.value = isHovered.value;
+});
 </script>
 
 <style scoped>
