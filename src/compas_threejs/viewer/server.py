@@ -3,7 +3,7 @@ import threading
 from pathlib import Path
 
 import uvicorn
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 
 app = FastAPI()
@@ -30,6 +30,13 @@ async def websocket_endpoint(websocket: WebSocket):
                 viewer_instance.on_message(data)
     except WebSocketDisconnect:
         clients.discard(websocket)
+
+
+@app.post("/broadcast")
+async def broadcast_message(request: Request):
+    binary_data = await request.body()
+    await broadcast(binary_data, "")
+    return {"status": "message broadcasted"}
 
 
 # 2. CATCH-ALL STATIC FILES LAST
