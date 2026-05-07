@@ -6,6 +6,8 @@ export const objectBarData = reactive({
     data: null,
 });
 
+export const objectActionsState = reactive([]);
+
 export const sideBarInfoState = reactive({
     title: "Sidebar Infos",
     isVisible: false,
@@ -16,6 +18,7 @@ export const pickerEnabled = reactive({ value: true });
 
 export const pickerMode = reactive({ value: "translate" });
 
+export const blockPicker = reactive({ value: false });
 export const showEdges = reactive({ value: false });
 
 export const theme = reactive({ value: "light" });
