@@ -16,7 +16,7 @@ from compas_threejs.viewer import Viewer
 from compas_threejs.metadata import Metadata
 
 viz = Viewer()
-viz.background_color = Color.black()
+viz.dark_mode = True
 viz.default_lighting = False
 viz.set_view(Point(10, -20, 12), target=Point(0, 0, 0))
 

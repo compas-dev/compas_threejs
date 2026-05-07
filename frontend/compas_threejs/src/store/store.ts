@@ -17,3 +17,7 @@ export const pickerEnabled = reactive({ value: true });
 export const pickerMode = reactive({ value: "translate" });
 
 export const showEdges = reactive({ value: false });
+
+export const theme = reactive({
+    value: "light",
+});
