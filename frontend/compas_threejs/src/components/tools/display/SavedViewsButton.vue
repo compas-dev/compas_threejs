@@ -24,7 +24,7 @@
                 <div class="flex h-8 items-stretch overflow-hidden rounded-lg border border-input bg-secondary">
                     <select
                         v-model="selectedId"
-                        class="h-full flex-1 border-0 bg-transparent px-3 py-1 text-sm text-secondary-foreground outline-none"
+                        class="h-full min-w-0 flex-1 truncate border-0 bg-secondary px-3 py-1 text-sm text-secondary-foreground outline-none"
                         @change="handleSelect"
                     >
                         <option v-if="views.length === 0" disabled value="">
@@ -147,5 +147,10 @@ onBeforeUnmount(() => {
     box-shadow:
         2px 2px 2px rgba(0, 0, 0, 0.35) inset,
         -1px -1px 1px rgba(255, 255, 255, 0.2) inset;
+}
+
+select option {
+    background: var(--secondary);
+    color: var(--secondary-foreground);
 }
 </style>

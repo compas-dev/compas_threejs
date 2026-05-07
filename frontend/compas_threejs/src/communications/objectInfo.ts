@@ -1,13 +1,13 @@
-import { objectInfoState } from "../store/store";
 import { objectActionsState } from "../store/store";
 import { sendData } from "@/communications/communication";
+import { objectBarData } from "../store/store";
 
 export function showObjectInfo() {
-    objectInfoState.isVisible = true;
+    objectBarData.isVisible = true;
 }
 
 export function hideObjectInfo() {
-    objectInfoState.isVisible = false;
+    objectBarData.isVisible = false;
 }
 
 export function updateObjectInfo(newInfo: {
@@ -15,13 +15,13 @@ export function updateObjectInfo(newInfo: {
     description: string;
     status: string;
 }) {
-    objectInfoState.title = newInfo.title;
+    objectBarData.title = newInfo.title;
 }
 
 export function objectInfoManager(data: { [key: string]: any } | null) {
     delete data["dispatch"];
     if (data != null) {
-        objectInfoState.data = data;
+        objectBarData.data = data;
     }
 }
 
@@ -54,7 +54,7 @@ export function handleObjectAction(action: { [key: string]: any }, value: any) {
 
 document.addEventListener("keydown", (event) => {
     if (event.key === "I" || event.key === "i") {
-        if (objectInfoState.isVisible) {
+        if (objectBarData.isVisible) {
             hideObjectInfo();
         } else {
             showObjectInfo();

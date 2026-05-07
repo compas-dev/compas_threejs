@@ -86,6 +86,7 @@ class Viewer:
         self._loop_interval = 0.01
         self._loop = None
         self._background_color = Color(0.9, 0.9, 0.9)
+        self._dark_mode = False
         self._camera_damping = True
         self._default_lighting = True
         self._world_axis = True
@@ -94,6 +95,7 @@ class Viewer:
         self._camera_zoom = 1
         self._camera_position = Point(8, -15, 15)
         self._camera_target = Point(0, 0, 0)
+        self._show_edges = False
 
         # Registry
         self.queued_messages = []
@@ -213,6 +215,26 @@ class Viewer:
         self._send_dictionary_message(dict)
 
     @property
+    def dark_mode(self) -> bool:
+        """Get or set dark mode for the viewer. When set, the frontend will switch theme.
+
+        Example:
+            viz.dark_mode = True
+            viz.dark_mode = False
+        """
+        return self._dark_mode
+
+    @dark_mode.setter
+    def dark_mode(self, value: bool):
+        self._dark_mode = bool(value)
+        dict = {
+            "dispatch": "theme",
+            "type": "background_mode",
+            "mode": "dark" if self._dark_mode else "light",
+        }
+        self._send_dictionary_message(dict)
+
+    @property
     def camera_zoom(self) -> float:
         """Set or get the camera zoom level."""
         return self._camera_zoom
@@ -260,6 +282,21 @@ class Viewer:
             "x": point.x,
             "y": point.y,
             "z": point.z,
+        }
+        self._send_dictionary_message(dict)
+
+    @property
+    def show_edges(self) -> bool:
+        """Get or set if edges of the mesh should be shown."""
+        return self._show_edges
+
+    @show_edges.setter
+    def show_edges(self, value: bool):
+        self._show_edges = value
+        dict = {
+            "dispatch": "scene",
+            "type": "show_edges",
+            "show": value,
         }
         self._send_dictionary_message(dict)
 
@@ -321,6 +358,8 @@ class Viewer:
 
         # Update viewer settings
         self.background_color = self.background_color
+        # Ensure frontend receives current dark mode state on start
+        self.dark_mode = self._dark_mode
         self.camera_damping = self.camera_damping
         self._send_default_view()
 

@@ -107,6 +107,7 @@ export class PickHelper {
             throw new Error("PickHelper has already been initialized.");
         }
         this.raycaster = new THREE.Raycaster();
+        this.raycaster.layers.set(0);
         this.pickedObject = null;
         this.setupEventListeners();
         initializedPickHelper = true;

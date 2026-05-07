@@ -7,6 +7,7 @@ import { lightManager } from "../viewer/light_manager";
 import { geometryManager } from "../viewer/geometry_manager";
 import { materialManager } from "../viewer/material_manager";
 import { sceneManager } from "../viewer/scene_manager";
+import { themeManager } from "../viewer/theme_manager";
 import { uiManager } from "./sidebarStore";
 import { textManager } from "../viewer/text_manager";
 import { objectInfoManager } from "./objectInfo";
@@ -37,6 +38,9 @@ function analyzeDictionary(dictionary: Dictionary) {
             break;
         case "scene":
             sceneManager(data);
+            break;
+        case "theme":
+            themeManager(data);
             break;
         case "ui":
             uiManager(data);
