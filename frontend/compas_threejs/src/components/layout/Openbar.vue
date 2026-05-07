@@ -77,7 +77,6 @@
             <ArrowBigLeftDash />
         </Button>
     </div>
-    <div>
         <Button
             variant="secondary"
             size="icon"
@@ -87,7 +86,6 @@
         >
             <ArrowBigRightDash />
         </Button>
-    </div>
 </template>
 
 <script setup lang="ts">
@@ -112,13 +110,11 @@ function toggleSideBar() {
     isVisible.value = !isVisible.value;
 }
 
-function handleKeyDown(event: KeyboardEvent) {
+document.addEventListener("keydown", (event) => {
     if (event.key === "Q" || event.key === "q") {
         toggleSideBar();
     }
-}
-
-useEventListener(document, "keydown", handleKeyDown);
+});
 </script>
 
 <style scoped>
