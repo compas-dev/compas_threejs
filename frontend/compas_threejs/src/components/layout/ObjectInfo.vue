@@ -79,7 +79,8 @@ import { Slider } from "@/components/ui/slider";
 import { hideObjectInfo } from "@/communications/objectInfo";
 import { handleObjectAction } from "@/communications/objectInfo";
 import { handleAction } from "@/communications/sidebarStore";
-import { onMounted, onUnmounted } from "vue";
+import { useHover } from "@/composables/useHover";
+import { watchEffect } from "vue";
 import { ArrowBigLeftDash, ArrowBigRightDash } from "lucide-vue-next";
 import { theme } from "@/store/store";
 
@@ -91,23 +92,12 @@ const geoInformation = objectBarData.data
       )
     : {};
 
-function pickerEnabler() {
-    const infoPanel = document.getElementById("info-panel");
-    const onPanel = infoPanel && infoPanel.matches(":hover");
-    if (onPanel) {
-        blockPicker.value = true;
-    } else {
-        blockPicker.value = false;
-    }
-}
+const { isHovered } = useHover("info-panel");
 
-onMounted(() => {
-    window.addEventListener("mousemove", pickerEnabler);
+watchEffect(() => {
+    blockPicker.value = isHovered.value;
 });
 
-onUnmounted(() => {
-    window.removeEventListener("mousemove", pickerEnabler);
-});
 const toggleObjectBar = () => {
     objectBarData.isVisible = !objectBarData.isVisible;
 };

@@ -44,6 +44,4 @@ div.three-container {
     position: fixed; /* Ensure it can contain absolutely positioned children if needed */
     overflow: hidden; /* Hide any overflow from the Three.js canvas */
 }
-
-
 </style>
