@@ -54,7 +54,7 @@ Display shortcuts:
 UI shortcuts:
 - `I`: Show/hide the metadata bar
 - `Q`: Show/hide the buttons and sliders bar
-
+- `D`: Toggle dark/light background
 
 
 

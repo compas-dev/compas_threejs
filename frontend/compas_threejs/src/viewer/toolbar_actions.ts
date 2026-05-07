@@ -1,5 +1,6 @@
 import { setCameraViewPreset } from "./scene_manager";
 import { setTransformMode } from "./picker";
+import { toggleTheme } from "./theme_manager";
 import { toggleObjectMotionPaused } from "@/communications/objectMotion";
 import {
   saveCurrentCanvasImage,
@@ -18,6 +19,7 @@ export {
   captureCurrentView,
   applySavedView,
   saveCurrentCanvasImage,
+  toggleTheme,
 };
 
 export type {
