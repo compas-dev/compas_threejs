@@ -33,25 +33,45 @@
 
                     <div class="grid gap-3">
                         <div class="grid grid-cols-3 items-center gap-4">
-                            <label for="screenshot-width" class="text-sm">Width</label>
+                            <div class="flex items-center gap-2">
+                                <label for="screenshot-width" class="text-sm">Width</label>
+                                <Tooltip v-if="widthError">
+                                    <TooltipTrigger as-child>
+                                        <span class="error-pill" aria-label="Width error">!</span>
+                                    </TooltipTrigger>
+                                    <TooltipContent class="z-[5000]" side="top">
+                                        <p>{{ widthError }}</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </div>
                             <input
                                 id="screenshot-width"
                                 v-model.number="width"
                                 type="number"
-                                min="64"
-                                max="8192"
+                                @input="markUserOverrides"
+                                @blur="normalizeWidth"
                                 class="themed-number col-span-2 h-8 rounded-lg border border-input bg-secondary px-3 py-1 text-sm text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                             />
                         </div>
 
                         <div class="grid grid-cols-3 items-center gap-4">
-                            <label for="screenshot-height" class="text-sm">Height</label>
+                            <div class="flex items-center gap-2">
+                                <label for="screenshot-height" class="text-sm">Height</label>
+                                <Tooltip v-if="heightError">
+                                    <TooltipTrigger as-child>
+                                        <span class="error-pill" aria-label="Height error">!</span>
+                                    </TooltipTrigger>
+                                    <TooltipContent class="z-[5000]" side="top">
+                                        <p>{{ heightError }}</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </div>
                             <input
                                 id="screenshot-height"
                                 v-model.number="height"
                                 type="number"
-                                min="64"
-                                max="8192"
+                                @input="markUserOverrides"
+                                @blur="normalizeHeight"
                                 class="themed-number col-span-2 h-8 rounded-lg border border-input bg-secondary px-3 py-1 text-sm text-secondary-foreground shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]"
                             />
                         </div>
@@ -81,7 +101,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { ImageDown } from "lucide-vue-next";
 import {
     saveCurrentCanvasImage,
@@ -106,13 +126,49 @@ const isOpen = ref(false);
 const width = ref(1920);
 const height = ref(1080);
 const format = ref<ScreenshotFormat>("png");
+const hasUserOverrides = ref(false);
+
+const MIN_DIMENSION = 64;
+const MAX_DIMENSION = 8192;
+
+const widthError = computed(() => {
+    if (!Number.isFinite(width.value)) {
+        return "Width must be a number.";
+    }
+    if (width.value < MIN_DIMENSION || width.value > MAX_DIMENSION) {
+        return `Width must be between ${MIN_DIMENSION} and ${MAX_DIMENSION} px.`;
+    }
+    return "";
+});
+
+const heightError = computed(() => {
+    if (!Number.isFinite(height.value)) {
+        return "Height must be a number.";
+    }
+    if (height.value < MIN_DIMENSION || height.value > MAX_DIMENSION) {
+        return `Height must be between ${MIN_DIMENSION} and ${MAX_DIMENSION} px.`;
+    }
+    return "";
+});
 
 function clampDimension(value: number, fallback: number) {
     if (!Number.isFinite(value)) {
         return fallback;
     }
 
-    return Math.min(8192, Math.max(64, Math.round(value)));
+    return Math.min(MAX_DIMENSION, Math.max(MIN_DIMENSION, Math.round(value)));
+}
+
+function markUserOverrides() {
+    hasUserOverrides.value = true;
+}
+
+function normalizeWidth() {
+    width.value = clampDimension(width.value, 1920);
+}
+
+function normalizeHeight() {
+    height.value = clampDimension(height.value, 1080);
 }
 
 function hydrateDimensionsFromCanvas() {
@@ -130,9 +186,14 @@ function hydrateDimensionsFromCanvas() {
 }
 
 function handleSave() {
+    normalizeWidth();
+    normalizeHeight();
+    if (widthError.value || heightError.value) {
+        return;
+    }
     saveCurrentCanvasImage({
-        width: clampDimension(width.value, 1920),
-        height: clampDimension(height.value, 1080),
+        width: width.value,
+        height: height.value,
         format: format.value,
     });
 
@@ -140,13 +201,29 @@ function handleSave() {
 }
 
 watch(isOpen, (open) => {
-    if (open) {
+    if (open && !hasUserOverrides.value) {
         hydrateDimensionsFromCanvas();
     }
 });
 </script>
 
 <style scoped>
+.error-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--destructive-foreground, #fff);
+    background: color-mix(in srgb, var(--destructive) 80%, transparent);
+    cursor: default;
+    user-select: none;
+}
+
 .themed-number {
     color: var(--foreground);
     caret-color: var(--foreground);
