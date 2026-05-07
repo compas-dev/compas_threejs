@@ -1,5 +1,9 @@
 <template>
-    <div id="openbar" class="theme" :class="{ 'is-hidden': !isVisible }">
+    <div
+        id="openbar"
+        class="fixed-openbar theme"
+        :class="{ 'is-hidden': !isVisible }"
+    >
         <!-- Dynamically render components from the store -->
         <div
             v-for="item in sidebarComponents"
@@ -7,9 +11,12 @@
             class="dynamic-item"
         >
             <!-- Add a label if it exists -->
-            <label v-if="item.label" class="dynamic-label">{{
-                item.label
-            }}</label>
+            <label
+                v-if="item.label"
+                class="dynamic-label"
+                :class="{ dark: theme.value === 'dark' }"
+                >{{ item.label }}</label
+            >
 
             <!-- Render a Button -->
             <Button
@@ -77,7 +84,6 @@
             <ArrowBigLeftDash />
         </Button>
     </div>
-
     <Button
         variant="secondary"
         size="icon"
@@ -90,10 +96,10 @@
 </template>
 
 <script setup lang="ts">
-import { watchEffect, toRaw } from "vue"; // 1. Import watchEffect and toRaw
+import { ref } from "vue";
+import { useEventListener } from "@vueuse/core";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { ref } from "vue"; // Import ref
 import { sidebarComponents, handleAction } from "@/communications/sidebarStore";
 import { ArrowBigLeftDash, ArrowBigRightDash } from "lucide-vue-next";
 import {
@@ -103,6 +109,10 @@ import {
     NumberFieldIncrement,
     NumberFieldInput,
 } from "@/components/ui/number-field";
+import { theme } from "@/store/store";
+import { useHover } from "@/composables/useHover";
+import { watchEffect } from "vue";
+import { blockPicker, pickerEnabled } from "../../store/store";
 
 const isVisible = ref(true);
 
@@ -114,6 +124,12 @@ document.addEventListener("keydown", (event) => {
     if (event.key === "Q" || event.key === "q") {
         toggleSideBar();
     }
+});
+
+const { isHovered } = useHover("openbar");
+
+watchEffect(() => {
+    blockPicker.value = isHovered.value;
 });
 </script>
 
@@ -161,9 +177,14 @@ div#openbar.is-hidden {
 .dynamic-label {
     font-weight: 500;
     font-size: 15px;
-    color: #333;
+    color: var(--foreground);
     padding: 0;
 }
+
+.slider-value {
+    color: var(--foreground);
+}
+
 Button.mb-4 {
     position: relative;
     margin: 0px;

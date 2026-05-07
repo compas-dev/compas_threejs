@@ -47,11 +47,11 @@
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
+    --popover: oklch(1 0 0 / 0.88);
     --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
+    --primary: oklch(0.205 0 0 / 0.92);
     --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
+    --secondary: oklch(0.97 0 0 / 0.72);
     --secondary-foreground: oklch(0.205 0 0);
     --muted: oklch(0.97 0 0);
     --muted-foreground: oklch(0.556 0 0);
@@ -75,6 +75,23 @@
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
     --button-hover: oklch(1 0 0 / 0%);
+    --toolbar-button-hover-shadow: 3px 3px 10px 0px color-mix(in oklab, var(--foreground) 30%, transparent);
+    --toolbar-button-active-shadow: 3px 3px 2px 1px color-mix(in oklab, var(--foreground) 55%, transparent) inset,
+        -3px -3px 2px 2px color-mix(in oklab, var(--background) 70%, transparent) inset;
+    font-family: Inter, sans-serif;
+    font-feature-settings:
+        "liga" 1,
+        "calt" 1; /* fix for Chrome */
+}
+
+/* Theme visuals: use variables so light/dark variants can override easily */
+:root {
+    --theme-bg-start: rgba(255, 255, 255, 0.12);
+    --theme-bg-end: rgba(255, 255, 255, 0.14);
+    --theme-border-color: rgba(255, 255, 255, 0.14);
+    --theme-box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12), inset 2px 2px 6px rgba(255, 255, 255, 0.6), inset -2px -2px 6px rgba(0, 0, 0, 0.04);
+    --theme-inset-highlight: rgba(255, 255, 255, 0.6);
+    --theme-inset-shadow: rgba(0, 0, 0, 0.04);
 }
 
 .dark {
@@ -82,11 +99,11 @@
     --foreground: oklch(0.985 0 0);
     --card: oklch(0.205 0 0);
     --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
+    --popover: oklch(0.205 0 0 / 0.88);
     --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
+    --primary: oklch(0.922 0 0 / 0.92);
     --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
+    --secondary: oklch(0.269 0 0 / 0.72);
     --secondary-foreground: oklch(0.985 0 0);
     --muted: oklch(0.269 0 0);
     --muted-foreground: oklch(0.708 0 0);
@@ -109,23 +126,35 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
+
+    /* Dark theme overrides for the theme panel */
+    --theme-bg-start: rgba(17, 24, 39, 0.12);
+    --theme-bg-end: rgba(17, 24, 39, 0.18);
+    --theme-border-color: rgba(255, 255, 255, 0.12);
+    --theme-box-shadow: 0 6px 22px 0 rgba(0, 0, 0, 0.28), inset 0 0 8px rgba(255, 255, 255, 0.06);
+    --toolbar-button-hover-shadow: 3px 3px 10px 0px color-mix(in oklab, var(--foreground) 40%, transparent);
+    --toolbar-button-active-shadow: 3px 3px 2px 1px color-mix(in oklab, var(--foreground) 70%, transparent) inset,
+        -2px -2px 2px 1px color-mix(in oklab, var(--background) 40%, transparent) inset;
 }
 
 @layer base {
     * {
         @apply border-border outline-ring/50;
     }
+
+    html,
+    body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+
     body {
         @apply bg-background text-foreground;
+        font-family: Inter, sans-serif;
     }
 }
 
-:root {
-    font-family: Inter, sans-serif;
-    font-feature-settings:
-        "liga" 1,
-        "calt" 1; /* fix for Chrome */
-}
 @supports (font-variation-settings: normal) {
     :root {
         font-family: InterVariable, sans-serif;
@@ -133,37 +162,21 @@
 }
 
 div#app {
-    margin: 0px;
-    padding: 0px;
-    /*overflow: hidden;*/
-}
-
-body,
-html {
-    margin: 0px;
-    padding: 0px;
-    overflow: hidden;
-    font-family: Inter, sans-serif;
+    margin: 0;
+    padding: 0;
 }
 
 .theme {
-    background: linear-gradient(
-        135deg,
-        rgba(255, 255, 255, 0.15) 0%,
-        rgba(255, 255, 255, 0.2) 100%
-    );
+    background: linear-gradient(135deg, var(--theme-bg-start) 0%, var(--theme-bg-end) 100%);
     -webkit-backdrop-filter: blur(25px) saturate(180%);
     backdrop-filter: blur(25px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-bottom: -3px solid rgba(220, 220, 220, 0.4);
-    border-right: -3px solid rgba(225, 225, 225, 0.3);
-    box-shadow:
-        0 8px 32px 0 rgba(0, 0, 0, 0.3),
-        inset 4px 4px 10px 2px rgba(255, 255, 255, 0.7),
-        inset -4px -4px 10px 2px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--theme-border-color);
+    box-shadow: var(--theme-box-shadow);
 }
 
 * {
     scrollbar-width: thin;
     scrollbar-color: #888 transparent;
 }
+
+

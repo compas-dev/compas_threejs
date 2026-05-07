@@ -27,6 +27,4 @@ text = TextGeometry(
 viz.add_text(text, material)
 
 
-
-
 viz.start()

@@ -2,15 +2,25 @@ import * as THREE from "three";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { camera, renderer, scene, controls } from "./scene_manager";
 import { SCENE_GEOMETRIES } from "./geometry_manager";
+import { GEOMETRY_MATERIALS, SCENE_MATERIALS } from "./material_manager";
 import { sendData } from "@/communications/communication";
 import { objectInfoManager } from "@/communications/objectInfo";
-import { pickerMode, pickerEnabled } from "@/store/store";
+import { objectActionsState } from "@/store/store";
+import { blockPicker, pickerEnabled } from "@/store/store";
+import { pickerMode } from "@/store/store";
 
 export let pickPosition: { x: number; y: number };
 let canvas: HTMLCanvasElement;
 export let tControl: TransformControls;
 let initializedTControls = false;
 let initializedPickHelper = false;
+let savedMaterialGuid;
+
+const highlihghtMaterial = new THREE.MeshStandardMaterial({
+    color: "orange",
+    emissive: "yellow",
+    emissiveIntensity: 0.1,
+});
 
 export type TransformMode = "translate" | "rotate" | "scale";
 
@@ -77,7 +87,7 @@ class TransformControlsManager {
                     break;
                 case "Escape":
                     this.tControl.detach();
-                    objectInfoManager({} as any);
+                    resetObjectInfoPanel();
                     break;
             }
         });
@@ -108,7 +118,7 @@ export class PickHelper {
             if (event.key === "Escape") {
                 if (this.pickedObject) {
                     this.dehighlightObject(this.pickedObject);
-                    objectInfoManager({} as any);
+                    resetObjectInfoPanel();
                 }
             }
         });
@@ -151,12 +161,17 @@ export class PickHelper {
             return;
         }
 
+        if (blockPicker.value) {
+            return;
+        }
+
         const picked = this.getPickedObject(normalizedPosition);
 
         if (picked) {
             // If we picked a new object, restore the previous one's color
             if (this.pickedObject !== picked && this.pickedObject !== null) {
                 this.dehighlightObject(this.pickedObject);
+                resetObjectInfoPanel();
             }
 
             // An object was clicked.
@@ -166,8 +181,8 @@ export class PickHelper {
             // Find the key of the picked object in SCENE_GEOMETRIES
             const pickedKey = this.getPickedObjectKey(this.pickedObject);
             if (pickedKey) {
+                this.sendMessage(pickedKey);
             }
-            this.sendMessage(pickedKey);
 
             this.highlightObject(this.pickedObject);
         } else {
@@ -176,29 +191,28 @@ export class PickHelper {
                 this.dehighlightObject(this.pickedObject);
                 this.pickedObject = null;
                 tControl.detach();
-                objectInfoManager({} as any);
+                resetObjectInfoPanel();
             }
         }
     }
 
     dehighlightObject(object: THREE.Object3D) {
-        if ((object as any).savedColor) {
-            (object as any).material.color.copy((object as any).savedColor);
-            (object as any).material.emissive?.set("black");
-            (object as any).material.emissiveIntensity = 0.0;
-        }
+        const material = SCENE_MATERIALS[savedMaterialGuid];
+        object.material = material;
     }
 
     highlightObject(object: THREE.Object3D) {
-        if (!(object as any).savedColor) {
-            (object as any).savedColor = (object as any).material.color.clone();
-        }
-        (object as any).material.color.set("orange");
-        if ((object as any).material.emissive) {
-            (object as any).material.emissive.set("yellow");
-            (object as any).material.emissiveIntensity = 0.1;
-        }
+        const geoGuid = Object.keys(SCENE_GEOMETRIES).find(
+            (key) => SCENE_GEOMETRIES[key] === object,
+        );
+        savedMaterialGuid = GEOMETRY_MATERIALS[geoGuid];
+        object.material = highlihghtMaterial;
     }
+}
+
+function resetObjectInfoPanel() {
+    objectInfoManager({} as any);
+    objectActionsState.splice(0);
 }
 
 function getCanvasRelativePosition(event: MouseEvent) {

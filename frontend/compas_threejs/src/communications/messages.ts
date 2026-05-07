@@ -7,15 +7,16 @@ import { lightManager } from "../viewer/light_manager";
 import { geometryManager } from "../viewer/geometry_manager";
 import { materialManager } from "../viewer/material_manager";
 import { sceneManager } from "../viewer/scene_manager";
+import { themeManager } from "../viewer/theme_manager";
 import { uiManager } from "./sidebarStore";
 import { textManager } from "../viewer/text_manager";
 import { objectInfoManager } from "./objectInfo";
+import { objectActionManager } from "./objectInfo";
 import { removeObjectFromScene } from "../viewer/scene_manager";
 
 const SCENE_GEOMETRIES: { [guid: string]: THREE.Object3D } = {};
 
 export function dispatchMessage(message: Uint8Array) {
-    const messageUnpacked = unpackMessage(message);
     const obj = unpackMessageToGeometry(message);
 
     if (obj instanceof Dictionary) {
@@ -38,6 +39,9 @@ function analyzeDictionary(dictionary: Dictionary) {
         case "scene":
             sceneManager(data);
             break;
+        case "theme":
+            themeManager(data);
+            break;
         case "ui":
             uiManager(data);
             break;
@@ -46,6 +50,10 @@ function analyzeDictionary(dictionary: Dictionary) {
             break;
         case "object_infos":
             objectInfoManager(data);
+            break;
+            return;
+        case "object_action":
+            objectActionManager(data);
             break;
             return;
         case "remove_object":

@@ -5,7 +5,7 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import Toolbar from "@/components/layout/Toolbar.vue";
 import Openbar from "@/components/layout/Openbar.vue";
 import { sideBarInfoState } from "@/store/store.ts";
@@ -28,4 +28,5 @@ div#sidebar {
     max-width: 300px;
     min-width: 250px;
 }
+
 </style>
