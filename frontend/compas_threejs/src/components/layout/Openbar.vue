@@ -127,9 +127,10 @@ document.addEventListener("keydown", (event) => {
 });
 
 const { isHovered } = useHover("openbar");
+const isOpenbarVisible = computed(() => sideBarInfoState.isVisible);
 
 watchEffect(() => {
-    blockPicker.value = isHovered.value;
+    blockPicker.value = isHovered.value && isOpenbarVisible.value;
 });
 </script>
 
@@ -147,6 +148,7 @@ div#openbar {
     gap: 15px; /* Adjust spacing */
     align-items: left;
     height: 100%;
+    pointer-events: auto;
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1); /* Smooth sliding effect */
     will-change: transform;
 
@@ -158,6 +160,7 @@ div#openbar.is-hidden {
     /* Slide left by its width + margin to fully hide it */
     /* Adjust -110% depending on your margin/padding needs */
     transform: translateX(-150%);
+    pointer-events: none;
 }
 
 .slider-container {
