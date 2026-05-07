@@ -25,6 +25,29 @@
                 </div>
             </div>
 
+            <div class="data-container">
+                <h1
+                    class="text-lg font-bold section-title"
+                    :class="{ dark: theme.value === 'dark' }"
+                >
+                    FUNCTIONS
+                </h1>
+                <div
+                    v-for="action in objectActionsState"
+                    :key="action"
+                    class="single_data"
+                >
+                    <Button
+                        v-if="action.type === 'button'"
+                        variant="outline"
+                        @click="handleObjectAction(action)"
+                        class="w-full"
+                    >
+                        {{ action.text }}
+                    </Button>
+                </div>
+            </div>
+
             <Button
                 variant="secondary"
                 size="icon"
@@ -34,6 +57,7 @@
                 <ArrowBigRightDash />
             </Button>
         </div>
+
         <Button
             variant="secondary"
             size="icon"
@@ -47,9 +71,15 @@
 </template>
 
 <script setup>
+import { objectActionsState } from "../../store/store";
+import { blockPicker, pickerEnabled } from "../../store/store";
 import { objectBarData } from "../../store/store";
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { hideObjectInfo } from "@/communications/objectInfo";
+import { handleObjectAction } from "@/communications/objectInfo";
+import { handleAction } from "@/communications/sidebarStore";
+import { onMounted, onUnmounted } from "vue";
 import { ArrowBigLeftDash, ArrowBigRightDash } from "lucide-vue-next";
 import { theme } from "@/store/store";
 
@@ -61,6 +91,23 @@ const geoInformation = objectBarData.data
       )
     : {};
 
+function pickerEnabler() {
+    const infoPanel = document.getElementById("info-panel");
+    const onPanel = infoPanel && infoPanel.matches(":hover");
+    if (onPanel) {
+        blockPicker.value = true;
+    } else {
+        blockPicker.value = false;
+    }
+}
+
+onMounted(() => {
+    window.addEventListener("mousemove", pickerEnabler);
+});
+
+onUnmounted(() => {
+    window.removeEventListener("mousemove", pickerEnabler);
+});
 const toggleObjectBar = () => {
     objectBarData.isVisible = !objectBarData.isVisible;
 };
@@ -126,8 +173,10 @@ h1.section-title {
     padding-left: 10px;
     border-radius: 10px;
     box-shadow:
-        1px 1px 3px 0px color-mix(in oklab, var(--foreground) 35%, transparent) inset,
-        -1px -1px 3px 0px color-mix(in oklab, var(--background) 70%, transparent) inset;
+        1px 1px 3px 0px color-mix(in oklab, var(--foreground) 35%, transparent)
+            inset,
+        -1px -1px 3px 0px
+            color-mix(in oklab, var(--background) 70%, transparent) inset;
 }
 
 div.data-entry {

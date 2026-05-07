@@ -4,7 +4,7 @@ import threading
 import time
 import webbrowser
 from enum import IntEnum
-from typing import Union
+from typing import Optional, Union
 from uuid import uuid4
 
 import compas_pb
@@ -14,6 +14,7 @@ from rich.console import Console
 
 from compas_threejs.lights.ambientlight import AmbientLight
 from compas_threejs.lights.sunlight import Sunlight
+from compas_threejs.ui import Button
 
 from .server import broadcast, get_server_loop, run_server, stop_server
 
@@ -99,8 +100,9 @@ class Viewer:
         # Registry
         self.queued_messages = []
         self._buttons = dict()
-        self._geoemetry_registry = dict()
+        self._geometry_registry = dict()
         self._metadata_registry = dict()
+        self._object_actions_registry = dict()
 
     def __enter__(self):
         return self
@@ -413,7 +415,13 @@ class Viewer:
 
     # ---- GEOMETRY --------------------------------------------------------------------------------
 
-    def add_geometry(self, geometry, material=None, metadata=None):
+    def add_geometry(
+        self,
+        geometry,
+        material=None,
+        metadata=None,
+        actions: Optional[list[Button]] = None,
+    ):
         """
         Adds a geometry object to the viewer. Optionally, a material can be associated with the geometry.
 
@@ -423,6 +431,11 @@ class Viewer:
             The geometry object to be added to the viewer. It must have a unique GUID.
         material : compas_threejs.material.Material, optional
             An optional material to be associated with the geometry.
+        metadata: compas_threejs.metadata.Metadata, optional
+            An optional metadata object to be associated with the geometry. This metadata can be sent back to the frontend when the geometry is picked, allowing for interactive exploration of object properties.
+        actions: list of compas_threejs.ui.Button, optional
+            An optional list of Button objects representing actions that can be performed on the geometry.
+            The function associated with the button need to accept `object` parameter.
 
         Returns
         -------
@@ -448,6 +461,11 @@ class Viewer:
         if metadata:
             self._metadata_registry[str(obj_id)] = metadata
 
+        if actions:
+            self._object_actions_registry[str(obj_id)] = actions
+            for action in actions:
+                self._buttons[str(action.guid)] = action.action
+
         # send geometry
         if loop:
             asyncio.run_coroutine_threadsafe(broadcast(binary_data, obj_id), loop)
@@ -455,7 +473,7 @@ class Viewer:
             self.queued_messages.append((binary_data, obj_id))
 
         # save the geometry for furture reference
-        self._geoemetry_registry[str(obj_id)] = geometry
+        self._geometry_registry[str(obj_id)] = geometry
 
     def add_geometries(self, geometries: list, material=None):
         for geo in geometries:
@@ -619,6 +637,8 @@ class Viewer:
             self.manage_ui_callback(action_dictionary)
         elif action_dictionary.get("dispatch") == "object_picked":
             self.manage_picked_object(action_dictionary)
+        elif action_dictionary.get("dispatch") == "object_action_callback":
+            self.manage_object_action_callback(action_dictionary)
         else:
             console.log(
                 f"[yellow]Received unrecognized message from frontend: {action_dictionary}[/yellow]"
@@ -672,4 +692,30 @@ class Viewer:
                 "No metadata associated with this object.": "",
             }
             self._send_dictionary_message(metadata)
+
+        object_actions = self._object_actions_registry.get(object_id)
+        if object_actions:
+            for action in object_actions:
+                message = action.as_dict()
+                message["dispatch"] = "object_action"
+                message["object_guid"] = object_id
+                self._send_dictionary_message(message)
         return
+
+    def manage_object_action_callback(self, action_dictionary):
+        action_id = action_dictionary.get("action_guid")
+        object_id = action_dictionary.get("object_guid")
+        console.log(
+            f"[blue]Received object action callback from frontend. Action ID: {action_id}, Object ID: {object_id}[/blue]"
+        )
+        object = self._geometry_registry.get(object_id)
+        if action_id and action_id in self._buttons:
+            function = self._buttons[action_id]
+            if function.__code__.co_argcount == 2:
+                self._buttons[action_id](object)
+            elif function.__code__.co_argcount == 3:
+                value = action_dictionary.get("value")
+                console.log(f"[blue]Value associated with the action: {value}[/blue]")
+                self._buttons[action_id](object, value)
+        else:
+            print(f"Unrecognized action or missing handler for action ID: {action_id}")
