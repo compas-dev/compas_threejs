@@ -3,7 +3,7 @@
         <div class="toolbar-group">
             <ToggleMovementButton
                 v-if="motionAvailable"
-                :active="!motionPaused"
+                :active="motionPaused"
                 @toggled="setMotionPaused"
             />
             <SaveViewButton

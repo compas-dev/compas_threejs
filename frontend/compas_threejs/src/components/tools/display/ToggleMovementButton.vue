@@ -8,8 +8,7 @@
                     :class="{ active }"
                     @click="handleClick"
                 >
-                    <Play v-if="active" class="button-icon" :size="16" />
-                    <Pause v-else class="button-icon" :size="16" />
+                    <Pause class="button-icon" :size="16" />
                 </Button>
             </TooltipTrigger>
             <TooltipContent class="z-1000" side="bottom">
@@ -20,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import { Pause, Play } from "lucide-vue-next";
+import { Pause } from "lucide-vue-next";
 import { toggleObjectMotionPaused } from "@/viewer/toolbar_actions";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
