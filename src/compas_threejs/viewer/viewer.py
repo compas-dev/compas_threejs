@@ -103,6 +103,7 @@ class Viewer:
         self._geometry_registry = dict()
         self._metadata_registry = dict()
         self._object_actions_registry = dict()
+        self._object_motion_paused = False
 
     def __enter__(self):
         return self
@@ -120,6 +121,7 @@ class Viewer:
     @loop.setter
     def loop(self, callback: callable):
         self._loop = callback
+        self._send_object_motion_state()
 
     @property
     def loop_interval(self) -> float:
@@ -361,6 +363,7 @@ class Viewer:
         # Ensure frontend receives current dark mode state on start
         self.dark_mode = self._dark_mode
         self.camera_damping = self.camera_damping
+        self._send_object_motion_state()
         self._send_default_view()
 
         # Send default lighting
@@ -383,9 +386,9 @@ class Viewer:
                 while True:
                     time.sleep(self.loop_interval)
                     callback = self.loop
-                    if callback:
+                    if callback and not self._object_motion_paused:
                         callback(i)
-                    i += 1
+                        i += 1
             except KeyboardInterrupt:
                 console.log("[green]Interruption ordered[/green]")
             finally:
@@ -412,6 +415,14 @@ class Viewer:
         else:
             # Queue the message if the server is not running yet
             self.queued_messages.append((binary_data, ""))
+
+    def _send_object_motion_state(self):
+        message = {
+            "dispatch": "object_motion",
+            "type": "availability",
+            "enabled": bool(self._loop),
+        }
+        self._send_dictionary_message(message)
 
     # ---- GEOMETRY --------------------------------------------------------------------------------
 
@@ -639,6 +650,8 @@ class Viewer:
             self.manage_picked_object(action_dictionary)
         elif action_dictionary.get("dispatch") == "object_action_callback":
             self.manage_object_action_callback(action_dictionary)
+        elif action_dictionary.get("dispatch") == "object_motion_control":
+            self.manage_object_motion_control(action_dictionary)
         else:
             console.log(
                 f"[yellow]Received unrecognized message from frontend: {action_dictionary}[/yellow]"
@@ -719,3 +732,9 @@ class Viewer:
                 self._buttons[action_id](object, value)
         else:
             print(f"Unrecognized action or missing handler for action ID: {action_id}")
+
+    def manage_object_motion_control(self, action_dictionary):
+        paused = bool(action_dictionary.get("paused", False))
+        self._object_motion_paused = paused
+        state = "paused" if paused else "running"
+        console.log(f"[blue]Object motion loop state set to: {state}[/blue]")

@@ -47,6 +47,7 @@ View shortcuts (numpad):
 - `0`: Bottom view
 
 Display shortcuts:
+- `spacebar`: Play/Pause object motion
 - `S`: Save current view
 - `F`: Save screenshot as image
 

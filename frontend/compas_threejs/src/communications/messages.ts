@@ -4,7 +4,7 @@ import type { AnyData } from "../protobuff/generated/compas_pb/data/message";
 import { Dictionary } from "../protobuff/messages";
 import * as THREE from "three";
 import { lightManager } from "../viewer/light_manager";
-import { geometryManager } from "../viewer/geometry_manager";
+import { geometryManager, SCENE_GEOMETRIES } from "../viewer/geometry_manager";
 import { materialManager } from "../viewer/material_manager";
 import { sceneManager } from "../viewer/scene_manager";
 import { themeManager } from "../viewer/theme_manager";
@@ -13,8 +13,8 @@ import { textManager } from "../viewer/text_manager";
 import { objectInfoManager } from "./objectInfo";
 import { objectActionManager } from "./objectInfo";
 import { removeObjectFromScene } from "../viewer/scene_manager";
-
-const SCENE_GEOMETRIES: { [guid: string]: THREE.Object3D } = {};
+import { objectMotionManager } from "./objectMotion";
+import { motionState } from "@/store/store";
 
 export function dispatchMessage(message: Uint8Array) {
     const obj = unpackMessageToGeometry(message);
@@ -23,6 +23,13 @@ export function dispatchMessage(message: Uint8Array) {
         analyzeDictionary(obj);
         return;
     } else {
+        if (
+            motionState.objectMotionPaused &&
+            obj?.guid &&
+            SCENE_GEOMETRIES[obj.guid]
+        ) {
+            return;
+        }
         geometryManager(obj);
     }
 }
@@ -58,6 +65,9 @@ function analyzeDictionary(dictionary: Dictionary) {
             return;
         case "remove_object":
             removeObjectFromScene(data);
+            break;
+        case "object_motion":
+            objectMotionManager(data);
             break;
         default:
             console.warn("Unknown dispatch value:", data.dispatch.value);

@@ -21,6 +21,9 @@ export const pickerMode = reactive({ value: "translate" });
 export const blockPicker = reactive({ value: false });
 export const showEdges = reactive({ value: false });
 
-export const theme = reactive({
-    value: "light",
+export const theme = reactive({ value: "light" });
+
+export const motionState = reactive({
+    objectMotionPaused: false,
+    objectMotionAvailable: false,
 });
