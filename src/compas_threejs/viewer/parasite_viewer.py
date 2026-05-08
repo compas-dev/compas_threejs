@@ -1,6 +1,8 @@
 import compas_pb
 import requests
 
+from .viewer import Viewer
+
 
 class ParasiteViewer:
     """A viewer that connects to an existing websocket server.
@@ -16,9 +18,6 @@ class ParasiteViewer:
     def __init__(self, host="localhost", port=9001):
         self.host = host
         self.port = port
-        self.ws = None
-        self.thread = None
-        self.is_connected = False
         self._connect()
 
     def _connect(self):

@@ -6,7 +6,7 @@ from compas_threejs.viewer.parasite_viewer import ParasiteViewer
 
 paraviz = ParasiteViewer()
 
-color = Color.blue()
+color = Color.cyan()
 
 message = {
     "dispatch": "scene",
@@ -15,7 +15,7 @@ message = {
 }
 
 
-colors = [Color.blue(), Color.red(), Color.yellow()]
+colors = [Color.green(), Color.cyan(), Color.magenta()]
 
 
 for i in range(50):
