@@ -13,6 +13,19 @@ authors = [
   { name = "Nicolas Benjamin Boscoboinik", email = "boscoboinik@arch.ethz.ch" }
 ]
 keywords = ["compas", "viewer", "threejs", "protobuf"]
+license = "MIT"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Topic :: Scientific/Engineering",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
 dependencies = [
     "compas",
     "compas_pb",
@@ -35,7 +48,7 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/my_compas_viewer"
+Homepage = "https://github.com/gramaziokohler/compas_threejs"
 
 # -- DISCOVERY --
 # Tells setuptools that the code is inside the 'src' folder
