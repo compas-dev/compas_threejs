@@ -79,7 +79,7 @@ plugins:
                   paths: [src]
                   inventories:
                       - https://docs.python.org/3/objects.inv
-                      - https://compas.dev/compas/latest/objects.inv
+                      # - https://compas.dev/compas/latest/objects.inv
                   options:
                       allow_inspection: true
                       backlinks: tree

@@ -1,7 +1,9 @@
 import { scene } from "../viewer/scene_builder";
-import { unpackMessageToGeometry, unpackMessage } from "../protobuff/analyzers";
-import type { AnyData } from "../protobuff/generated/compas_pb/data/message";
-import { Dictionary } from "../protobuff/messages";
+import {
+    unpackMessageToGeometry,
+    unpackMessage,
+} from "@gramaziokohler/compas-pb-ts";
+import { Dictionary } from "@gramaziokohler/compas-pb-ts";
 import * as THREE from "three";
 import { lightManager } from "../viewer/light_manager";
 import { geometryManager } from "../viewer/geometry_manager";
