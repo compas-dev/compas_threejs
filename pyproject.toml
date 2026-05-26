@@ -19,8 +19,19 @@ dependencies = [
     "websockets",
     "fastapi",
     "uvicorn",
-    "rich",
-    "invoke"
+    "rich"
+]
+
+[project.optional-dependencies]
+dev = [
+    "invoke",
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocstrings",
+    "mkdocstrings-python",
+    "compas_invocations2[mkdocs]>=1.0.2",
+    "ruff",
+
 ]
 
 [project.urls]
