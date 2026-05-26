@@ -5,6 +5,10 @@ from .ui_element import UIElement
 
 
 class Button(UIElement):
+    """
+    Button Element
+    """
+
     def __init__(self, text, action, label: Optional[str] = None, **kwargs):
         super().__init__(**kwargs)
         self.text = text
