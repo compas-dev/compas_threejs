@@ -13,12 +13,11 @@ authors = [
   { name = "Nicolas Benjamin Boscoboinik", email = "boscoboinik@arch.ethz.ch" }
 ]
 keywords = ["compas", "viewer", "threejs", "protobuf"]
-license = "MIT"
+license = { text = "MIT" }
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Topic :: Scientific/Engineering",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",

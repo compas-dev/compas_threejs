@@ -51,9 +51,7 @@ markdown_extensions:
     - footnotes
     - md_in_html
     - pymdownx.caret
-    - pymdownx.emoji:
-          emoji_index: !!python/name:material.extensions.emoji.twemoji
-          emoji_generator: !!python/name:material.extensions.emoji.to_svg
+    - pymdownx.emoji
     - pymdownx.keys
     - pymdownx.mark
     - pymdownx.tasklist:
@@ -79,7 +77,7 @@ plugins:
                   paths: [src]
                   inventories:
                       - https://docs.python.org/3/objects.inv
-                      - https://compas.dev/compas/latest/objects.inv
+                      # - https://compas.dev/compas/latest/objects.inv
                   options:
                       allow_inspection: true
                       backlinks: tree
