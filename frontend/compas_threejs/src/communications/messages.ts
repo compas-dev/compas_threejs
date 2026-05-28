@@ -1,4 +1,3 @@
-import { scene } from "../viewer/scene_builder";
 import {
     unpackMessageToGeometry,
     unpackMessage,
