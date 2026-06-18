@@ -4,7 +4,7 @@ and dynamically add geometries, materials, and metadata.
 
 Usage:
     Terminal 1: python examples/box.py
-    Terminal 2: python examples/remote_viewer_example.py
+    Terminal 2: python examples/remote_viewer.py
 """
 
 import time
@@ -20,7 +20,9 @@ remote = RemoteViewer(host="localhost", port=9001)
 
 print("Connecting to Viewer server...")
 remote.connect()
-print("Connected!")
+if remote.is_connected():
+    print("Connected!")
+
 
 # Change the background color
 remote.background_color = Color.blue()
