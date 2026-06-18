@@ -141,7 +141,7 @@ class RemoteViewer:
         bool
             True if connected, False otherwise.
         """
-        return self.websocket is not None and not self.websocket.closed
+        return self.websocket is not None
 
     async def _send_bytes_async(self, data: bytes):
         """Send binary data over WebSocket asynchronously."""
