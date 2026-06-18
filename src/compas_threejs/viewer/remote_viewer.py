@@ -152,6 +152,7 @@ class RemoteViewer:
             await self.websocket.send(data)
         except Exception as e:
             console.log(f"[red]Error sending data: {e}[/red]")
+            self.websocket = None
 
     def _send_bytes(self, data: bytes):
         """Send binary data over WebSocket."""
