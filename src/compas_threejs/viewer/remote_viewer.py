@@ -144,8 +144,9 @@ class RemoteViewer:
         if self.websocket is None:
             return False
         try:
-            # Check if websocket is open by testing its state
-            return self.websocket.open
+            # Check connection state using the state property
+            # websockets uses WebSocketState enum
+            return self.websocket.state.name == "OPEN"
         except Exception:
             return False
 
