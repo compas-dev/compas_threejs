@@ -23,6 +23,14 @@ remote.connect()
 if remote.is_connected():
     print("Connected!")
 
+remote.disconnect()
+time.sleep(1)
+print(f"Disconnected: {not remote.is_connected()}")
+
+remote.connect()
+time.sleep(1)
+print(f"Connected: {remote.is_connected()}")
+
 
 # Change the background color
 remote.background_color = Color.blue()
@@ -55,3 +63,5 @@ print("Added sphere")
 print("\nUpdating scene settings...")
 remote.camera_position = (15, -25, 20)
 remote.camera_zoom = 1.2
+
+remote.disconnect()
