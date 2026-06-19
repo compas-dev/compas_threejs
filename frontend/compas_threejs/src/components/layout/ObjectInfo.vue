@@ -95,7 +95,7 @@ const geoInformation = objectBarData.data
 const { isHovered } = useHover("info-panel");
 
 watchEffect(() => {
-    blockPicker.value = isHovered.value;
+    blockPicker.value = isHovered.value && objectBarData.isVisible;
 });
 
 const toggleObjectBar = () => {
@@ -117,6 +117,7 @@ div.right-bar {
     width: 30vw;
     max-width: 300px;
     min-width: 250px;
+    pointer-events: none;
 }
 
 /* 'scoped' means these styles only apply to this module */
@@ -132,11 +133,13 @@ div.object-info {
     display: flex;
     flex-direction: column;
     color: var(--foreground);
+    pointer-events: auto;
 }
 
 div.is-hidden {
     transform: translateX(+150%);
     /*display: none;*/
+    pointer-events: none;
 }
 
 div#data-container {
@@ -188,6 +191,7 @@ Button#openObjectBar {
     display: flex;
     visibility: hidden;
     transition: visibility 1s;
+    pointer-events: auto;
 }
 
 Button#openObjectBar.is-hidden {
