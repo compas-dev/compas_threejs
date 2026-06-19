@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.11.0",
+    "@gramaziokohler/compas-pb-ts": "^1.1.5",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@vueuse/core": "^14.2.1",
     "class-variance-authority": "^0.7.1",

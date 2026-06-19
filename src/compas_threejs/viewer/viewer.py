@@ -14,6 +14,8 @@ from rich.console import Console
 
 from compas_threejs.lights.ambientlight import AmbientLight
 from compas_threejs.lights.sunlight import Sunlight
+from compas_threejs.materials.generic_material import GenericMaterial
+from compas_threejs.metadata import Metadata
 from compas_threejs.ui import Button
 
 from .server import broadcast, get_server_loop, run_server, stop_server
@@ -37,49 +39,60 @@ class CameraView(IntEnum):
 
 
 class Viewer:
-    class Viewer:
-        """
-        The Viewer class is responsible for visualizing 3D geometry, lights, and other elements
-        in a browser-based environment. It integrates with a server to enable real-time
-        updates and interactions.
+    """
+    The Viewer class is responsible for visualizing 3D geometry, lights, and other elements
+    in a browser-based environment. It integrates with a server to enable real-time
+    updates and interactions.
 
 
-        Parameters
-        ----------
-        websocket_port : int, optional
-            The port on which the WebSocket server will run. Default is 9001.
-        background_color : Color, optional
-            The background color of the viewer. Default is a light gray (0.9, 0.9, 0.9).
+    Attributes
+    ----------
+    loop : callable
+        A user-defined callback function that will be called in each iteration of the main loop.
+
+    loop_interval : float, optional
+        The interval in seconds for the main loop to run. Default is 0.02 (50 FPS).
+
+    background_color : Color
+        The background color of the viewer.
+
+    camera_damping : bool
+        Whether camera damping is enabled. Default is True.
+
+    default_lighting : bool, optional
+        Whether to include default lighting in the scene. Default is True.
+        This attribute can only be modifief before calling `Viewer.start()`.
 
 
-        Attributes
-        ----------
-        loop : callable
-            A user-defined callback function that will be called in each iteration of the main loop.
+    world_axis : bool, optional
+        Whether to show the world axis in the scene. Default is True.
 
-        loop_interval : float, optional
-            The interval in seconds for the main loop to run. Default is 0.02 (50 FPS).
+    picker : bool, optional
+        Whether to enable the object picker in the scene. Default is True.
 
-        background_color : Color
-            The background color of the viewer.
+    camera_fov : float, optional
+        The camera field of view (FOV) in degrees. Default is 60.
 
-        camera_damping : bool
-            Whether camera damping is enabled. Default is True.
+    camera_zoom : float, optional
+        The camera zoom level. Default is 1.
 
-        default_lighting : bool, optional
-            Whether to include default lighting in the scene. Default is True.
-            This attribute can only be modifief before calling `Viewer.start()`.
+    dark_mode : bool, optional
+        Whether to enable dark mode for the viewer. Default is False.
 
+    camera_position : Point, optional
+        The camera position in world coordinates. Default is (8, -15, 15).
 
-        """
+    camera_target : Point, optional
+        The camera target point used by orbit controls. Default is (0, 0, 0).
 
-    def __init__(
-        self,
-        websocket_port=9001,
-        default_lighting: bool = True,
-    ):
+    show_edges : bool, optional
+        Whether to show edges of the mesh. Default is False.
+
+    """
+
+    def __init__(self):
         # Server
-        self.websocket_port = websocket_port
+        self.websocket_port = 9001
         self.websocket_server_thread = None
 
         # Setter Attributes
@@ -418,8 +431,8 @@ class Viewer:
     def add_geometry(
         self,
         geometry,
-        material=None,
-        metadata=None,
+        material: Optional[GenericMaterial] = None,
+        metadata: Optional[Metadata] = None,
         actions: Optional[list[Button]] = None,
     ):
         """

@@ -2,69 +2,68 @@
 
 [![Made with COMPAS](https://compas.dev/badge.svg)](https://compas.dev/#/)
 
-A browser based viewer for COMPAS, built on top of THREEJS.
+COMPAS ThreeJS is a package that connects the COMPAS framework for computational workflows with Three.js. This integration enables the visualization of and interaction with complex 3D objects directly within a standard web browser.
 
-# Installation
-    pip install git+https://github.com/gramaziokohler/compas_threejs.git
+## Table of Contents
 
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Examples](#examples)
+- [Contributing](#contributing)
+- [License](#license)
 
+## Features
 
-# Example
+- **Seamless Integration**: Connects the Python-based COMPAS framework with the JavaScript-based Three.js library.
+- **Browser Visualization**: Easily render and interact with complex 3D objects directly in a web browser.
+- **Interactive Workflows**: Build and deploy computational design workflows with rich graphical interfaces.
+
+## Installation
+
+Instructions on how to install the package. For example, using pip:
+
+```bash
+pip install compas_threejs
+```
+
+## Usage
+
+Provide a basic example of how to use the package.
 
 ```python
-from compas_threejs.viewer import Viewer
 from compas.geometry import Box
+from compas_threejs.viewer import Viewer
 
+# 1. Create a viewer instance
 viz = Viewer()
 
+# 2. Create a COMPAS geometry
 box = Box(1, 1, 1)
+
+# 3. Add the geometry to the viewer
 viz.add_geometry(box)
 
+# 4. Start the viewer
 viz.start()
+
 ```
 
+## Examples
 
-# Commands
+Check out our [examples directory](./examples) for more detailed use cases and implementation strategies.
 
-The viewer includes a toolbar and quick keyboard shortcuts for navigation and interaction.
+## Contributing
 
-Object transform shortcuts:
-- `P`: Enable/Disable selection
-- `W`: Move
-- `E`: Rotate
-- `R`: Scale
+We welcome contributions! Please see our [contributing guidelines](CONTRIBUTING.md) for more information on how to get involved.
 
-View shortcuts (numpad):
-- `5`: Top view
-- `2`: Front view
-- `8`: Back view
-- `4`: Left view
-- `6`: Right view
-- `1`: Front-left perspective
-- `3`: Front-right perspective
-- `7`: Back-left perspective
-- `9`: Back-right perspective
-- `0`: Bottom view
+## License
 
-Display shortcuts:
-- `S`: Save current view
-- `F`: Save screenshot as image
-
-UI shortcuts:
-- `I`: Show/hide the metadata bar
-- `Q`: Show/hide the buttons and sliders bar
-- `D`: Toggle dark/light background
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 
+---
 
-# Invokes
-
-To start the development server, run the following command in a second terminal:
-```
-invoke rundev
-```
-
-To build the static files directly into the python package run the following command in the terminal:
-```
-invoke buildstatic
-```
+<div align="center">
+Made with ❤️
+</div>
