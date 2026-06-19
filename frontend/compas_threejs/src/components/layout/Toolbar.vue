@@ -37,6 +37,7 @@ watchEffect(() => {
     margin: 0px;
     height: auto;
     width: 100%;
+    pointer-events: auto;
 }
 
 :deep(.toolbar-group) {

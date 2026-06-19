@@ -27,6 +27,14 @@ div#sidebar {
     width: 30vw;
     max-width: 300px;
     min-width: 250px;
+    pointer-events: none;
 }
 
+:deep(.toolbar) {
+    pointer-events: auto;
+}
+
+:deep(#openbar) {
+    pointer-events: auto;
+}
 </style>
