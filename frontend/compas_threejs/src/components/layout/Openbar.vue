@@ -96,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { useEventListener } from "@vueuse/core";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -127,7 +127,7 @@ document.addEventListener("keydown", (event) => {
 });
 
 const { isHovered } = useHover("openbar");
-const isOpenbarVisible = computed(() => sideBarInfoState.isVisible);
+const isOpenbarVisible = computed(() => isVisible.value);
 
 watchEffect(() => {
     blockPicker.value = isHovered.value && isOpenbarVisible.value;
