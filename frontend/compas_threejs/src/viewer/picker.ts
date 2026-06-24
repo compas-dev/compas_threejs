@@ -15,6 +15,7 @@ export let tControl: TransformControls;
 let initializedTControls = false;
 let initializedPickHelper = false;
 let savedMaterialGuid;
+let savedOriginalMaterial: THREE.Material | null = null;
 
 const highlihghtMaterial = new THREE.MeshStandardMaterial({
     color: "orange",
@@ -197,11 +198,21 @@ export class PickHelper {
     }
 
     dehighlightObject(object: THREE.Object3D) {
-        const material = SCENE_MATERIALS[savedMaterialGuid];
-        object.material = material;
+        // Restore the original material that was saved before highlighting
+        if (savedOriginalMaterial) {
+            object.material = savedOriginalMaterial;
+            savedOriginalMaterial = null;
+        } else if (savedMaterialGuid && SCENE_MATERIALS[savedMaterialGuid]) {
+            // Fallback: try to restore from SCENE_MATERIALS if available
+            const material = SCENE_MATERIALS[savedMaterialGuid];
+            object.material = material;
+        }
     }
 
     highlightObject(object: THREE.Object3D) {
+        // Save the original material before replacing it
+        savedOriginalMaterial = object.material as THREE.Material;
+
         const geoGuid = Object.keys(SCENE_GEOMETRIES).find(
             (key) => SCENE_GEOMETRIES[key] === object,
         );
