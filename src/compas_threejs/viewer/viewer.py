@@ -10,6 +10,7 @@ from uuid import uuid4
 import compas_pb
 from compas.colors import Color
 from compas.geometry import Point
+from compas_brep import Brep
 from rich.console import Console
 
 from compas_threejs.lights.ambientlight import AmbientLight
@@ -116,6 +117,7 @@ class Viewer:
         self._geometry_registry = dict()
         self._metadata_registry = dict()
         self._object_actions_registry = dict()
+        self._brep_viewmesh_registry = dict()  # brep_id -> viewmesh
 
     def __enter__(self):
         return self
@@ -455,6 +457,14 @@ class Viewer:
         None
 
         """
+        # if it is a Brep we need to get its wiewmesh
+        if isinstance(geometry, Brep):
+            brep_id = geometry.guid
+            brep_viewmesh = geometry.to_viewmesh()
+            self._brep_viewmesh_registry[brep_id] = brep_viewmesh
+            # the geometry variable now gets the viewmesh
+            geometry = brep_viewmesh
+
         obj_id = geometry.guid
 
         binary_data = compas_pb.pb_dump_bts(geometry)
@@ -502,6 +512,14 @@ class Viewer:
             The geometry object to be updated.
         """
         obj_id = geometry.guid
+
+        # If the geometry is a Brep get its respective viewmesh
+        if isinstance(geometry, Brep):
+            viewmesh = self._brep_viewmesh_registry.get(geometry.guid)
+            if viewmesh:
+                obj_id = viewmesh.guid
+            geometry = geometry.to_viewmesh()
+
         binary_data = compas_pb.pb_dump_bts(geometry)
         loop = get_server_loop()
         if loop:
@@ -510,6 +528,12 @@ class Viewer:
             self.queued_messages.append((binary_data, obj_id))
 
     def remove_object(self, geometry):
+        # If the geometry is a Brep, remove its viewmesh from the registry
+        if isinstance(geometry, Brep):
+            viewmesh = self._brep_viewmesh_registry.get(geometry.guid)
+            if viewmesh:
+                geometry = viewmesh
+
         obj_id = geometry.guid
         message = {"dispatch": "remove_object", "guid": str(obj_id)}
         self._send_dictionary_message(message)
