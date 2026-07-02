@@ -2,19 +2,15 @@ import { scene } from "./scene_manager";
 import * as THREE from "three";
 import { GEOMETRY_MATERIALS, SCENE_MATERIALS } from "./material_manager";
 import { showEdges } from "@/store/store";
+import { convertToThreeJSMesh } from "@/conversions";
 
 export const SCENE_GEOMETRIES: { [guid: string]: THREE.Object3D } = {};
 
-const ABSTRACT_GEOMETRIES = [
-    "Line",
-    "Point",
-    "Vector",
-    "Frame",
-    "Plane",
-    "Polyline",
-];
+const ABSTRACT_GEOMETRIES = ["Line", "Point", "Vector", "Frame", "Plane", "Polyline"];
 
 export function geometryManager(obj: any) {
+    console.log(obj);
+
     // FILTER
     // if the geometry is abstract, than send it to another workflow\
     if (ABSTRACT_GEOMETRIES.includes(obj.name)) {
@@ -25,7 +21,7 @@ export function geometryManager(obj: any) {
     const existingObj = SCENE_GEOMETRIES[guid];
 
     // 1. Get the new Mesh from your API
-    const newMesh = obj.buildGeometry();
+    const newMesh = convertToThreeJSMesh(obj);
     if (newMesh instanceof THREE.Mesh) {
         console.log("True");
     } else {
@@ -107,10 +103,7 @@ function abstractGeometryManager(obj: any) {
     // GEOMETRY
     if (geometry instanceof THREE.Line || geometry instanceof THREE.Points) {
         geometry.material = material;
-    } else if (
-        geometry instanceof THREE.ArrowHelper ||
-        geometry instanceof THREE.PlaneHelpers
-    ) {
+    } else if (geometry instanceof THREE.ArrowHelper || geometry instanceof THREE.PlaneHelpers) {
         geometry.setColor(material.color);
     }
 
@@ -118,10 +111,7 @@ function abstractGeometryManager(obj: any) {
     SCENE_GEOMETRIES[guid] = geometry;
 }
 
-export function updateMaterial(
-    geometry_guid: string,
-    material: THREE.MeshStandardMaterial,
-) {
+export function updateMaterial(geometry_guid: string, material: THREE.MeshStandardMaterial) {
     const object = SCENE_GEOMETRIES[geometry_guid];
 
     if (!object) {
@@ -133,10 +123,7 @@ export function updateMaterial(
         return;
     }
 
-    if (
-        object instanceof THREE.ArrowHelper ||
-        object instanceof THREE.PlaneHelpers
-    ) {
+    if (object instanceof THREE.ArrowHelper || object instanceof THREE.PlaneHelpers) {
         object.setColor(material.color);
     }
 }
