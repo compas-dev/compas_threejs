@@ -1,7 +1,4 @@
-import {
-    unpackMessageToGeometry,
-    unpackMessage,
-} from "@gramaziokohler/compas-pb-ts";
+import { unpackMessageToGeometry, unpackMessage } from "@gramaziokohler/compas-pb-ts";
 import { Dictionary } from "@gramaziokohler/compas-pb-ts";
 import * as THREE from "three";
 import { lightManager } from "../viewer/light_manager";
@@ -18,14 +15,20 @@ import { removeObjectFromScene } from "../viewer/scene_manager";
 const SCENE_GEOMETRIES: { [guid: string]: THREE.Object3D } = {};
 
 export function dispatchMessage(message: Uint8Array) {
-    const obj = unpackMessageToGeometry(message);
+    decodeWebsocketMessage(message);
+    // const obj = unpackMessageToGeometry(message);
+    // if (obj instanceof Dictionary) {
+    //     analyzeDictionary(obj);
+    //     return;
+    // } else {
+    //     geometryManager(obj);
+    // }
+}
 
-    if (obj instanceof Dictionary) {
-        analyzeDictionary(obj);
-        return;
-    } else {
-        geometryManager(obj);
-    }
+export function decodeWebsocketMessage(message: Uint8Array) {
+    // With compas_pb_ts unpack the message
+    const object = unpackMessage(message);
+    console.log(object);
 }
 
 function analyzeDictionary(dictionary: Dictionary) {

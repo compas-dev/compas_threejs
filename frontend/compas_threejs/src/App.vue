@@ -13,7 +13,7 @@
 import { onMounted, ref } from "vue";
 import ObjectInfo from "./components/layout/ObjectInfo.vue";
 import { renderer } from "./viewer/scene_manager";
-import { initializeWebSocketConnection } from "./communications/communication";
+import { initializeWebSocketConnection } from "./communications/websocket";
 import Sidebar from "@/components/layout/Sidebar.vue";
 import ThemeIndicator from "@/components/layout/ThemeIndicator.vue";
 import { theme } from "@/store/store";

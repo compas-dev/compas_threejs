@@ -1,5 +1,5 @@
 import { reactive } from "vue";
-import { sendData } from "@/communications/communication";
+import { sendDataMessage } from "@/communications/websocket";
 import type { Dictionary } from "@gramaziokohler/compas-pb-ts";
 import { sideBarInfoState } from "../store/store";
 
@@ -10,13 +10,7 @@ interface ButtonComponent {
     component: "Button";
     label?: string;
     props: {
-        variant:
-            | "outline"
-            | "default"
-            | "destructive"
-            | "secondary"
-            | "ghost"
-            | "link";
+        variant: "outline" | "default" | "destructive" | "secondary" | "ghost" | "link";
         text: string;
     };
     action: string; // GUID for click action
@@ -49,10 +43,7 @@ interface NumberFieldComponent {
 }
 
 // --- The main type is now a union of all supported components ---
-export type DynamicComponent =
-    | ButtonComponent
-    | SliderComponent
-    | NumberFieldComponent;
+export type DynamicComponent = ButtonComponent | SliderComponent | NumberFieldComponent;
 export const sidebarComponents = reactive<DynamicComponent[]>([]);
 
 export function uiManager(data: { [key: string]: any }) {
@@ -136,5 +127,5 @@ export function handleAction(actionGuid: string, value?: any) {
         message.value = value;
     }
 
-    sendData(message);
+    sendDataMessage(message);
 }
