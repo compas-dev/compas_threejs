@@ -18,13 +18,18 @@ import { removeObjectFromScene } from "../viewer/scene_manager";
 const SCENE_GEOMETRIES: { [guid: string]: THREE.Object3D } = {};
 
 export function dispatchMessage(message: Uint8Array) {
-    const obj = unpackMessageToGeometry(message);
+    try {
+        const obj = unpackMessageToGeometry(message);
 
-    if (obj instanceof Dictionary) {
-        analyzeDictionary(obj);
-        return;
-    } else {
-        geometryManager(obj);
+        if (obj instanceof Dictionary) {
+            analyzeDictionary(obj);
+            return;
+        } else {
+            geometryManager(obj);
+        }
+    } catch (error) {
+        console.error("Error decoding message:", error);
+        console.error("Message bytes:", message);
     }
 }
 

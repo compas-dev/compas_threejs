@@ -26,12 +26,6 @@ export function geometryManager(obj: any) {
 
     // 1. Get the new Mesh from your API
     const newMesh = obj.buildGeometry();
-    if (newMesh instanceof THREE.Mesh) {
-        console.log("True");
-    } else {
-        console.log("False");
-        return;
-    }
     if (!(newMesh instanceof THREE.Mesh)) return;
 
     // 2. Extract and prepare the geometry from the new mesh

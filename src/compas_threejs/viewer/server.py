@@ -25,9 +25,24 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.send_bytes(buffer)
     try:
         while True:
-            data = await websocket.receive_bytes()
-            if viewer_instance:
-                viewer_instance.on_message(data)
+            try:
+                # Receive either text or bytes
+                message = await websocket.receive()
+            except RuntimeError as e:
+                # Handle "Cannot call receive once a disconnect message has been received"
+                if "disconnect" in str(e).lower():
+                    break
+                raise
+
+            if "text" in message:
+                # Text data (JSON) - process as UI callback from browser
+                data = message["text"].encode("utf-8")
+                if viewer_instance:
+                    viewer_instance.on_message(data)
+            elif "bytes" in message:
+                # Binary data - broadcast to all clients (geometry/material from RemoteViewer)
+                data = message["bytes"]
+                await broadcast(data)
     except WebSocketDisconnect:
         clients.discard(websocket)
 
@@ -38,9 +53,21 @@ dist_dir = Path(__file__).parent / "frontend"
 app.mount("/", StaticFiles(directory=dist_dir, html=True), name="frontend")
 
 
-async def broadcast(binary_data: bytes, obj_id: str = None):
-    key = obj_id or str(len(scene_state))
-    scene_state[key] = binary_data
+async def broadcast(binary_data: bytes, obj_id: str = None, persist: bool = True):
+    """Broadcast binary data to all connected clients.
+
+    Parameters
+    ----------
+    binary_data : bytes
+        The binary data to broadcast.
+    obj_id : str, optional
+        Object ID for scene state storage.
+    persist : bool, optional
+        If True, store in scene_state for new clients. Default is True.
+    """
+    if persist:
+        key = obj_id or str(len(scene_state))
+        scene_state[key] = binary_data
     if not clients:
         return
     await asyncio.gather(

@@ -26,7 +26,6 @@ export function objectInfoManager(data: { [key: string]: any } | null) {
 }
 
 export function objectActionManager(data: Record<string, any>) {
-    console.log("Received object action:", data);
     const action = {
         guid: data.guid.value,
         label: data.label.value,

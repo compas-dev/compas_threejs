@@ -419,11 +419,18 @@ class Viewer:
         webbrowser.open(f"http://localhost:{self.websocket_port}/")
 
     def _send_dictionary_message(self, msg: dict):
-        """Helper method to send a dictionary message to the frontend."""
+        """Helper method to send a dictionary message to the frontend.
+
+        UI elements are not persisted in scene_state to avoid replaying them to new clients.
+        """
         binary_data = compas_pb.pb_dump_bts(msg)
+        dispatch = msg.get("dispatch", "")
+        persist = dispatch not in ("ui", "remove_object")
         loop = get_server_loop()
         if loop:
-            asyncio.run_coroutine_threadsafe(broadcast(binary_data, ""), loop)
+            asyncio.run_coroutine_threadsafe(
+                broadcast(binary_data, "", persist=persist), loop
+            )
         else:
             # Queue the message if the server is not running yet
             self.queued_messages.append((binary_data, ""))
