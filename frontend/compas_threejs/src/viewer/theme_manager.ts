@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import { theme } from "@/store/store";
-import { scene } from "../viewer/scene_manager";
 
 const DARK_LIGHTNESS_THRESHOLD = 0.5;
 
@@ -8,6 +7,7 @@ const lightBackgroundColor = 0xe6e6e6;
 const darkBackgroundColor = 0x000000;
 let userLightBackgroundColor: number | null = null;
 let userDarkBackgroundColor: number | null = null;
+let sceneInstance: THREE.Scene | null = null;
 
 function getColorLightness(color: number): number {
     const r8 = (color >> 16) & 255;
@@ -22,10 +22,21 @@ function isDarkBackgroundColor(color: number): boolean {
     return getColorLightness(color) < DARK_LIGHTNESS_THRESHOLD;
 }
 
-export function themeManager(data: Record<string, unknown>): void {
-    if (data.mode.value === "dark") {
+/**
+ * Initialize the theme manager with a scene instance
+ */
+export function initializeThemeManager(scene: THREE.Scene): void {
+    sceneInstance = scene;
+}
+
+interface ThemeUpdateData {
+    mode?: { value: string };
+}
+
+export function themeManager(data: ThemeUpdateData): void {
+    if (data.mode?.value === "dark") {
         goDarkMode();
-    } else if (data.mode.value === "light") {
+    } else if (data.mode?.value === "light") {
         goLightMode();
     }
 }
@@ -55,20 +66,30 @@ export function toggleTheme() {
 }
 
 export function goDarkMode() {
+    if (!sceneInstance) {
+        console.warn("Theme manager not initialized. Call initializeThemeManager() first.");
+        return;
+    }
+
     if (userDarkBackgroundColor !== null) {
-        scene.background = new THREE.Color(userDarkBackgroundColor);
+        sceneInstance.background = new THREE.Color(userDarkBackgroundColor);
     } else {
-        scene.background = new THREE.Color(darkBackgroundColor);
+        sceneInstance.background = new THREE.Color(darkBackgroundColor);
     }
 
     theme.value = "dark";
 }
 
 export function goLightMode() {
+    if (!sceneInstance) {
+        console.warn("Theme manager not initialized. Call initializeThemeManager() first.");
+        return;
+    }
+
     if (userLightBackgroundColor !== null) {
-        scene.background = new THREE.Color(userLightBackgroundColor);
+        sceneInstance.background = new THREE.Color(userLightBackgroundColor);
     } else {
-        scene.background = new THREE.Color(lightBackgroundColor);
+        sceneInstance.background = new THREE.Color(lightBackgroundColor);
     }
     theme.value = "light";
 }

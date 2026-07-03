@@ -1,8 +1,8 @@
-import { unpackMessage, getObjectFromMessage } from "@gramaziokohler/compas-pb-ts";
+import { getObjectFromMessage } from "@gramaziokohler/compas-pb-ts";
 import { Dictionary } from "@gramaziokohler/compas-pb-ts";
-import { lightManager } from "../viewer/light_manager";
+import { lightManagerFromData } from "../viewer/light_manager";
 import { geometryManager } from "../viewer/geometry_manager";
-import { materialManager } from "../viewer/material_manager";
+import { materialManagerFromData } from "../viewer/material_manager";
 import { sceneManager } from "../viewer/scene_manager";
 import { themeManager } from "../viewer/theme_manager";
 import { uiManager } from "./sidebarStore";
@@ -31,10 +31,10 @@ function analyzeDictionary(dictionary: Dictionary) {
     const data = dictionary.data.items;
     switch (data.dispatch.value) {
         case "material":
-            materialManager(data);
+            materialManagerFromData(data);
             break;
         case "light":
-            lightManager(data);
+            lightManagerFromData(data);
             break;
         case "scene":
             sceneManager(data);

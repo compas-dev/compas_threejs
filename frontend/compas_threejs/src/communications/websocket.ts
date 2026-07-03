@@ -46,7 +46,7 @@ export function sendWebSocketMessage(message: ArrayBuffer): boolean {
     }
 }
 
-export function sendDataMessage(data: Record<string, any>): boolean {
+export function sendDataMessage(data: Record<string, undefined>): boolean {
     /**
      * Sends data over the WebSocket connection as text (JSON).
      * Frontend-to-backend messages are sent as text to avoid being

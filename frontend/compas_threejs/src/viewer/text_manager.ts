@@ -5,95 +5,137 @@ import { SCENE_GEOMETRIES } from "./geometry_manager";
 import { GEOMETRY_MATERIALS, SCENE_MATERIALS } from "./material_manager";
 import { scene } from "./scene_manager";
 
-export function textManager(data: Record<string, unknown>) {
-    switch (data.type.value) {
-        case "text_geometry":
-            buildTextGeometry(data);
-            break;
+type TextData = Record<string, { value: unknown }>;
+
+type TextGeometryParams = {
+    text: string;
+    fontName: string;
+    fontWeight: string;
+    size: number;
+    depth: number;
+};
+
+type TextPositionParams = {
+    point: THREE.Vector3;
+    direction: THREE.Vector3;
+    up: THREE.Vector3;
+};
+
+const FONT_CACHE: Record<string, THREE.Font> = {};
+const FONT_PATH = "/fonts";
+const DEFAULT_MATERIAL_COLOR = 0x00ffff;
+
+export function textManager(data: TextData): void {
+    if (data.type.value === "text_geometry") {
+        void buildTextGeometry(data);
     }
 }
 
-// A simple object to store fonts we've already loaded
-const FONT_CACHE: Record<string, unknown> = {};
-
-async function loadFont(fontName: string, fontWeight: string): Promise<unknown> {
+async function loadFont(fontName: string, fontWeight: string): Promise<THREE.Font> {
     const cacheKey = `${fontName}_${fontWeight}`;
 
-    // 1. Check if we already have it
     if (FONT_CACHE[cacheKey]) {
         return FONT_CACHE[cacheKey];
     }
 
     const loader = new FontLoader();
-    const path = `/fonts/${cacheKey}.typeface.json`;
+    const path = `${FONT_PATH}/${cacheKey}.typeface.json`;
 
     return new Promise((resolve, reject) => {
         loader.load(
             path,
-            (response) => {
-                // 2. Save it to cache before resolving
-                FONT_CACHE[cacheKey] = response;
-                resolve(response);
+            (font: THREE.Font) => {
+                FONT_CACHE[cacheKey] = font;
+                resolve(font);
             },
             undefined,
-            (err) => reject(err)
+            (err: ErrorEvent) => reject(err)
         );
     });
 }
 
-async function buildTextGeometry(data: Record<string, unknown>) {
-    const text = data.text.value;
-    const fontName = data.font.value;
-    const fontWeight = data.weight.value;
-    const depth = data.depth.value;
-    const size = data.size.value;
+function extractTextParams(data: TextData): TextGeometryParams {
+    return {
+        text: data.text.value as string,
+        fontName: data.font.value as string,
+        fontWeight: data.weight.value as string,
+        size: data.size.value as number,
+        depth: data.depth.value as number,
+    };
+}
 
-    // AWAIT the font here. The code will pause until the font is ready.
-    const font = await loadFont(fontName, fontWeight);
+function extractPositionParams(data: TextData): TextPositionParams {
+    return {
+        point: new THREE.Vector3(
+            data.point_x.value as number,
+            data.point_y.value as number,
+            data.point_z.value as number
+        ),
+        direction: new THREE.Vector3(
+            data.direction_x.value as number,
+            data.direction_y.value as number,
+            data.direction_z.value as number
+        ),
+        up: new THREE.Vector3(
+            data.up_x.value as number,
+            data.up_y.value as number,
+            data.up_z.value as number
+        ),
+    };
+}
 
-    const textGeometry = new TextGeometry(text, {
-        font: font,
-        size: size,
-        depth: depth,
+function getOrCreateMaterial(guid: string): THREE.MeshStandardMaterial {
+    if (GEOMETRY_MATERIALS[guid]) {
+        return SCENE_MATERIALS[GEOMETRY_MATERIALS[guid]];
+    }
+
+    return new THREE.MeshStandardMaterial({
+        color: DEFAULT_MATERIAL_COLOR,
+        side: THREE.DoubleSide,
     });
+}
 
-    let material: THREE.MeshStandardMaterial;
-    if (GEOMETRY_MATERIALS[data.guid.value]) {
-        const material_guid = GEOMETRY_MATERIALS[data.guid.value];
-        material = SCENE_MATERIALS[material_guid];
-    } else {
-        material = new THREE.MeshStandardMaterial({
-            color: 0x00ffff,
-            side: THREE.DoubleSide,
-        });
+function calculateCenterOffset(geometry: TextGeometry, isCentered: boolean): number {
+    if (!isCentered) {
+        return 0;
     }
 
-    let centerOffset: number;
-    if (data.centered.value) {
-        textGeometry.computeBoundingBox();
-        centerOffset = -0.5 * (textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x);
-    } else {
-        centerOffset = 0;
+    geometry.computeBoundingBox();
+    const boundingBox = geometry.boundingBox;
+    if (!boundingBox) {
+        return 0;
     }
 
-    const point = new THREE.Vector3(data.point_x.value, data.point_y.value, data.point_z.value);
-    const direction = new THREE.Vector3(
-        data.direction_x.value,
-        data.direction_y.value,
-        data.direction_z.value
-    );
-    const up = new THREE.Vector3(data.up_x.value, data.up_y.value, data.up_z.value);
+    return -0.5 * (boundingBox.max.x - boundingBox.min.x);
+}
 
-    const zAxis = new THREE.Vector3().crossVectors(direction, up).normalize();
-    const xAxis = direction.clone().normalize();
-    const yAxis = up.clone().normalize();
+function createTransformationMatrix(params: TextPositionParams): THREE.Matrix4 {
+    const zAxis = new THREE.Vector3().crossVectors(params.direction, params.up).normalize();
+    const xAxis = params.direction.clone().normalize();
+    const yAxis = params.up.clone().normalize();
 
-    const transformationMatrix = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
-    transformationMatrix.setPosition(point);
+    const matrix = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
+    matrix.setPosition(params.point);
+    return matrix;
+}
+
+async function buildTextGeometry(data: TextData): Promise<void> {
+    const { text, fontName, fontWeight, size, depth } = extractTextParams(data);
+    const positionParams = extractPositionParams(data);
+    const guid = data.guid.value as string;
+    const isCentered = data.centered.value as boolean;
+
+    const font = await loadFont(fontName, fontWeight);
+    const textGeometry = new TextGeometry(text, { font, size, depth });
+    const material = getOrCreateMaterial(guid);
+
+    const centerOffset = calculateCenterOffset(textGeometry, isCentered);
+    const transformationMatrix = createTransformationMatrix(positionParams);
 
     const textMesh = new THREE.Mesh(textGeometry, material);
     textMesh.position.x = centerOffset;
     textMesh.applyMatrix4(transformationMatrix);
-    SCENE_GEOMETRIES[data.guid.value] = textMesh;
+
+    SCENE_GEOMETRIES[guid] = textMesh;
     scene.add(textMesh);
 }

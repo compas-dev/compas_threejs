@@ -2,270 +2,404 @@ import { scene } from "./scene_manager";
 import * as THREE from "three";
 import { RectAreaLightHelper } from "three/examples/jsm/helpers/RectAreaLightHelper.js";
 import { Sky } from "three/examples/jsm/objects/Sky.js";
+import { ligthtToThree } from "../conversions/lights";
 
-export const SCENE_LIGHTS: { [guid: string]: THREE.Material } = {};
-export const SCENE_LIGTH_HELPERS: { [guid: string]: THREE.Material } = {};
-
-export function lightManager(data: Record<string, unknown>) {
-    if (data.type.value == "point_light") {
-        buildPointLight(data);
-    } else if (data.type.value == "spot_light") {
-        buildSpotLight(data);
-    } else if (data.type.value == "rect_light") {
-        buildRectLight(data);
-    } else if (data.type.value == "sunlight") {
-        buildSunlight(data);
-    } else if (data.type.value == "sky") {
-        buildSky(data);
-    } else if (data.type.value == "ambient_light") {
-        buildAmbientLight(data);
-    }
+interface LightEntry {
+    light: THREE.Light | Sky;
+    helper?: THREE.Object3D;
+    backendGuid: string; // GUID from backend
+    lightType: string;
 }
 
-function buildPointLight(data: Record<string, unknown>) {
-    let pointLight: THREE.PointLight, helper: THREE.PointLightHelper;
+interface SkyLightEntry {
+    sky: Sky;
+    sun: THREE.DirectionalLight;
+    ambient: THREE.AmbientLight;
+    helper?: THREE.Object3D;
+    backendGuid: string; // GUID from backend
+}
 
-    // Get the light
-    if (SCENE_LIGHTS[data.guid.value]) {
-        pointLight = SCENE_LIGHTS[data.guid.value] as THREE.PointLight;
+export const SCENE_LIGHTS: Map<string, LightEntry> = new Map();
+export const SCENE_SKY_LIGHTS: Map<string, SkyLightEntry> = new Map();
+
+/**
+ * Convert raw light data to THREE.Light object
+ * Internal helper for conversion
+ */
+function convertLightData(data: Record<string, unknown>): THREE.Light | Sky | null {
+    return ligthtToThree(data as any);
+}
+
+/**
+ * Determine light type from data
+ */
+function getLightType(data: Record<string, unknown>): string {
+    return (data.type as { value: string }).value;
+}
+
+/**
+ * Determine light type from THREE.Light object
+ */
+function getLightTypeFromObject(light: THREE.Light | Sky): string {
+    if (light instanceof Sky) return "sky";
+    if (light instanceof THREE.PointLight) return "point_light";
+    if (light instanceof THREE.SpotLight) return "spot_light";
+    if (light instanceof THREE.RectAreaLight) return "rect_light";
+    if (light instanceof THREE.DirectionalLight) return "sunlight";
+    if (light instanceof THREE.AmbientLight) return "ambient_light";
+    return "unknown";
+}
+
+/**
+ * Get backend guid from light object by searching entries
+ */
+function getBackendGuidFromLight(light: THREE.Light | Sky): string | undefined {
+    const entry = Array.from(SCENE_LIGHTS.values()).find((e) => e.light === light);
+    return entry?.backendGuid;
+}
+
+/**
+ * Main entry point for light management
+ * Accepts a THREE.Light object and manages it in the scene
+ */
+export function lightManager(
+    light: THREE.Light | Sky,
+    backendGuid: string,
+    lightType: string,
+    options?: { helper?: boolean }
+): void {
+    if (!backendGuid) {
+        console.warn("Light management requires a backendGuid");
+        return;
+    }
+
+    if (lightType === "sky") {
+        manageSkyLight(light as Sky, backendGuid);
     } else {
-        pointLight = new THREE.PointLight();
-        scene.add(pointLight);
-    }
-
-    // Properties of the ligt
-    let color = data.color.value;
-    color = color.replace("#", "0x");
-    color = parseInt(color);
-    pointLight.color.set(color);
-    pointLight.intensity = data.intensity.value;
-    pointLight.distance = data.distance.value;
-    pointLight.decay = data.decay.value;
-    pointLight.position.set(data.x.value, data.y.value, data.z.value);
-    pointLight.castShadow = true;
-    pointLight.shadow.bias = -0.002;
-    pointLight.shadow.normalBias = 0.02;
-
-    // Set the helper
-    if (SCENE_LIGTH_HELPERS[data.guid.value] && data.helper.value) {
-        helper = SCENE_LIGTH_HELPERS[data.guid.value];
-        helper.update();
-    } else if (data.helper.value) {
-        helper = new THREE.PointLightHelper(pointLight, 0.5);
-        scene.add(helper);
-    }
-
-    // Save light and helper
-    SCENE_LIGHTS[data.guid.value] = pointLight;
-    if (helper) {
-        SCENE_LIGTH_HELPERS[data.guid.value] = helper;
+        const existingEntry = SCENE_LIGHTS.get(backendGuid);
+        if (existingEntry) {
+            updateLight(backendGuid, light);
+        } else {
+            addLight(light, backendGuid, options?.helper);
+        }
     }
 }
 
-function buildSpotLight(data: Record<string, unknown>) {
-    let spotLight: THREE.SpotLight, helper: THREE.SpotLightHelper;
+/**
+ * Convert light data and manage it (internal API)
+ * Used when data conversion is needed
+ */
+export function lightManagerFromData(data: Record<string, unknown>): void {
+    const backendGuid = (data.guid as { value: string })?.value;
+    const lightType = getLightType(data);
+    const showHelper = (data.helper as { value: boolean })?.value ?? false;
 
-    // Get the light
-    if (SCENE_LIGHTS[data.guid.value]) {
-        spotLight = SCENE_LIGHTS[data.guid.value] as THREE.SpotLight;
-        scene.remove(spotLight.target);
+    if (!backendGuid) {
+        console.warn("Light data missing backendGuid");
+        return;
+    }
+
+    const newLight = convertLightData(data);
+    if (!newLight) {
+        console.warn(`Failed to convert light of type: ${lightType}`);
+        return;
+    }
+
+    lightManager(newLight, backendGuid, lightType, { helper: showHelper });
+}
+
+/**
+ * Add a new light to the scene
+ */
+export function addLight(
+    newLight: THREE.Light | Sky,
+    backendGuid: string,
+    showHelper?: boolean
+): void {
+    scene.add(newLight);
+
+    // Add spotlight target to scene if it exists
+    if (newLight instanceof THREE.SpotLight && newLight.target) {
+        scene.add(newLight.target);
+    }
+
+    const lightType = getLightTypeFromObject(newLight);
+
+    const entry: LightEntry = {
+        light: newLight,
+        backendGuid,
+        lightType,
+    };
+
+    // Add entry to map first so helper can reference it
+    SCENE_LIGHTS.set(backendGuid, entry);
+
+    if (showHelper) {
+        addLightHelper(newLight, backendGuid);
+        // Helper was added and stored in entry by addLightHelper
+    }
+}
+
+/**
+ * Remove a light from the scene
+ */
+export function removeLight(backendGuidOrObject: string | THREE.Light | Sky): void {
+    let backendGuid: string;
+    let entry: LightEntry | undefined;
+
+    // Determine if parameter is a backend guid or a light object
+    if (typeof backendGuidOrObject === "string") {
+        backendGuid = backendGuidOrObject;
+        entry = SCENE_LIGHTS.get(backendGuid);
     } else {
-        spotLight = new THREE.SpotLight();
-        scene.add(spotLight);
+        // Find the entry by light object reference
+        entry = Array.from(SCENE_LIGHTS.values()).find((e) => e.light === backendGuidOrObject);
+        if (!entry) return;
+        backendGuid = entry.backendGuid;
     }
 
-    // Properties of the lights
-    let color = data.color.value;
-    color = color.replace("#", "0x");
-    color = parseInt(color);
-    spotLight.color.set(color);
-    spotLight.intensity = data.intensity.value;
-    spotLight.distance = data.distance.value;
-    spotLight.angle = data.angle.value;
-    spotLight.penumbra = data.penumbra.value;
-    spotLight.decay = data.decay.value;
-    spotLight.position.set(data.x.value, data.y.value, data.z.value);
-    const target = new THREE.Object3D();
-    target.position.set(data.tx.value, data.ty.value, data.tz.value);
-    scene.add(target);
-    spotLight.target = target;
-    scene.remove(target);
-    spotLight.castShadow = true;
-    spotLight.shadow.bias = -0.002;
-    spotLight.shadow.normalBias = 0.02;
-
-    // Set the helpers
-    if (SCENE_LIGTH_HELPERS[data.guid.value] && data.helper.value) {
-        helper = SCENE_LIGTH_HELPERS[data.guid.value];
-        helper.update();
-    } else if (data.helper.value) {
-        helper = new THREE.SpotLightHelper(spotLight);
-        scene.add(helper);
+    if (!entry) {
+        console.warn(`Light with backendGuid ${backendGuid} not found`);
+        return;
     }
 
-    // Save the light and helper
-    SCENE_LIGHTS[data.guid.value] = spotLight;
-    if (helper) {
-        SCENE_LIGTH_HELPERS[data.guid.value] = helper;
+    removeLightHelper(backendGuid);
+    scene.remove(entry.light);
+
+    if (entry.light instanceof THREE.SpotLight && entry.light.target) {
+        scene.remove(entry.light.target);
     }
+
+    SCENE_LIGHTS.delete(backendGuid);
 }
 
-function buildRectLight(data: Record<string, unknown>) {
-    let rectLight: THREE.RectAreaLight, helper: RectAreaLightHelper;
+/**
+ * Update an existing light's properties
+ */
+export function updateLight(
+    backendGuidOrOldLight: string | THREE.Light | Sky,
+    newLight: THREE.Light | Sky
+): void {
+    let backendGuid: string;
+    let entry: LightEntry | undefined;
 
-    // Get the light
-    if (SCENE_LIGHTS[data.guid.value]) {
-        rectLight = SCENE_LIGHTS[data.guid.value] as THREE.RectAreaLight;
+    // Determine if first parameter is a backend guid or a light object
+    if (typeof backendGuidOrOldLight === "string") {
+        backendGuid = backendGuidOrOldLight;
+        entry = SCENE_LIGHTS.get(backendGuid);
     } else {
-        rectLight = new THREE.RectAreaLight();
-        scene.add(rectLight);
+        // Find the entry by old light object reference
+        entry = Array.from(SCENE_LIGHTS.values()).find((e) => e.light === backendGuidOrOldLight);
+        if (!entry) return;
+        backendGuid = entry.backendGuid;
     }
 
-    // Set the properties
-    let color = data.color.value;
-    color = color.replace("#", "0x");
-    color = parseInt(color);
-    rectLight.color.set(color);
-    rectLight.intensity = data.intensity.value;
-    rectLight.width = data.width.value;
-    rectLight.height = data.height.value;
-    rectLight.position.set(data.x.value, data.y.value, data.z.value);
-    rectLight.lookAt(data.tx.value, data.ty.value, data.tz.value);
-    // rectLight.castShadow = true;
-    // rectLight.shadow.bias = -0.002;
-    // rectLight.shadow.normalBias = 0.02
-
-    // Hleper
-    if (SCENE_LIGTH_HELPERS[data.guid.value] && data.helper.value) {
-        helper = SCENE_LIGTH_HELPERS[data.guid.value] as RectAreaLightHelper;
-        // helper.update();
-    } else if (data.helper.value) {
-        helper = new RectAreaLightHelper(rectLight);
-        scene.add(helper);
+    if (!entry) {
+        console.warn(`Light with backendGuid ${backendGuid} not found`);
+        return;
     }
 
-    // Save
-    SCENE_LIGHTS[data.guid.value] = rectLight;
-    if (helper) {
-        SCENE_LIGTH_HELPERS[data.guid.value] = helper;
+    const oldLight = entry.light;
+    const oldHelper = entry.helper;
+    const newLightType = getLightTypeFromObject(newLight);
+
+    // Remove old helper if exists
+    if (oldHelper) {
+        removeLightHelper(backendGuid);
     }
+
+    // Replace old light with new one
+    scene.remove(oldLight);
+    scene.add(newLight);
+
+    entry.light = newLight;
+    entry.lightType = newLightType;
 }
 
-function buildSunlight(data: Record<string, unknown>) {
-    let sunlight: THREE.DirectionalLight, helper: THREE.DirectionalLightHelper;
+/**
+ * Add a helper for a light
+ */
+export function addLightHelper(
+    lightOrBackendGuid: THREE.Light | Sky | string,
+    backendGuid?: string
+): void {
+    let light: THREE.Light | Sky;
+    let guid: string;
 
-    // Get the light
-    if (SCENE_LIGHTS[data.guid.value]) {
-        sunlight = SCENE_LIGHTS[data.guid.value] as THREE.DirectionalLight;
+    // Determine parameters based on input
+    if (typeof lightOrBackendGuid === "string") {
+        guid = lightOrBackendGuid;
+        const entry = SCENE_LIGHTS.get(guid);
+        if (!entry) return;
+        light = entry.light;
     } else {
-        sunlight = new THREE.DirectionalLight();
-        scene.add(sunlight);
+        light = lightOrBackendGuid;
+        guid = backendGuid || "";
+        if (!guid) {
+            const entry = Array.from(SCENE_LIGHTS.values()).find((e) => e.light === light);
+            if (!entry) return;
+            guid = entry.backendGuid;
+        }
     }
 
-    // Set the properties
-    let color = data.color.value;
-    color = color.replace("#", "0x");
-    color = parseInt(color);
-    sunlight.color.set(color);
-    sunlight.intensity = data.intensity.value;
-    sunlight.position.set(data.x.value, data.y.value, data.z.value);
-    sunlight.target.position.set(data.tx.value, data.ty.value, data.tz.value);
-    sunlight.castShadow = true;
+    let newHelper: THREE.Object3D | null = null;
+    const lightType = getLightTypeFromObject(light);
 
-    // Helper
-    if (SCENE_LIGTH_HELPERS[data.guid.value] && data.helper.value) {
-        helper = SCENE_LIGTH_HELPERS[data.guid.value] as THREE.DirectionalLightHelper;
-        helper.update();
-    } else if (data.helper.value) {
-        const helper = new THREE.DirectionalLightHelper(sunlight);
-        scene.add(helper);
+    switch (lightType) {
+        case "point_light":
+            newHelper = new THREE.PointLightHelper(light as THREE.PointLight, 0.5);
+            break;
+        case "spot_light":
+            newHelper = new THREE.SpotLightHelper(light as THREE.SpotLight);
+            break;
+        case "rect_light":
+            newHelper = new RectAreaLightHelper(light as THREE.RectAreaLight);
+            break;
+        case "sunlight":
+            newHelper = new THREE.DirectionalLightHelper(light as THREE.DirectionalLight);
+            break;
     }
 
-    // Save
-    SCENE_LIGHTS[data.guid.value] = sunlight;
-    if (helper) {
-        SCENE_LIGTH_HELPERS[data.guid.value] = helper;
+    if (!newHelper) {
+        return;
+    }
+
+    scene.add(newHelper);
+
+    const entry = SCENE_LIGHTS.get(guid);
+    if (entry) {
+        entry.helper = newHelper;
     }
 }
 
-function buildSky(data: Record<string, unknown>) {
-    let sky: Sky, sun: THREE.DirectionalLight, ambient: THREE.AmbientLight;
+/**
+ * Remove a light's helper
+ */
+export function removeLightHelper(backendGuidOrObject: string | THREE.Light | Sky): void {
+    let backendGuid: string;
+    let entry: LightEntry | undefined;
 
-    if (SCENE_LIGHTS[data.guid.value]) {
-        sky = SCENE_LIGHTS[data.guid.value] as Sky;
-        sun = SCENE_LIGHTS[data.guid.value + "_sun"];
-        ambient = SCENE_LIGHTS[data.guid.value + "_ambient"];
+    // Determine if parameter is a backend guid or a light object
+    if (typeof backendGuidOrObject === "string") {
+        backendGuid = backendGuidOrObject;
+        entry = SCENE_LIGHTS.get(backendGuid);
     } else {
-        sky = new Sky();
-        sun = new THREE.DirectionalLight(0xffffff, 1.0);
-        // sun.castShadow = true;
-        // sun.shadow.bias = -0.002;
-        // sun.shadow.normalBias = 0.02;
-        ambient = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(sky);
-        scene.add(sun);
-        scene.add(ambient);
+        // Find the entry by light object reference
+        entry = Array.from(SCENE_LIGHTS.values()).find((e) => e.light === backendGuidOrObject);
+        if (!entry) return;
+        backendGuid = entry.backendGuid;
     }
 
-    // Properties
-    sky.scale.setScalar(1000);
-    sky.material.uniforms["up"].value = new THREE.Vector3(0, 0, 1); // Set sky up direction
-    sky.material.uniforms["turbidity"].value = data.turbidity.value;
-    sky.material.uniforms["rayleigh"].value = data.rayleigh.value;
-    sky.material.uniforms["mieCoefficient"].value = data.mie_coefficient.value;
-    sky.material.uniforms["mieDirectionalG"].value = data.mie_directional_g.value;
+    if (!entry || !entry.helper) {
+        return;
+    }
 
-    const sunPosition = new THREE.Vector3();
-    const phi = THREE.MathUtils.degToRad(90 - data.elevation.value);
-    const theta = THREE.MathUtils.degToRad(data.azimuth.value);
-    sunPosition.setFromSphericalCoords(1, phi, theta);
-    sky.material.uniforms["sunPosition"].value = sunPosition;
-
-    sun.position.copy(sky.material.uniforms.sunPosition.value);
-    sun.color.copy(getSunColor(data.elevation.value));
-
-    ambient.color.copy(getSunColor(data.elevation.value)).multiplyScalar(0.6);
-
-    // Save
-    SCENE_LIGHTS[data.guid.value] = sky;
-    SCENE_LIGHTS[data.guid.value + "_sun"] = sun;
-    SCENE_LIGHTS[data.guid.value + "_ambient"] = ambient;
+    const oldHelper = entry.helper;
+    scene.remove(oldHelper);
+    entry.helper = undefined;
 }
 
-function getSunColor(elevation: number): THREE.Color {
-    if (elevation > 10) return new THREE.Color(0xffffff); // White sun when high
-    if (elevation > 0) {
-        // Transition from yellow to white
-        const t = elevation / 10.0;
-        return new THREE.Color(0xffffcc).lerp(new THREE.Color(0xffffff), t);
-    }
-    if (elevation > -5) {
-        // Transition from orange to yellow
-        const t = (elevation + 5) / 5.0;
-        return new THREE.Color(0xffcc66).lerp(new THREE.Color(0xffffcc), t);
-    }
-    // Red sun below the horizon
-    return new THREE.Color(0xffcc66);
-}
+/**
+ * Manage sky lights (special case with multiple lights)
+ */
+function manageSkyLight(newSky: Sky, skyBackendGuid: string): void {
+    const existingEntry = SCENE_SKY_LIGHTS.get(skyBackendGuid);
 
-function buildAmbientLight(data: Record<string, unknown>) {
-    let ambientLight: THREE.AmbientLight;
-
-    // Get the light
-    if (SCENE_LIGHTS[data.guid.value]) {
-        ambientLight = SCENE_LIGHTS[data.guid.value] as THREE.AmbientLight;
+    if (existingEntry) {
+        updateSkyLight(skyBackendGuid, newSky);
     } else {
-        ambientLight = new THREE.AmbientLight();
-        scene.add(ambientLight);
+        addSkyLight(skyBackendGuid, newSky);
+    }
+}
+
+/**
+ * Add a new sky light (includes sky, sun, and ambient light)
+ */
+function addSkyLight(skyBackendGuid: string, newSky: Sky): void {
+    const newSun = new THREE.DirectionalLight(0xffffff, 1.0);
+    const newAmbient = new THREE.AmbientLight(0xffffff, 0.6);
+
+    scene.add(newSky);
+    scene.add(newSun);
+    scene.add(newAmbient);
+
+    const entry: SkyLightEntry = {
+        sky: newSky,
+        sun: newSun,
+        ambient: newAmbient,
+        backendGuid: skyBackendGuid,
+    };
+
+    SCENE_SKY_LIGHTS.set(skyBackendGuid, entry);
+}
+
+/**
+ * Update an existing sky light
+ */
+function updateSkyLight(skyBackendGuidToUpdate: string, newSky: Sky): void {
+    const entry = SCENE_SKY_LIGHTS.get(skyBackendGuidToUpdate);
+
+    if (!entry) {
+        console.warn(`Sky light with skyBackendGuid ${skyBackendGuidToUpdate} not found`);
+        return;
     }
 
-    // Porperties
-    let color = data.color.value;
-    color = color.replace("#", "0x");
-    color = parseInt(color);
-    ambientLight.color.set(color);
-    ambientLight.intensity = data.intensity.value;
-    ambientLight.color.needsUpdate = true;
-    // Save
-    // SCENE_LIGHTS[data.guid.value] = ambientLight;
+    const oldSky = entry.sky;
+    scene.remove(oldSky);
+    scene.add(newSky);
+
+    entry.sky = newSky;
+}
+
+/**
+ * Remove a sky light (removes sky, sun, and ambient light)
+ */
+export function removeSkyLight(skyBackendGuid: string): void {
+    const entry = SCENE_SKY_LIGHTS.get(skyBackendGuid);
+
+    if (!entry) {
+        console.warn(`Sky light with skyBackendGuid ${skyBackendGuid} not found`);
+        return;
+    }
+
+    scene.remove(entry.sky);
+    scene.remove(entry.sun);
+    scene.remove(entry.ambient);
+
+    SCENE_SKY_LIGHTS.delete(skyBackendGuid);
+}
+
+/**
+ * Get all lights in the scene
+ */
+export function getAllLights(): LightEntry[] {
+    return Array.from(SCENE_LIGHTS.values());
+}
+
+/**
+ * Get a specific light by backendGuid
+ */
+export function getLight(backendGuid: string): LightEntry | undefined {
+    return SCENE_LIGHTS.get(backendGuid);
+}
+
+/**
+ * Clear all lights from the scene
+ */
+export function clearAllLights(): void {
+    SCENE_LIGHTS.forEach((entry) => {
+        scene.remove(entry.light);
+        if (entry.helper) {
+            scene.remove(entry.helper);
+        }
+    });
+
+    SCENE_SKY_LIGHTS.forEach((entry) => {
+        scene.remove(entry.sky);
+        scene.remove(entry.sun);
+        scene.remove(entry.ambient);
+    });
+
+    SCENE_LIGHTS.clear();
+    SCENE_SKY_LIGHTS.clear();
 }

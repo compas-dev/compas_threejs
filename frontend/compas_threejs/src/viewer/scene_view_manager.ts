@@ -1,15 +1,30 @@
 import { camera, controls, renderer, scene } from "./scene_manager";
 
+type Vector3 = { x: number; y: number; z: number };
+
 export type SavedView = {
     id: string;
     name: string;
-    cameraPosition: { x: number; y: number; z: number };
-    target: { x: number; y: number; z: number };
+    cameraPosition: Vector3;
+    target: Vector3;
     zoom: number;
     fov: number;
 };
 
 export type ScreenshotFormat = "png" | "jpg" | "webp";
+
+type ScreenshotFormatConfig = {
+    mimeType: string;
+    extension: string;
+    requiresQuality: boolean;
+    defaultQuality?: number;
+};
+
+const SCREENSHOT_FORMAT_CONFIG: Record<ScreenshotFormat, ScreenshotFormatConfig> = {
+    png: { mimeType: "image/png", extension: "png", requiresQuality: false },
+    jpg: { mimeType: "image/jpeg", extension: "jpg", requiresQuality: true, defaultQuality: 0.92 },
+    webp: { mimeType: "image/webp", extension: "webp", requiresQuality: false },
+};
 
 export type ScreenshotOptions = {
     width?: number;
@@ -19,105 +34,153 @@ export type ScreenshotOptions = {
     quality?: number;
 };
 
+const MINIMUM_DIMENSION = 16;
+const CANVAS_CONTEXT_ERROR = "Unable to create screenshot canvas context";
+
+function extractVector3(source: { x: number; y: number; z: number }): Vector3 {
+    return { x: source.x, y: source.y, z: source.z };
+}
+
 export function captureCurrentView(name: string): SavedView {
     return {
         id: `view-${Date.now()}`,
         name,
-        cameraPosition: {
-            x: camera.position.x,
-            y: camera.position.y,
-            z: camera.position.z,
-        },
-        target: {
-            x: controls.target.x,
-            y: controls.target.y,
-            z: controls.target.z,
-        },
+        cameraPosition: extractVector3(camera.position),
+        target: extractVector3(controls.target),
         zoom: camera.zoom,
         fov: camera.fov,
     };
 }
 
-export function applySavedView(view: SavedView) {
-    camera.position.set(view.cameraPosition.x, view.cameraPosition.y, view.cameraPosition.z);
-    controls.target.set(view.target.x, view.target.y, view.target.z);
+function applyVector3(
+    target: { set: (x: number, y: number, z: number) => void },
+    source: Vector3
+): void {
+    target.set(source.x, source.y, source.z);
+}
+
+export function applySavedView(view: SavedView): void {
+    applyVector3(camera.position, view.cameraPosition);
+    applyVector3(controls.target, view.target);
     camera.zoom = view.zoom;
     camera.fov = view.fov;
     camera.updateProjectionMatrix();
     controls.update();
 }
 
-function sanitizeDimension(value: number, fallback: number) {
+function sanitizeDimension(value: number, fallback: number): number {
     if (!Number.isFinite(value) || value <= 0) {
         return fallback;
     }
-
-    return Math.max(16, Math.round(value));
+    return Math.max(MINIMUM_DIMENSION, Math.round(value));
 }
 
-function createExportCanvas(width: number, height: number, format: ScreenshotFormat) {
-    const exportCanvas = document.createElement("canvas");
-    exportCanvas.width = width;
-    exportCanvas.height = height;
-
-    const context = exportCanvas.getContext("2d");
-    if (!context) {
-        throw new Error("Unable to create screenshot canvas context");
-    }
-
+function getSourceDimensions(): { width: number; height: number } {
     const source = renderer.domElement;
     const sourceRect = source.getBoundingClientRect();
-    const sourceWidth = Math.round(sourceRect.width) || source.clientWidth || source.width;
-    const sourceHeight = Math.round(sourceRect.height) || source.clientHeight || source.height;
+    const width = Math.round(sourceRect.width) || source.clientWidth || source.width;
+    const height = Math.round(sourceRect.height) || source.clientHeight || source.height;
+    return { width, height };
+}
 
+function prepareCanvasBackground(
+    context: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+    format: ScreenshotFormat
+): void {
     if (format === "jpg") {
-        // JPEG has no alpha channel; this is only a safe base layer before drawing.
         context.fillStyle = "#ffffff";
         context.fillRect(0, 0, width, height);
     } else {
         context.clearRect(0, 0, width, height);
     }
-
-    // Use "cover" behavior: fill target size without distortion, crop overflow.
-    const scale = Math.max(width / sourceWidth, height / sourceHeight);
-    const drawWidth = Math.round(sourceWidth * scale);
-    const drawHeight = Math.round(sourceHeight * scale);
-    const offsetX = Math.floor((width - drawWidth) / 2);
-    const offsetY = Math.floor((height - drawHeight) / 2);
-
-    context.drawImage(source, offsetX, offsetY, drawWidth, drawHeight);
-
-    return exportCanvas;
 }
 
-function triggerDownload(href: string, fileName: string) {
+function calculateScaleFit(
+    targetWidth: number,
+    targetHeight: number,
+    sourceWidth: number,
+    sourceHeight: number
+): {
+    scale: number;
+    drawWidth: number;
+    drawHeight: number;
+    offsetX: number;
+    offsetY: number;
+} {
+    const scale = Math.max(targetWidth / sourceWidth, targetHeight / sourceHeight);
+    const drawWidth = Math.round(sourceWidth * scale);
+    const drawHeight = Math.round(sourceHeight * scale);
+    const offsetX = Math.floor((targetWidth - drawWidth) / 2);
+    const offsetY = Math.floor((targetHeight - drawHeight) / 2);
+    return { scale, drawWidth, drawHeight, offsetX, offsetY };
+}
+
+function createExportCanvas(
+    width: number,
+    height: number,
+    format: ScreenshotFormat
+): HTMLCanvasElement {
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+        throw new Error(CANVAS_CONTEXT_ERROR);
+    }
+
+    const { width: sourceWidth, height: sourceHeight } = getSourceDimensions();
+    prepareCanvasBackground(context, width, height, format);
+
+    const { offsetX, offsetY, drawWidth, drawHeight } = calculateScaleFit(
+        width,
+        height,
+        sourceWidth,
+        sourceHeight
+    );
+    context.drawImage(renderer.domElement, offsetX, offsetY, drawWidth, drawHeight);
+
+    return canvas;
+}
+
+function triggerDownload(href: string, fileName: string): void {
     const link = document.createElement("a");
     link.download = fileName;
     link.href = href;
     link.click();
 }
 
-function buildDefaultFileName(extension: string) {
-    return `compas-view-${new Date().toISOString().replace(/[:.]/g, "-")}.${extension}`;
+function buildDefaultFileName(extension: string): string {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    return `compas-view-${timestamp}.${extension}`;
 }
 
-export function saveCurrentCanvasImage(options: ScreenshotOptions = {}) {
+function getRendererDimensions(): { width: number; height: number } {
+    const { domElement } = renderer;
+    return {
+        width: domElement.width || domElement.clientWidth,
+        height: domElement.height || domElement.clientHeight,
+    };
+}
+
+export function saveCurrentCanvasImage(options: ScreenshotOptions = {}): void {
     controls.update();
     renderer.render(scene, camera);
 
     const format = options.format ?? "png";
-    const fallbackWidth = renderer.domElement.width || renderer.domElement.clientWidth;
-    const fallbackHeight = renderer.domElement.height || renderer.domElement.clientHeight;
+    const { width: fallbackWidth, height: fallbackHeight } = getRendererDimensions();
     const width = sanitizeDimension(options.width ?? fallbackWidth, fallbackWidth);
     const height = sanitizeDimension(options.height ?? fallbackHeight, fallbackHeight);
     const exportCanvas = createExportCanvas(width, height, format);
 
-    const mimeType =
-        format === "jpg" ? "image/jpeg" : format === "webp" ? "image/webp" : "image/png";
-    const quality = format === "jpg" ? (options.quality ?? 0.92) : undefined;
-    const extension = format === "jpg" ? "jpg" : format === "webp" ? "webp" : "png";
-    const fileName = options.fileName ?? buildDefaultFileName(extension);
-    const dataUrl = exportCanvas.toDataURL(mimeType, quality);
+    const formatConfig = SCREENSHOT_FORMAT_CONFIG[format];
+    const quality = formatConfig.requiresQuality
+        ? (options.quality ?? formatConfig.defaultQuality)
+        : undefined;
+    const fileName = options.fileName ?? buildDefaultFileName(formatConfig.extension);
+    const dataUrl = exportCanvas.toDataURL(formatConfig.mimeType, quality);
 
     triggerDownload(dataUrl, fileName);
 }

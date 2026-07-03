@@ -65,7 +65,7 @@ function buildTransformationFromFrame(frame: Frame): THREE.Matrix4 {
  * @param arc - COMPAS Arc protobuf object
  * @returns A THREE object representing the arc (Line or Mesh)
  */
-export function arcToThreeJS(arc: Arc) {
+export function arcToThreeJS(_arc: Arc) {
     throw new Error("Method not implemented.");
 }
 
@@ -80,7 +80,7 @@ export function arcToThreeJS(arc: Arc) {
  * @param bezier - COMPAS Bezier protobuf object
  * @returns A THREE object representing the Bezier curve
  */
-export function bezierToThreeJS(bezier: Bezier) {
+export function bezierToThreeJS(_bezier: Bezier) {
     throw new Error("Method not implemented.");
 }
 
@@ -202,7 +202,7 @@ export function cylinderToThreeJS(cylinder: Cylinder, radialSegments: number) {
  * @param radialSegments - segment count for sampling the ellipse
  * @returns A THREE object representing the ellipse
  */
-export function ellipseToThreeJS(ellipse: Ellipse, radialSegments: number) {
+export function ellipseToThreeJS(_ellipse: Ellipse, _radialSegments: number) {
     throw Error("Method not implemented.");
 }
 
@@ -238,7 +238,7 @@ export function frameToThreeJS(frame: Frame): THREE.AxesHelper {
  * @param hyperbola - COMPAS Hyperbola protobuf object
  * @returns A THREE.Line representing the hyperbola
  */
-export function hyperbolaToThreeJS(hyperbola: Hyperbola): THREE.Line {
+export function hyperbolaToThreeJS(_hyperbola: Hyperbola): THREE.Line {
     throw Error("Method not implemented.");
 }
 
@@ -268,7 +268,7 @@ export function lineToThreeJS(line: Line): THREE.Mesh {
  * @param parabola - COMPAS Parabola protobuf object
  * @returns A THREE.Line representing the parabola
  */
-export function parabolaToThreeJS(parabola: Parabola): THREE.Line {
+export function parabolaToThreeJS(_parabola: Parabola): THREE.Line {
     throw Error("Method not implemented.");
 }
 
@@ -342,7 +342,7 @@ export function pointcloudToThreeJS(pointcloud: Pointcloud): THREE.Points {
  * @param polygon - COMPAS Polygon protobuf object
  * @returns THREE.Mesh representing the filled polygon
  */
-export function polygonToThreeJS(polygon: Polygon): THREE.Mesh {
+export function polygonToThreeJS(_polygon: Polygon): THREE.Mesh {
     throw new Error("Not implemented");
 }
 
@@ -416,7 +416,7 @@ export function projectionToThreeJS(projection: Projection): THREE.Matrix4 {
  * @param quaternion - COMPAS Quaternion protobuf object
  * @returns THREE.Quaternion corresponding to the COMPAS quaternion
  */
-export function quaternionToThreeJS(quaternion: Quaternion): THREE.Quaternion {
+export function quaternionToThreeJS(_quaternion: Quaternion): THREE.Quaternion {
     throw new Error("Not implemented");
 }
 
@@ -466,7 +466,7 @@ export function reflectionToThreeJS(reflection: Reflection): THREE.Matrix4 {
  * @param rotation - COMPAS Rotation protobuf object
  * @returns THREE.Matrix4 representing the rotation
  */
-export function rotationToThreeJS(rotation: Rotation): THREE.Matrix4 {
+export function rotationToThreeJS(_rotation: Rotation): THREE.Matrix4 {
     throw new Error("Not implemented");
 }
 
@@ -635,7 +635,7 @@ export function transformationToThreeJS(transformation: Transformation): THREE.M
  * @param translation - COMPAS Translation protobuf object
  * @returns THREE.Vector3 representing the translation
  */
-export function translationToThreeJS(translation: Translation): THREE.Vector3 {
+export function translationToThreeJS(_translation: Translation): THREE.Vector3 {
     throw new Error("translationToThreeJS not implemented");
 }
 
@@ -661,7 +661,7 @@ export function vectorToThreeJS(sphere: Vector, origin?: Point): THREE.ArrowHelp
         vectorOrigin = new THREE.Vector3(0, 0, 0);
     }
 
-    let arrowHelper = new THREE.ArrowHelper(direction, vectorOrigin, length, 0xff0000);
+    const arrowHelper = new THREE.ArrowHelper(direction, vectorOrigin, length, 0xff0000);
     arrowHelper.setDirection(direction);
     return arrowHelper;
 }

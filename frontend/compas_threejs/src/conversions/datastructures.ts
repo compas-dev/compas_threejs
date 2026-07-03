@@ -14,7 +14,7 @@ import * as THREE from "three";
  * @param face - PolyhedronFace from compas-pb-ts
  * @returns THREE.Mesh representing the face
  */
-export function polyhedronFaceToThreeJS(face: PolyhedronFace): THREE.Mesh {
+export function polyhedronFaceToThreeJS(_face: PolyhedronFace): THREE.Mesh {
     throw new Error("polyhedronFaceToThreeJS not implemented");
 }
 
@@ -26,7 +26,7 @@ export function polyhedronFaceToThreeJS(face: PolyhedronFace): THREE.Mesh {
  * @param faceList - MeshFaceList to convert
  * @returns THREE.Mesh representing the face list
  */
-export function MeshFaceListToThreeJS(faceList: MeshFaceList): THREE.Mesh {
+export function MeshFaceListToThreeJS(_faceList: MeshFaceList): THREE.Mesh {
     throw new Error("MeshFaceListToThreeJS not implemented");
 }
 
@@ -48,7 +48,6 @@ export function MeshFaceListToThreeJS(faceList: MeshFaceList): THREE.Mesh {
  */
 export function meshToThreeJS(mesh: Mesh): THREE.Mesh {
     const geometry = new THREE.BufferGeometry();
-    
 
     // Convert vertices to a flat array of positions
     const vertices = new Float32Array(mesh.vertices.length * 3);

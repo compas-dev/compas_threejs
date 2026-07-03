@@ -3,24 +3,26 @@
 
 import { scene } from "./scene_manager";
 import * as THREE from "three";
-import { GEOMETRY_MATERIALS, SCENE_MATERIALS } from "./material_manager";
-import { materialToLineMaterial, materialToPointsMaterial } from "./material_manager";
+import { convertToLineMaterial, convertToPointsMaterial } from "./material_manager";
 import { showEdges } from "@/store/store";
 import { convertToThreeJSGeometry } from "@/conversions";
 
 export const SCENE_GEOMETRIES: { [guid: string]: THREE.Object3D } = {};
 
-export function getObjectMaterial(obj: any): THREE.Material {
-    if (GEOMETRY_MATERIALS[obj.guid]) {
-        const material_guid = GEOMETRY_MATERIALS[obj.guid];
-        if (SCENE_MATERIALS[material_guid]) {
-            return SCENE_MATERIALS[material_guid];
-        }
-        return null;
-    }
+export function getObjectMaterial(obj: { guid: string }): THREE.Material | null {
+    const materialEntry = getMaterialByGeometry(obj.guid);
+    return materialEntry?.material || null;
 }
 
-export function addObject(obj: any) {
+function getMaterialByGeometry(guid: string): { material: THREE.Material } | undefined {
+    const object = SCENE_GEOMETRIES[guid];
+    if (object && "material" in object) {
+        return { material: (object as any).material };
+    }
+    return undefined;
+}
+
+export function addObject(obj: undefined) {
     // Check if a material for this object already exist
     // Otherwise give a standard material
     let material = getObjectMaterial(obj);
@@ -42,13 +44,13 @@ export function addObject(obj: any) {
     } else if (three_geometry instanceof THREE.Line) {
         // Lines use LineBasicMaterial
         if (!(material instanceof THREE.LineBasicMaterial)) {
-            material = materialToLineMaterial(material);
+            material = convertToLineMaterial(material);
         }
         three_geometry.material = material;
     } else if (three_geometry instanceof THREE.Points) {
         // Points use PointsMaterial
         if (!(material instanceof THREE.PointsMaterial)) {
-            material = materialToPointsMaterial(material);
+            material = convertToPointsMaterial(material);
         }
         three_geometry.material = material;
     } else if (
@@ -74,7 +76,7 @@ export function addObject(obj: any) {
     }
 }
 
-export function updateObject(obj: any) {
+export function updateObject(obj: undefined) {
     // Extract the new mesh
     const newThreeGeometry = convertToThreeJSGeometry(obj);
 
@@ -112,6 +114,15 @@ export function isObjectInRegistry(obj: any): boolean {
     const objGuid = obj.guid;
     const existingObj = SCENE_GEOMETRIES[objGuid];
     return existingObj !== undefined;
+}
+
+export function removeObject(obj: undefined) {
+    const objGuid = obj.guid;
+    const existingObj = SCENE_GEOMETRIES[objGuid];
+    if (existingObj) {
+        scene.remove(existingObj);
+        delete SCENE_GEOMETRIES[objGuid];
+    }
 }
 
 export function geometryManager(obj: any) {

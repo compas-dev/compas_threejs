@@ -1,19 +1,14 @@
-import { setCameraViewPreset } from "./scene_manager";
-import { setTransformMode } from "./picker";
-import { toggleTheme } from "./theme_manager";
-import { saveCurrentCanvasImage, applySavedView, captureCurrentView } from "./scene_view_manager";
-export {
-    // Group 1: transformations
-    setTransformMode,
+// Scene management
+export { setCameraViewPreset } from "./scene_manager";
 
-    // Group 2: camera views
-    setCameraViewPreset,
+// Transform operations
+export { setTransformMode } from "./picker";
 
-    // Group 3: view management and export
-    captureCurrentView,
-    applySavedView,
-    saveCurrentCanvasImage,
-    toggleTheme,
-};
+// View capture and application
+export { captureCurrentView, applySavedView, saveCurrentCanvasImage } from "./scene_view_manager";
 
+// Theme
+export { toggleTheme } from "./theme_manager";
+
+// Types
 export type { SavedView, ScreenshotFormat, ScreenshotOptions } from "./scene_view_manager";

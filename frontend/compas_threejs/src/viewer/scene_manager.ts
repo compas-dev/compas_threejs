@@ -1,209 +1,227 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { initializePicker, PickHelper } from "./picker";
+import { initializePicker } from "./picker";
 import { pickerEnabled, theme } from "@/store/store";
 import { SCENE_GEOMETRIES } from "./geometry_manager";
 import { GEOMETRY_MATERIALS } from "./material_manager";
 import { showEdges } from "@/store/store";
-import { goDarkMode, goLightMode, setUserBackgroundColor } from "./theme_manager";
+import {
+    goDarkMode,
+    goLightMode,
+    setUserBackgroundColor,
+    initializeThemeManager,
+} from "./theme_manager";
+import { createScene, createCamera, createRenderer, createControls } from "./renderer_factory";
+import { ViewPresetManager, ViewPreset } from "./view_preset_manager";
+import { AnimationLoop } from "./animation_loop";
+import { ResizeManager } from "./resize_manager";
 
-// Change the default UP vector for all objects
-THREE.Object3D.DEFAULT_UP.set(0, 0, 1);
-
-// Initialize Scene
-export const scene = new THREE.Scene();
-
-// Initialize Camera
-export const camera = new THREE.PerspectiveCamera(
-    60,
-    window.innerWidth / window.innerHeight,
-    0.1,
-    1000
-);
-camera.position.set(8, -15, 15);
-camera.zoom = 1;
-camera.layers.enable(1);
-
-export type ViewPreset =
-    | "top"
-    | "bottom"
-    | "front"
-    | "back"
-    | "left"
-    | "right"
-    | "front_left"
-    | "front_right"
-    | "back_left"
-    | "back_right";
-
-export const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio);
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.toneMappingExposure = 2.5;
-renderer.physicallyCorrectLights = true;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-document.body.appendChild(renderer.domElement);
-
-// Controls
-export const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.mouseButtons = {
-    LEFT: null,
-    MIDDLE: null,
-    RIGHT: THREE.MOUSE.ROTATE,
-};
-
-const viewPresets: Record<ViewPreset, THREE.Vector3> = {
-    top: new THREE.Vector3(0, 0, 1),
-    bottom: new THREE.Vector3(0, 0, -1),
-    front: new THREE.Vector3(0, -1, 0),
-    back: new THREE.Vector3(0, 1, 0),
-    left: new THREE.Vector3(-1, 0, 0),
-    right: new THREE.Vector3(1, 0, 0),
-    front_left: new THREE.Vector3(-1, -1, 1),
-    front_right: new THREE.Vector3(1, -1, 1),
-    back_left: new THREE.Vector3(-1, 1, 1),
-    back_right: new THREE.Vector3(1, 1, 1),
-};
-
-const NUMPAD_VIEW_MAP = new Map<string, ViewPreset>([
-    ["Numpad5", "top"],
-    ["Numpad0", "bottom"],
-    ["Numpad2", "front"],
-    ["Numpad8", "back"],
-    ["Numpad4", "left"],
-    ["Numpad6", "right"],
-    ["Numpad1", "front_left"],
-    ["Numpad3", "front_right"],
-    ["Numpad7", "back_left"],
-    ["Numpad9", "back_right"],
-]);
-
-// Create an axes helper with a size of 5 units
-const axesHelper = new THREE.AxesHelper(5);
-scene.add(axesHelper);
-
-// Initialize the picker
-const picker = new PickHelper();
-initializePicker(picker);
-
-// Ensure the initial scene background matches the current theme value.
-if (theme.value === "dark") {
-    goDarkMode();
-} else {
-    goLightMode();
+// Type definition for update data structure
+interface UpdateValue<T> {
+    value: T;
 }
 
-// The Loop
-function animate() {
-    requestAnimationFrame(animate);
-    controls.update();
-    renderer.render(scene, camera);
+interface SceneUpdateData {
+    type?: UpdateValue<string>;
+    damping?: UpdateValue<boolean>;
+    show?: UpdateValue<boolean>;
+    enabled?: UpdateValue<boolean>;
+    fov?: UpdateValue<number>;
+    zoom?: UpdateValue<number>;
+    x?: UpdateValue<number>;
+    y?: UpdateValue<number>;
+    z?: UpdateValue<number>;
+    preset?: UpdateValue<ViewPreset>;
+    color?: UpdateValue<string>;
+    guid?: UpdateValue<string>;
 }
-animate();
 
-window.addEventListener("keydown", (event) => {
-    if (event.altKey || event.ctrlKey || event.metaKey) {
-        return;
+/**
+ * SceneManager orchestrates all Three.js scene initialization and management.
+ * It creates the scene, camera, renderer, and manages updates from external configuration.
+ */
+class SceneManager {
+    public readonly scene: THREE.Scene;
+    public readonly camera: THREE.PerspectiveCamera;
+    public readonly renderer: THREE.WebGLRenderer;
+    public readonly controls: OrbitControls;
+
+    private viewPresetManager: ViewPresetManager;
+    private animationLoop: AnimationLoop;
+    private resizeManager: ResizeManager;
+    private axesHelper: THREE.AxesHelper;
+
+    constructor() {
+        // Create core THREE.js components
+        this.scene = createScene();
+        this.camera = createCamera(window.innerWidth, window.innerHeight);
+        this.renderer = createRenderer(window.innerWidth, window.innerHeight);
+        this.controls = createControls(this.camera, this.renderer.domElement);
+
+        // Attach renderer to DOM
+        document.body.appendChild(this.renderer.domElement);
+
+        // Initialize helper systems
+        this.viewPresetManager = new ViewPresetManager(this.camera, this.controls);
+        this.animationLoop = new AnimationLoop(
+            this.renderer,
+            this.scene,
+            this.camera,
+            this.controls
+        );
+        this.resizeManager = new ResizeManager(this.camera, this.renderer);
+
+        // Setup axes helper
+        this.axesHelper = new THREE.AxesHelper(5);
+        this.scene.add(this.axesHelper);
+
+        // Initialize picker
+        initializePicker(this.camera, this.renderer.domElement, this.scene, this.controls);
+
+        // Initialize theme manager
+        initializeThemeManager(this.scene);
+
+        // Apply initial theme
+        this.applyInitialTheme();
+
+        // Start the animation loop
+        this.animationLoop.start();
     }
 
-    const preset = getViewPresetFromKey(event.code);
-    if (!preset) {
-        return;
-    }
-
-    applyViewPreset(preset);
-    event.preventDefault();
-});
-
-// Resize Handling
-window.addEventListener("resize", () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-});
-
-function applyViewPreset(preset: ViewPreset) {
-    const target = controls.target.clone();
-    const direction = viewPresets[preset].clone().normalize();
-    const distance = camera.position.distanceTo(target);
-
-    camera.position.copy(target.clone().add(direction.multiplyScalar(distance)));
-    controls.update();
-}
-
-export function setCameraViewPreset(preset: ViewPreset) {
-    applyViewPreset(preset);
-}
-
-function getViewPresetFromKey(code: string): ViewPreset | null {
-    return NUMPAD_VIEW_MAP.get(code) ?? null;
-}
-
-export function sceneManager(data: Record<string, unknown>) {
-    switch (data.type.value) {
-        case "background_color":
-            updateSceneBackgroundColor(data);
-            break;
-        case "controls_damping":
-            controls.enableDamping = data.damping.value;
-            break;
-        case "world_axis":
-            axesHelper.visible = data.show.value;
-            break;
-        case "picker":
-            pickerEnabled.value = data.enabled.value;
-            break;
-        case "camera_fov":
-            camera.fov = data.fov.value;
-            camera.updateProjectionMatrix();
-            break;
-        case "camera_zoom":
-            camera.zoom = data.zoom.value;
-            camera.updateProjectionMatrix();
-            break;
-        case "camera_position":
-            camera.position.set(data.x.value, data.y.value, data.z.value);
-            controls.update();
-            break;
-        case "camera_target":
-            controls.target.set(data.x.value, data.y.value, data.z.value);
-            controls.update();
-            break;
-        case "camera_view": {
-            const preset = data.preset.value as ViewPreset;
-            if (preset) {
-                applyViewPreset(preset);
-            }
-            break;
+    private applyInitialTheme(): void {
+        if (theme.value === "dark") {
+            goDarkMode();
+        } else {
+            goLightMode();
         }
-        case "show_edges":
-            showEdges.value = data.show.value;
-            break;
-        default:
-            console.warn("Unknown scene type:", data.type.value);
+    }
+
+    /**
+     * Process configuration updates from external sources
+     */
+    public handleSceneUpdate(data: SceneUpdateData): void {
+        const updateType = data.type?.value;
+
+        switch (updateType) {
+            case "background_color":
+                this.updateBackgroundColor(data);
+                break;
+            case "controls_damping":
+                this.controls.enableDamping = Boolean(data.damping?.value);
+                break;
+            case "world_axis":
+                this.axesHelper.visible = Boolean(data.show?.value);
+                break;
+            case "picker":
+                pickerEnabled.value = Boolean(data.enabled?.value);
+                break;
+            case "camera_fov":
+                this.camera.fov = Number(data.fov?.value);
+                this.camera.updateProjectionMatrix();
+                break;
+            case "camera_zoom":
+                this.camera.zoom = Number(data.zoom?.value);
+                this.camera.updateProjectionMatrix();
+                break;
+            case "camera_position":
+                this.camera.position.set(
+                    Number(data.x?.value),
+                    Number(data.y?.value),
+                    Number(data.z?.value)
+                );
+                this.controls.update();
+                break;
+            case "camera_target":
+                this.controls.target.set(
+                    Number(data.x?.value),
+                    Number(data.y?.value),
+                    Number(data.z?.value)
+                );
+                this.controls.update();
+                break;
+            case "camera_view":
+                {
+                    const preset = data.preset?.value as ViewPreset;
+                    if (preset) {
+                        this.viewPresetManager.applyPreset(preset);
+                    }
+                }
+                break;
+            case "show_edges":
+                showEdges.value = Boolean(data.show?.value);
+                break;
+            default:
+                console.warn("Unknown scene update type:", updateType);
+        }
+    }
+
+    private updateBackgroundColor(data: SceneUpdateData): void {
+        let color = String(data.color?.value);
+        color = color.replace("#", "0x");
+        const colorValue = parseInt(color);
+        setUserBackgroundColor(colorValue);
+    }
+
+    /**
+     * Remove an object from the scene by its GUID
+     */
+    public removeObject(guid: string): void {
+        if (guid in SCENE_GEOMETRIES) {
+            const obj = SCENE_GEOMETRIES[guid];
+            this.scene.remove(obj);
+            delete SCENE_GEOMETRIES[guid];
+        }
+
+        if (guid in GEOMETRY_MATERIALS) {
+            delete GEOMETRY_MATERIALS[guid];
+        }
+    }
+
+    /**
+     * Set the camera view to a preset
+     */
+    public setCameraViewPreset(preset: ViewPreset): void {
+        this.viewPresetManager.applyPreset(preset);
+    }
+
+    /**
+     * Dispose of all resources
+     */
+    public dispose(): void {
+        this.animationLoop.stop();
+        this.renderer.dispose();
     }
 }
 
-function updateSceneBackgroundColor(data: Record<string, unknown>) {
-    let color = data.color.value;
-    color = color.replace("#", "0x");
-    color = parseInt(color);
-    setUserBackgroundColor(color);
+// Create singleton instance
+const sceneMgrInstance = new SceneManager();
+
+// Export public API
+export const scene = sceneMgrInstance.scene;
+export const camera = sceneMgrInstance.camera;
+export const renderer = sceneMgrInstance.renderer;
+export const controls = sceneMgrInstance.controls;
+export type { ViewPreset };
+
+/**
+ * Handler for scene configuration updates from external sources
+ */
+export function sceneManager(data: Record<string, unknown>): void {
+    sceneMgrInstance.handleSceneUpdate(data as SceneUpdateData);
 }
 
-export function removeObjectFromScene(data: Record<string, unknown>) {
-    const obj_guid = data.guid.value;
-    if (obj_guid in SCENE_GEOMETRIES) {
-        const obj = SCENE_GEOMETRIES[obj_guid];
-        scene.remove(obj);
-        delete SCENE_GEOMETRIES[obj_guid];
-    }
+/**
+ * Remove an object from the scene
+ */
+export function removeObjectFromScene(data: Record<string, unknown>): void {
+    const updateData = data as SceneUpdateData;
+    const guid = String(updateData.guid?.value || "");
+    sceneMgrInstance.removeObject(guid);
+}
 
-    if (obj_guid in GEOMETRY_MATERIALS) {
-        delete GEOMETRY_MATERIALS[obj_guid];
-    }
+/**
+ * Set camera view to a preset
+ */
+export function setCameraViewPreset(preset: ViewPreset): void {
+    sceneMgrInstance.setCameraViewPreset(preset);
 }

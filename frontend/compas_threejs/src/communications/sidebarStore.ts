@@ -1,6 +1,5 @@
 import { reactive } from "vue";
 import { sendDataMessage } from "@/communications/websocket";
-import type { Dictionary } from "@gramaziokohler/compas-pb-ts";
 import { sideBarInfoState } from "../store/store";
 
 // Define a type for the components we want to add.
