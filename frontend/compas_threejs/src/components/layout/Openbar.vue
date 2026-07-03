@@ -1,15 +1,7 @@
 <template>
-    <div
-        id="openbar"
-        class="fixed-openbar theme"
-        :class="{ 'is-hidden': !isVisible }"
-    >
+    <div id="openbar" class="fixed-openbar theme" :class="{ 'is-hidden': !isVisible }">
         <!-- Dynamically render components from the store -->
-        <div
-            v-for="item in sidebarComponents"
-            :key="item.id"
-            class="dynamic-item"
-        >
+        <div v-for="item in sidebarComponents" :key="item.id" class="dynamic-item">
             <!-- Add a label if it exists -->
             <label
                 v-if="item.label"
@@ -28,19 +20,14 @@
             </Button>
 
             <!-- Render a Slider -->
-            <div
-                v-else-if="item.component === 'Slider'"
-                class="slider-container"
-            >
+            <div v-else-if="item.component === 'Slider'" class="slider-container">
                 <Slider
                     :min="item.props.min"
                     :max="item.props.max"
                     :step="item.props.step"
                     :default-value="item.props.defaultValue"
                     v-model="item.props.defaultValue"
-                    @update:model-value="
-                        (value) => handleAction(item.action, value[0])
-                    "
+                    @update:model-value="(value) => handleAction(item.action, value[0])"
                     class="w-[80%]"
                 >
                 </Slider>
@@ -50,19 +37,14 @@
             </div>
 
             <!-- Render a NumberField -->
-            <div
-                v-else-if="item.component === 'NumberField'"
-                class="number-field-container"
-            >
+            <div v-else-if="item.component === 'NumberField'" class="number-field-container">
                 <NumberField
                     :min="item.props.min"
                     :max="item.props.max"
                     :step="item.props.step"
                     :default-value="item.props.value"
                     v-model="item.props.value"
-                    @update:model-value="
-                        (value) => handleAction(item.action, value)
-                    "
+                    @update:model-value="(value) => handleAction(item.action, value)"
                     class="w-full"
                 >
                     <NumberFieldContent>
@@ -75,12 +57,7 @@
 
             <!-- You could add more v-if blocks here for other components like Sliders -->
         </div>
-        <Button
-            variant="secondary"
-            size="icon"
-            class="mb-4"
-            @click="toggleSideBar()"
-        >
+        <Button variant="secondary" size="icon" class="mb-4" @click="toggleSideBar()">
             <ArrowBigLeftDash />
         </Button>
     </div>

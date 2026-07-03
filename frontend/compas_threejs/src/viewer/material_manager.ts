@@ -4,7 +4,7 @@ import { updateMaterial } from "./geometry_manager";
 export const GEOMETRY_MATERIALS: { [guid: string]: THREE.Material } = {}; // Values are material GUID!
 export const SCENE_MATERIALS: { [guid: string]: THREE.Material } = {};
 
-export function materialManager(matData: { [key: string]: any }) {
+export function materialManager(matData: Record<string, unknown>) {
     let material: THREE.Material;
 
     // get the right material
@@ -31,7 +31,7 @@ export function materialManager(matData: { [key: string]: any }) {
     updateMaterial(matData.geometry_guid.value, material);
 }
 
-function buildStandardMaterial(data: { [key: string]: any }) {
+function buildStandardMaterial(data: Record<string, unknown>) {
     let color = data.color.value;
     color = color.replace("#", "0x");
     let emissive = data.emissive.value;
@@ -50,9 +50,7 @@ function buildStandardMaterial(data: { [key: string]: any }) {
     return material;
 }
 
-function buildLineMaterial(data: {
-    [key: string]: any;
-}): THREE.LineBasicMaterial {
+function buildLineMaterial(data: Record<string, unknown>): THREE.LineBasicMaterial {
     let color = data.color.value;
     color = color.replace("#", "0x");
 
@@ -62,9 +60,7 @@ function buildLineMaterial(data: {
     return material;
 }
 
-function buildPointsMaterial(data: {
-    [key: string]: any;
-}): THREE.PointsMaterial {
+function buildPointsMaterial(data: Record<string, unknown>): THREE.PointsMaterial {
     let color = data.color.value;
     color = color.replace("#", "0x");
 
@@ -75,9 +71,7 @@ function buildPointsMaterial(data: {
     return material;
 }
 
-function buildPhysicalMaterial(data: {
-    [key: string]: any;
-}): THREE.MeshPhysicalMaterial {
+function buildPhysicalMaterial(data: Record<string, unknown>): THREE.MeshPhysicalMaterial {
     let color = data.color.value;
     color = color.replace("#", "0x");
     let emissive = data.emissive.value;

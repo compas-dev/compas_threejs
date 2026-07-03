@@ -21,20 +21,16 @@
                 side="bottom"
                 align="start"
             >
-                <div class="flex h-8 items-stretch overflow-hidden rounded-lg border border-input bg-secondary">
+                <div
+                    class="flex h-8 items-stretch overflow-hidden rounded-lg border border-input bg-secondary"
+                >
                     <select
                         v-model="selectedId"
                         class="h-full min-w-0 flex-1 truncate border-0 bg-secondary px-3 py-1 text-sm text-secondary-foreground outline-none"
                         @change="handleSelect"
                     >
-                        <option v-if="views.length === 0" disabled value="">
-                            No saved views
-                        </option>
-                        <option
-                            v-for="view in views"
-                            :key="view.id"
-                            :value="view.id"
-                        >
+                        <option v-if="views.length === 0" disabled value="">No saved views</option>
+                        <option v-for="view in views" :key="view.id" :value="view.id">
                             {{ view.name }}
                         </option>
                     </select>
@@ -67,17 +63,8 @@ import { onBeforeUnmount, ref, watch } from "vue";
 import { ClipboardList, Trash2 } from "lucide-vue-next";
 import type { SavedView } from "@/viewer/toolbar_actions";
 import { Button } from "@/components/ui/button";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const props = defineProps<{
     views: SavedView[];
@@ -105,7 +92,7 @@ watch(
         const hasSelected = views.some((view) => view.id === id);
         selectedId.value = hasSelected ? id : views[0].id;
     },
-    { immediate: true },
+    { immediate: true }
 );
 
 function handleSelect() {

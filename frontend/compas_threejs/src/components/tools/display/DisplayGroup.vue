@@ -26,11 +26,7 @@ import {
     type SavedView,
 } from "@/viewer/toolbar_actions";
 import { useKeyboardShortcuts } from "@/components/tools/useKeyboardShortcuts";
-import {
-    SaveViewButton,
-    SavedViewsButton,
-    SaveScreenshotButton,
-} from "./index";
+import { SaveViewButton, SavedViewsButton, SaveScreenshotButton } from "./index";
 
 const SAVED_VIEWS_STORAGE_KEY = "compas_threejs_saved_views";
 
@@ -112,5 +108,4 @@ useKeyboardShortcuts({
         toggleTheme();
     },
 });
-
 </script>

@@ -23,9 +23,7 @@
             >
                 <div class="grid gap-5">
                     <div class="space-y-2">
-                        <h4 class="font-medium leading-none">
-                            Export Screenshot
-                        </h4>
+                        <h4 class="font-medium leading-none">Export Screenshot</h4>
                         <p class="text-sm text-muted-foreground">
                             Set width, height, and image format.
                         </p>
@@ -91,7 +89,9 @@
                     </div>
 
                     <div class="flex justify-end gap-2">
-                        <Button variant="secondary" size="sm" @click="isOpen = false">Cancel</Button>
+                        <Button variant="secondary" size="sm" @click="isOpen = false"
+                            >Cancel</Button
+                        >
                         <Button variant="secondary" size="sm" @click="handleSave">Save</Button>
                     </div>
                 </div>
@@ -103,24 +103,12 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { ImageDown } from "lucide-vue-next";
-import {
-    saveCurrentCanvasImage,
-    type ScreenshotFormat,
-} from "@/viewer/toolbar_actions";
+import { saveCurrentCanvasImage, type ScreenshotFormat } from "@/viewer/toolbar_actions";
 import { renderer } from "@/viewer/scene_manager";
 import { Button } from "@/components/ui/button";
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Kbd } from "@/components/ui/kbd";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const isOpen = ref(false);
 const width = ref(1920);

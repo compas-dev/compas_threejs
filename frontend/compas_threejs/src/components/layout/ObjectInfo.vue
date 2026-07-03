@@ -13,11 +13,7 @@
                     >
                         METADATA
                     </h1>
-                    <div
-                        v-for="(value, key) in objectBarData.data"
-                        :key="key"
-                        class="data-entry"
-                    >
+                    <div v-for="(value, key) in objectBarData.data" :key="key" class="data-entry">
                         <p>
                             <strong> {{ key }}:</strong> {{ value.value }}
                         </p>
@@ -32,11 +28,7 @@
                 >
                     FUNCTIONS
                 </h1>
-                <div
-                    v-for="action in objectActionsState"
-                    :key="action"
-                    class="single_data"
-                >
+                <div v-for="action in objectActionsState" :key="action" class="single_data">
                     <Button
                         v-if="action.type === 'button'"
                         variant="outline"
@@ -48,12 +40,7 @@
                 </div>
             </div>
 
-            <Button
-                variant="secondary"
-                size="icon"
-                id="closeObjectBar"
-                @click="toggleObjectBar()"
-            >
+            <Button variant="secondary" size="icon" id="closeObjectBar" @click="toggleObjectBar()">
                 <ArrowBigRightDash />
             </Button>
         </div>
@@ -85,11 +72,7 @@ import { ArrowBigLeftDash, ArrowBigRightDash } from "lucide-vue-next";
 import { theme } from "@/store/store";
 
 const geoInformation = objectBarData.data
-    ? Object.fromEntries(
-          Object.entries(objectBarData.data).filter(
-              ([key]) => key !== "dispatch",
-          ),
-      )
+    ? Object.fromEntries(Object.entries(objectBarData.data).filter(([key]) => key !== "dispatch"))
     : {};
 
 const { isHovered } = useHover("info-panel");
@@ -166,10 +149,8 @@ h1.section-title {
     padding-left: 10px;
     border-radius: 10px;
     box-shadow:
-        1px 1px 3px 0px color-mix(in oklab, var(--foreground) 35%, transparent)
-            inset,
-        -1px -1px 3px 0px
-            color-mix(in oklab, var(--background) 70%, transparent) inset;
+        1px 1px 3px 0px color-mix(in oklab, var(--foreground) 35%, transparent) inset,
+        -1px -1px 3px 0px color-mix(in oklab, var(--background) 70%, transparent) inset;
 }
 
 div.data-entry {

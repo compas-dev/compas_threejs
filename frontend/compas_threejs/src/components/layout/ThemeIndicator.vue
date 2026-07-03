@@ -1,10 +1,6 @@
 <template>
     <Transition name="theme-indicator">
-        <div
-            v-if="showThemeIndicator"
-            class="theme-indicator"
-            aria-hidden="true"
-        >
+        <div v-if="showThemeIndicator" class="theme-indicator" aria-hidden="true">
             <Moon v-if="themeIndicatorMode === 'dark'" class="theme-indicator-icon" />
             <SunMedium v-else class="theme-indicator-icon" />
         </div>
@@ -87,14 +83,17 @@ onMounted(() => {
     border: 1px solid color-mix(in oklab, var(--foreground) 14%, transparent);
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
     backdrop-filter: blur(10px);
-    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    transition:
+        transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
         opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .dark .theme-indicator {
     background: oklch(0.269 0 0);
     border-color: color-mix(in oklab, var(--foreground) 14%, transparent);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.5), inset 0 0 10px rgba(255,255,255,0.06);
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.5),
+        inset 0 0 10px rgba(255, 255, 255, 0.06);
 }
 
 .theme-indicator-icon {
@@ -105,7 +104,8 @@ onMounted(() => {
 
 .theme-indicator-enter-active,
 .theme-indicator-leave-active {
-    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    transition:
+        transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
         opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 

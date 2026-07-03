@@ -36,11 +36,9 @@ export function setTransformMode(mode: TransformMode) {
 class TransformControlsManager {
     private tControl: TransformControls;
 
-    constructor(pickHelper?: PickHelper) {
+    constructor(_pickHelper?: PickHelper) {
         if (initializedTControls) {
-            throw new Error(
-                "TransformControlsManager has already been initialized.",
-            );
+            throw new Error("TransformControlsManager has already been initialized.");
         }
         this.tControl = new TransformControls(camera, renderer.domElement);
         scene.add(this.tControl.getHelper());
@@ -49,12 +47,9 @@ class TransformControlsManager {
     }
 
     private setupEventListeners() {
-        this.tControl.addEventListener(
-            "dragging-changed",
-            (event: { value: boolean }) => {
-                controls.enabled = !event.value;
-            },
-        );
+        this.tControl.addEventListener("dragging-changed", (event: { value: boolean }) => {
+            controls.enabled = !event.value;
+        });
 
         window.addEventListener("keydown", (event) => {
             if (event.altKey || event.ctrlKey || event.metaKey) {
@@ -137,15 +132,13 @@ export class PickHelper {
         this.raycaster.setFromCamera(normalizedPosition, camera);
         const intersectedObjects = this.raycaster.intersectObjects(
             SCENE_GEOMETRIES ? Object.values(SCENE_GEOMETRIES) : [],
-            true,
+            true
         );
         return intersectedObjects.length ? intersectedObjects[0].object : null;
     }
 
     getPickedObjectKey(object: THREE.Object3D): string | undefined {
-        return Object.keys(SCENE_GEOMETRIES).find(
-            (key) => SCENE_GEOMETRIES[key] === object,
-        );
+        return Object.keys(SCENE_GEOMETRIES).find((key) => SCENE_GEOMETRIES[key] === object);
     }
 
     sendMessage(pickedKey: string) {
@@ -157,7 +150,7 @@ export class PickHelper {
         sendData(message);
     }
 
-    pick(normalizedPosition: { x: number; y: number }, scene: any) {
+    pick(normalizedPosition: { x: number; y: number }, _scene: unknown) {
         if (!pickerEnabled.value) {
             return;
         }
@@ -205,6 +198,7 @@ export class PickHelper {
                 savedOriginalMaterial instanceof THREE.Material ||
                 Array.isArray(savedOriginalMaterial)
             ) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 object.material = savedOriginalMaterial as any;
             }
             savedOriginalMaterial = null;
@@ -222,11 +216,12 @@ export class PickHelper {
         // Handle both single material and array of materials
         const material = object.material;
         if (material instanceof THREE.Material || Array.isArray(material)) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             savedOriginalMaterial = material as any;
         }
 
         const geoGuid = Object.keys(SCENE_GEOMETRIES).find(
-            (key) => SCENE_GEOMETRIES[key] === object,
+            (key) => SCENE_GEOMETRIES[key] === object
         );
         savedMaterialGuid = GEOMETRY_MATERIALS[geoGuid];
         object.material = highlihghtMaterial;
@@ -234,6 +229,7 @@ export class PickHelper {
 }
 
 function resetObjectInfoPanel() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     objectInfoManager({} as any);
     objectActionsState.splice(0);
 }
