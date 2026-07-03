@@ -3,7 +3,7 @@ import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { camera, renderer, scene, controls } from "./scene_manager";
 import { SCENE_GEOMETRIES } from "./geometry_manager";
 import { GEOMETRY_MATERIALS, SCENE_MATERIALS } from "./material_manager";
-import { sendData } from "@/communications/communication";
+import { sendDataMessage } from "@/communications/websocket";
 import { objectInfoManager } from "@/communications/objectInfo";
 import { objectActionsState } from "@/store/store";
 import { blockPicker, pickerEnabled } from "@/store/store";
@@ -138,7 +138,16 @@ export class PickHelper {
     }
 
     getPickedObjectKey(object: THREE.Object3D): string | undefined {
-        return Object.keys(SCENE_GEOMETRIES).find((key) => SCENE_GEOMETRIES[key] === object);
+        // Traverse up the hierarchy to find the root object in SCENE_GEOMETRIES
+        let current: THREE.Object3D | null = object;
+        while (current) {
+            const key = Object.keys(SCENE_GEOMETRIES).find((k) => SCENE_GEOMETRIES[k] === current);
+            if (key) {
+                return key;
+            }
+            current = current.parent;
+        }
+        return undefined;
     }
 
     sendMessage(pickedKey: string) {
@@ -147,7 +156,7 @@ export class PickHelper {
             dispatch: "object_picked",
             guid: pickedKey,
         };
-        sendData(message);
+        sendDataMessage(message);
     }
 
     pick(normalizedPosition: { x: number; y: number }, _scene: unknown) {

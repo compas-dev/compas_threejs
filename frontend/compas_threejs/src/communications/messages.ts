@@ -1,4 +1,4 @@
-import { unpackMessageToGeometry } from "@gramaziokohler/compas-pb-ts";
+import { unpackMessage, getObjectFromMessage } from "@gramaziokohler/compas-pb-ts";
 import { Dictionary } from "@gramaziokohler/compas-pb-ts";
 import { lightManager } from "../viewer/light_manager";
 import { geometryManager } from "../viewer/geometry_manager";
@@ -11,23 +11,22 @@ import { objectInfoManager } from "./objectInfo";
 import { objectActionManager } from "./objectInfo";
 import { removeObjectFromScene } from "../viewer/scene_manager";
 
-// SCENE_GEOMETRIES is currently unused but kept for future tracking of scene objects
-// const SCENE_GEOMETRIES: { [guid: string]: THREE.Object3D } = {};
-
 export function dispatchMessage(message: Uint8Array) {
-    try {
-        const obj = unpackMessageToGeometry(message);
-
-        if (obj instanceof Dictionary) {
-            analyzeDictionary(obj);
-            return;
-        } else {
-            geometryManager(obj);
-        }
-    } catch (error) {
-        console.error("Error decoding message:", error);
-        console.error("Message bytes:", message);
+    const object = decodeWebsocketMessage(message);
+    if (object instanceof Dictionary) {
+        analyzeDictionary(object);
+        return;
+    } else {
+        // It is a geometry type
+        geometryManager(object);
     }
+}
+
+export function decodeWebsocketMessage(message: Uint8Array) {
+    console.log(unpackMessage(message));
+    const object = getObjectFromMessage(message);
+    console.log(object);
+    return object;
 }
 
 function analyzeDictionary(dictionary: Dictionary) {

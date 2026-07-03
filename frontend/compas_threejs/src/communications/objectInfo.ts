@@ -1,5 +1,5 @@
 import { objectActionsState } from "../store/store";
-import { sendData } from "@/communications/communication";
+import { sendDataMessage } from "@/communications/websocket";
 import { objectBarData } from "../store/store";
 
 export function showObjectInfo() {
@@ -45,7 +45,7 @@ export function handleObjectAction(action: Record<string, unknown>, value?: unkn
         message.value = value;
     }
 
-    sendData(message);
+    sendDataMessage(message);
 }
 
 document.addEventListener("keydown", (event) => {
