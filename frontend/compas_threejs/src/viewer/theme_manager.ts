@@ -4,8 +4,8 @@ import { scene } from "../viewer/scene_manager";
 
 const DARK_LIGHTNESS_THRESHOLD = 0.5;
 
-let lightBackgroundColor = 0xe6e6e6;
-let darkBackgroundColor = 0x000000;
+const lightBackgroundColor = 0xe6e6e6;
+const darkBackgroundColor = 0x000000;
 let userLightBackgroundColor: number | null = null;
 let userDarkBackgroundColor: number | null = null;
 
@@ -22,7 +22,7 @@ function isDarkBackgroundColor(color: number): boolean {
     return getColorLightness(color) < DARK_LIGHTNESS_THRESHOLD;
 }
 
-export function themeManager(data: { [key: string]: any }): void {
+export function themeManager(data: Record<string, unknown>): void {
     if (data.mode.value === "dark") {
         goDarkMode();
     } else if (data.mode.value === "light") {

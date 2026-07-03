@@ -14,11 +14,7 @@
                     :disabled="!pickerEnabled.value"
                 >
                     <span class="button-icon">
-                        <Scale3d
-                            :size="16"
-                            :stroke-width="2"
-                            aria-hidden="true"
-                        />
+                        <Scale3d :size="16" :stroke-width="2" aria-hidden="true" />
                     </span>
                 </Button>
             </TooltipTrigger>
@@ -34,12 +30,7 @@ import { Scale3d } from "lucide-vue-next";
 import { setTransformMode } from "@/viewer/toolbar_actions";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-    TooltipProvider,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { pickerEnabled } from "@/store/store.ts";
 import { pickerMode } from "@/store/store.ts";
 

@@ -36,7 +36,7 @@ export function setTransformMode(mode: TransformMode) {
 class TransformControlsManager {
     private tControl: TransformControls;
 
-    constructor(pickHelper?: PickHelper) {
+    constructor(_pickHelper?: PickHelper) {
         if (initializedTControls) {
             throw new Error("TransformControlsManager has already been initialized.");
         }
@@ -132,7 +132,7 @@ export class PickHelper {
         this.raycaster.setFromCamera(normalizedPosition, camera);
         const intersectedObjects = this.raycaster.intersectObjects(
             SCENE_GEOMETRIES ? Object.values(SCENE_GEOMETRIES) : [],
-            true,
+            true
         );
         return intersectedObjects.length ? intersectedObjects[0].object : null;
     }
@@ -150,7 +150,7 @@ export class PickHelper {
         sendDataMessage(message);
     }
 
-    pick(normalizedPosition: { x: number; y: number }, scene: any) {
+    pick(normalizedPosition: { x: number; y: number }, _scene: unknown) {
         if (!pickerEnabled.value) {
             return;
         }
@@ -198,6 +198,7 @@ export class PickHelper {
                 savedOriginalMaterial instanceof THREE.Material ||
                 Array.isArray(savedOriginalMaterial)
             ) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 object.material = savedOriginalMaterial as any;
             }
             savedOriginalMaterial = null;
@@ -215,11 +216,12 @@ export class PickHelper {
         // Handle both single material and array of materials
         const material = object.material;
         if (material instanceof THREE.Material || Array.isArray(material)) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             savedOriginalMaterial = material as any;
         }
 
         const geoGuid = Object.keys(SCENE_GEOMETRIES).find(
-            (key) => SCENE_GEOMETRIES[key] === object,
+            (key) => SCENE_GEOMETRIES[key] === object
         );
         savedMaterialGuid = GEOMETRY_MATERIALS[geoGuid];
         object.material = highlihghtMaterial;
@@ -227,6 +229,7 @@ export class PickHelper {
 }
 
 function resetObjectInfoPanel() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     objectInfoManager({} as any);
     objectActionsState.splice(0);
 }

@@ -14,14 +14,15 @@ export function updateObjectInfo(newInfo: { title: string; description: string; 
     objectBarData.title = newInfo.title;
 }
 
-export function objectInfoManager(data: { [key: string]: any } | null) {
-    delete data["dispatch"];
+export function objectInfoManager(data: Record<string, unknown> | null) {
     if (data != null) {
-        objectBarData.data = data;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { dispatch, ...rest } = data;
+        objectBarData.data = rest;
     }
 }
 
-export function objectActionManager(data: Record<string, any>) {
+export function objectActionManager(data: Record<string, unknown>) {
     const action = {
         guid: data.guid.value,
         label: data.label.value,
@@ -32,7 +33,7 @@ export function objectActionManager(data: Record<string, any>) {
     objectActionsState.push(action);
 }
 
-export function handleObjectAction(action: { [key: string]: any }, value: any) {
+export function handleObjectAction(action: Record<string, unknown>, value?: unknown) {
     const message = {
         dispatch: "object_action_callback",
         action_guid: action.guid,

@@ -31,12 +31,7 @@ import { Kbd } from "@/components/ui/kbd";
 import { pickerEnabled } from "@/store/store.ts";
 import { pickerMode } from "@/store/store.ts";
 
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-    TooltipProvider,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 function handleClick() {
     setTransformMode("translate");

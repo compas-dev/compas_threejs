@@ -36,7 +36,7 @@ export function initializeWebSocketConnection(): void {
     connect();
 }
 
-export function handleWebSocketMessage(data: any): void {
+export function handleWebSocketMessage(data: unknown): void {
     /**
      * Handles incoming WebSocket messages.
      * @param data - The data received from the WebSocket.
@@ -45,7 +45,9 @@ export function handleWebSocketMessage(data: any): void {
         const message = new Uint8Array(data);
         dispatchMessage(message);
     } else if (typeof data === "string") {
+        // Handle string data if needed
     } else {
+        // Handle other data types if needed
     }
 }
 
@@ -67,7 +69,7 @@ export function sendWebSocketMessage(message: ArrayBuffer): void {
  *
  * @param data - A JavaScript object that can be serialized into JSON.
  */
-export function sendData(data: Record<string, any>): void {
+export function sendData(data: Record<string, unknown>): void {
     try {
         // Convert the JavaScript object to a JSON string and send as text
         const jsonString = JSON.stringify(data);
@@ -92,9 +94,7 @@ export function stringToArrayBuffer(str: string): ArrayBuffer {
     return uint8Array.buffer;
 }
 
-export function dictionaryToArrayBuffer(
-    data: Record<string, any>,
-): ArrayBuffer {
+export function dictionaryToArrayBuffer(data: Record<string, unknown>): ArrayBuffer {
     /**
      * Converts a dictionary (JavaScript object) to an ArrayBuffer by first serializing it to a JSON string.
      * This allows it to be easily parsed back into a dictionary in Python.

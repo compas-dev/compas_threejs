@@ -5,10 +5,7 @@
             @activated="setActiveTransform('move')"
         />
 
-        <MoveButton
-            :active="activeTransform === 'move'"
-            @activated="setActiveTransform('move')"
-        />
+        <MoveButton :active="activeTransform === 'move'" @activated="setActiveTransform('move')" />
         <RotateButton
             :active="activeTransform === 'rotate'"
             @activated="setActiveTransform('rotate')"

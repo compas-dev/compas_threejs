@@ -97,7 +97,7 @@ export function solidGeometryManager(obj: any) {
     }
 }
 
-function abstractGeometryManager(obj: any) {
+function abstractGeometryManager(obj: unknown) {
     const geometry = obj.buildGeometry();
     const guid: string = obj.guid;
 
