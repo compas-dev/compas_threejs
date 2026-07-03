@@ -138,7 +138,16 @@ export class PickHelper {
     }
 
     getPickedObjectKey(object: THREE.Object3D): string | undefined {
-        return Object.keys(SCENE_GEOMETRIES).find((key) => SCENE_GEOMETRIES[key] === object);
+        // Traverse up the hierarchy to find the root object in SCENE_GEOMETRIES
+        let current: THREE.Object3D | null = object;
+        while (current) {
+            const key = Object.keys(SCENE_GEOMETRIES).find((k) => SCENE_GEOMETRIES[k] === current);
+            if (key) {
+                return key;
+            }
+            current = current.parent;
+        }
+        return undefined;
     }
 
     sendMessage(pickedKey: string) {
