@@ -11,9 +11,6 @@ import { objectInfoManager } from "./objectInfo";
 import { objectActionManager } from "./objectInfo";
 import { removeObjectFromScene } from "../viewer/scene_manager";
 
-// SCENE_GEOMETRIES is currently unused but kept for future tracking of scene objects
-// const SCENE_GEOMETRIES: { [guid: string]: THREE.Object3D } = {};
-
 export function dispatchMessage(message: Uint8Array) {
     const object = decodeWebsocketMessage(message);
     if (object instanceof Dictionary) {
@@ -25,8 +22,10 @@ export function dispatchMessage(message: Uint8Array) {
     }
 }
 
-export function decodeWebsocketMessage(message: Uint8Array): Any {
+export function decodeWebsocketMessage(message: Uint8Array) {
+    console.log(unpackMessage(message));
     const object = getObjectFromMessage(message);
+    console.log(object);
     return object;
 }
 
