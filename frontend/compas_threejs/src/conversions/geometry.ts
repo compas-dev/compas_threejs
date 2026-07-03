@@ -121,7 +121,7 @@ export function capsuleToThreeJS(capsule: Capsule, capSegments: number, radialSe
         capsule.radius,
         capsule.height,
         capSegments,
-        radialSegments,
+        radialSegments
     );
     const capsuleMesh = new THREE.Mesh(capsuleGeometry);
     const transformationMatrix = buildTransformationFromFrame(capsule.frame!);
@@ -182,7 +182,7 @@ export function cylinderToThreeJS(cylinder: Cylinder, radialSegments: number) {
         cylinder.radius,
         cylinder.radius,
         cylinder.height,
-        radialSegments,
+        radialSegments
     );
     const cylinderMesh = new THREE.Mesh(cylinder_geometry);
     // transform geometry to the correct position
@@ -220,7 +220,7 @@ export function frameToThreeJS(frame: Frame): THREE.AxesHelper {
     axesHelper.setColors(
         new THREE.Color(0xff0000),
         new THREE.Color(0x00ff00),
-        new THREE.Color(0x0000ff),
+        new THREE.Color(0x0000ff)
     );
     const transformationMatrix = buildTransformationFromFrame(frame);
     axesHelper.applyMatrix4(transformationMatrix);
@@ -285,7 +285,7 @@ export function parabolaToThreeJS(parabola: Parabola): THREE.Line {
 export function planeToThreeJS(plane: Plane, size: number = 2): THREE.PlaneHelper {
     const planeGeometry = new THREE.Plane(
         new THREE.Vector3(plane.normal.x, plane.normal.y, plane.normal.z),
-        0,
+        0
     );
     planeGeometry.translate(new THREE.Vector3(plane.point.x, plane.point.y, plane.point.z));
     const planeHelper = new THREE.PlaneHelper(planeGeometry, size, 0xff00ff);
@@ -300,7 +300,7 @@ export function planeToThreeJS(plane: Plane, size: number = 2): THREE.PlaneHelpe
  * @param point - COMPAS Point protobuf containing x,y,z
  * @returns THREE.Points containing a single point
  */
-export function pointToThreeJS(point: Point): THREE.THREE.Points {
+export function pointToThreeJS(point: Point): THREE.Points {
     const geometry = new THREE.BufferGeometry();
     const vertices = new Float32Array([point.x, point.y, point.z]);
     geometry.setAttribute("position", new THREE.BufferAttribute(vertices, 3));
@@ -553,7 +553,7 @@ export function shearToThreeJS(shear: Shear): THREE.Matrix4 {
 export function sphereToThreeJS(
     sphere: Sphere,
     widthSegments: number = 64,
-    heightSegments: number = 64,
+    heightSegments: number = 64
 ): THREE.Mesh {
     const sphereGeometry = new THREE.SphereGeometry(sphere.radius, widthSegments, heightSegments);
     const sphereMesh = new THREE.Mesh(sphereGeometry);
@@ -576,13 +576,13 @@ export function sphereToThreeJS(
 export function torusToThreeJS(
     torus: Torus,
     segmentsTubular: number = 64,
-    segmentsRadial: number = 64,
+    segmentsRadial: number = 64
 ): THREE.Mesh {
     const torusGeometry = new THREE.TorusGeometry(
         torus.radiusAxis,
         torus.radiusPipe,
         segmentsTubular,
-        segmentsRadial,
+        segmentsRadial
     );
     const torusMesh = new THREE.Mesh(torusGeometry);
     const transformationMatrix = buildTransformationFromFrame(torus.frame!);

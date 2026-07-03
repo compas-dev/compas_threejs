@@ -1,27 +1,14 @@
 import * as THREE from "three";
-import { updateMaterial } from "./geometry_manager";
+
+import { convertToThreeJSMaterial } from "../conversions/material";
+import { SCENE_GEOMETRIES } from "./geometry_manager";
 
 export const GEOMETRY_MATERIALS: { [guid: string]: THREE.Material } = {}; // Values are material GUID!
 export const SCENE_MATERIALS: { [guid: string]: THREE.Material } = {};
 
 export function materialManager(matData: Record<string, unknown>) {
-    let material: THREE.Material;
-
-    // get the right material
-    switch (matData.type.value) {
-        case "standard_material":
-            material = buildStandardMaterial(matData);
-            break;
-        case "line_material":
-            material = buildLineMaterial(matData);
-            break;
-        case "point_material":
-            material = buildPointsMaterial(matData);
-            break;
-        case "physical_material":
-            material = buildPhysicalMaterial(matData);
-            break;
-    }
+    // get the material
+    const material = convertToThreeJSMaterial(matData);
 
     // save the material
     SCENE_MATERIALS[matData.guid.value] = material;
@@ -31,90 +18,29 @@ export function materialManager(matData: Record<string, unknown>) {
     updateMaterial(matData.geometry_guid.value, material);
 }
 
-function buildStandardMaterial(data: Record<string, unknown>) {
-    let color = data.color.value;
-    color = color.replace("#", "0x");
-    let emissive = data.emissive.value;
-    emissive = emissive.replace("#", "0x");
-
-    const material = new THREE.MeshStandardMaterial({
-        color: parseInt(color),
-        metalness: data.metalness.value,
-        roughness: data.roughness.value,
-        emissive: parseInt(emissive),
-        emissiveIntensity: data.emissive_intensity.value,
-        flatShading: data.flat_shading.value,
-        wireframe: data.wireframe.value,
-        side: THREE.DoubleSide,
-    });
-    return material;
+export function updateMaterial(geometry_guid: string, material: THREE.Material) {
+    const object = SCENE_GEOMETRIES[geometry_guid];
+    if (!object) {
+        return;
+    }
+    if (object) {
+        object.material = material;
+        return;
+    }
+    if (object instanceof THREE.ArrowHelper || object instanceof THREE.PlaneHelpers) {
+        object.setColor(material.color);
+    }
 }
 
-function buildLineMaterial(data: Record<string, unknown>): THREE.LineBasicMaterial {
-    let color = data.color.value;
-    color = color.replace("#", "0x");
-
-    const material = new THREE.LineBasicMaterial({
-        color: parseInt(color),
+export function materialToLineMaterial(material: THREE.Material): THREE.LineBasicMaterial {
+    return new THREE.LineBasicMaterial({
+        color: material.color,
     });
-    return material;
 }
 
-function buildPointsMaterial(data: Record<string, unknown>): THREE.PointsMaterial {
-    let color = data.color.value;
-    color = color.replace("#", "0x");
-
-    const material = new THREE.PointsMaterial({
-        color: parseInt(color),
-        size: data.size.value,
+export function materialToPointsMaterial(material: THREE.Material): THREE.PointsMaterial {
+    return new THREE.PointsMaterial({
+        color: material.color,
+        size: 0.5,
     });
-    return material;
-}
-
-function buildPhysicalMaterial(data: Record<string, unknown>): THREE.MeshPhysicalMaterial {
-    let color = data.color.value;
-    color = color.replace("#", "0x");
-    let emissive = data.emissive.value;
-    emissive = emissive.replace("#", "0x");
-    let attenuationColor = data.attenuation_color.value;
-    attenuationColor = attenuationColor.replace("#", "0x");
-    let sheenColor = data.sheen_color.value;
-    sheenColor = sheenColor.replace("#", "0x");
-    let specularColor = data.specular_color.value;
-    specularColor = specularColor.replace("#", "0x");
-
-    const material = new THREE.MeshPhysicalMaterial({
-        color: parseInt(color),
-        metalness: data.metalness.value,
-        roughness: data.roughness.value,
-        emissive: parseInt(emissive),
-        emissiveIntensity: data.emissive_intensity.value,
-        flatShading: data.flat_shading.value,
-        wireframe: data.wireframe.value,
-        side: THREE.DoubleSide,
-        anisotropy: data.anisotropy.value,
-        anisotropyRotation: data.anisotropy_rotation.value,
-        attenuationColor: parseInt(attenuationColor),
-        attenuationDistance: data.attenuation_distance.value,
-        clearcoat: data.clearcoat.value,
-        clearcoatRoughness: data.clearcoat_roughness.value,
-        dispersion: data.dispersion.value,
-        ior: data.ior.value,
-        iridescence: data.iridescence.value,
-        iridescenceIOR: data.iridescence_ior.value,
-        iridescenceThicknessRange: [
-            data.iridescence_thickness_start.value,
-            data.iridescence_thickness_end.value,
-        ],
-        reflectivity: data.reflectivity.value,
-        sheen: data.sheen.value,
-        sheenColor: parseInt(sheenColor),
-        specularColor: parseInt(specularColor),
-        sheenRoughness: data.sheen_roughness.value,
-        specularIntensity: data.specular_intensity.value,
-        thickness: data.thickness.value,
-        transmission: data.transmission.value,
-    });
-
-    return material;
 }

@@ -4,15 +4,11 @@
 import { scene } from "./scene_manager";
 import * as THREE from "three";
 import { GEOMETRY_MATERIALS, SCENE_MATERIALS } from "./material_manager";
+import { materialToLineMaterial, materialToPointsMaterial } from "./material_manager";
 import { showEdges } from "@/store/store";
-import { convertToThreeJSMesh } from "@/conversions";
-import { ThrowStatement } from "typescript";
+import { convertToThreeJSGeometry } from "@/conversions";
 
-// Stores the meshes of the scene, keyed by the GUID of the object
-// Object GUID --> Mesh Geometry
 export const SCENE_GEOMETRIES: { [guid: string]: THREE.Object3D } = {};
-
-const ABSTRACT_GEOMETRIES = ["Line", "Point", "Vector", "Frame", "Plane", "Polyline"];
 
 export function getObjectMaterial(obj: any): THREE.Material {
     if (GEOMETRY_MATERIALS[obj.guid]) {
@@ -35,42 +31,81 @@ export function addObject(obj: any) {
             metalness: 0.5,
         });
     }
-    // Add the mesh to the scene
-    const mesh = convertToThreeJSMesh(obj);
-    mesh.material = material;
-    scene.add(mesh);
-    SCENE_GEOMETRIES[obj.guid] = mesh;
+
+    // Get the threejs geometry
+    const three_geometry = convertToThreeJSGeometry(obj);
+    console.log(three_geometry);
+
+    // Assign the material
+    if (three_geometry instanceof THREE.Mesh) {
+        three_geometry.material = material;
+    } else if (three_geometry instanceof THREE.Line) {
+        // Lines use LineBasicMaterial
+        if (!(material instanceof THREE.LineBasicMaterial)) {
+            material = materialToLineMaterial(material);
+        }
+        three_geometry.material = material;
+    } else if (three_geometry instanceof THREE.Points) {
+        // Points use PointsMaterial
+        if (!(material instanceof THREE.PointsMaterial)) {
+            material = materialToPointsMaterial(material);
+        }
+        three_geometry.material = material;
+    } else if (
+        three_geometry instanceof THREE.ArrowHelper ||
+        three_geometry instanceof THREE.PlaneHelpers
+    ) {
+        three_geometry.setColor(material.color);
+    }
+
+    // Add it to the scene and the registry
+    scene.add(three_geometry);
+    SCENE_GEOMETRIES[obj.guid] = three_geometry;
+
     // If the show edges option is active, show the edges
-    if (showEdges.value) {
-        const edgesGeometry = new THREE.EdgesGeometry(mesh.geometry);
+    if (showEdges.value && three_geometry instanceof THREE.Mesh) {
+        const edgesGeometry = new THREE.EdgesGeometry(three_geometry.geometry);
         const lineSegments = new THREE.LineSegments(
             edgesGeometry,
-            new THREE.LineBasicMaterial({ color: 0x000000 }),
+            new THREE.LineBasicMaterial({ color: 0x000000 })
         );
         lineSegments.layers.set(1);
-        mesh.add(lineSegments);
+        three_geometry.add(lineSegments);
     }
 }
 
 export function updateObject(obj: any) {
-    console.log(obj);
     // Extract the new mesh
-    const newMesh = convertToThreeJSMesh(obj);
-    console.log(newMesh);
-    // Extract and prepare the geometry for the new mesh.
-    const newGeo = newMesh.geometry;
-    newGeo.computeBoundingSphere();
-    newGeo.computeBoundingBox();
-    // Update swap the geometries
-    const meshToUpdate = SCENE_GEOMETRIES[obj.guid];
-    const oldGeo = meshToUpdate?.geometry;
-    meshToUpdate.geometry = newGeo;
-    // Transform: copy positio rotation and scale to the new mesh
-    meshToUpdate.position.copy(newMesh.position);
-    meshToUpdate.rotation.copy(newMesh.rotation);
-    meshToUpdate.scale.copy(newMesh.scale);
-    // Cleanup: dispose of the old mesh
-    oldGeo?.dispose();
+    const newThreeGeometry = convertToThreeJSGeometry(obj);
+
+    const threeGometryToUpdate = SCENE_GEOMETRIES[obj.guid];
+
+    // Handle different geometry types
+    if (newThreeGeometry instanceof THREE.Mesh) {
+        // Extract and prepare the geometry for the new mesh.
+        const newGeo = newThreeGeometry.geometry;
+        newGeo.computeBoundingSphere();
+        newGeo.computeBoundingBox();
+        // Update swap the geometries
+        const oldGeo = threeGometryToUpdate?.geometry;
+        threeGometryToUpdate.geometry = newGeo;
+        // Transform: copy positio rotation and scale to the new mesh
+        threeGometryToUpdate.position.copy(newThreeGeometry.position);
+        threeGometryToUpdate.rotation.copy(newThreeGeometry.rotation);
+        threeGometryToUpdate.scale.copy(newThreeGeometry.scale);
+        // Cleanup: dispose of the old mesh
+        oldGeo?.dispose();
+    } else if (newThreeGeometry instanceof THREE.Points || newThreeGeometry instanceof THREE.Line) {
+        // For Points and Lines, update geometry and position
+        const newGeo = newThreeGeometry.geometry;
+        const oldGeo = threeGometryToUpdate?.geometry;
+        threeGometryToUpdate.geometry = newGeo;
+        threeGometryToUpdate.position.copy(newThreeGeometry.position);
+        threeGometryToUpdate.rotation.copy(newThreeGeometry.rotation);
+        threeGometryToUpdate.scale.copy(newThreeGeometry.scale);
+        // Cleanup: dispose of the old geometry
+        oldGeo?.dispose();
+    }
 }
 
 export function isObjectInRegistry(obj: any): boolean {
@@ -80,63 +115,10 @@ export function isObjectInRegistry(obj: any): boolean {
 }
 
 export function geometryManager(obj: any) {
-    // if the geometry is abstract, than send it to another workflow\
-    if (ABSTRACT_GEOMETRIES.includes(obj.name)) {
-        abstractGeometryManager(obj);
-    } else {
-        solidGeometryManager(obj);
-    }
-}
-
-export function solidGeometryManager(obj: any) {
     if (isObjectInRegistry(obj)) {
         updateObject(obj);
         return;
     } else {
         addObject(obj);
-    }
-}
-
-function abstractGeometryManager(obj: unknown) {
-    const geometry = obj.buildGeometry();
-    const guid: string = obj.guid;
-
-    // MATERIAL
-    let material: THREE.Material;
-
-    if (GEOMETRY_MATERIALS[guid]) {
-        const material_guid = GEOMETRY_MATERIALS[guid];
-        if (SCENE_MATERIALS[material_guid]) {
-            material = SCENE_MATERIALS[material_guid];
-        }
-    } else {
-        return;
-    }
-
-    // GEOMETRY
-    if (geometry instanceof THREE.Line || geometry instanceof THREE.Points) {
-        geometry.material = material;
-    } else if (geometry instanceof THREE.ArrowHelper || geometry instanceof THREE.PlaneHelpers) {
-        geometry.setColor(material.color);
-    }
-
-    scene.add(geometry);
-    SCENE_GEOMETRIES[guid] = geometry;
-}
-
-export function updateMaterial(geometry_guid: string, material: THREE.MeshStandardMaterial) {
-    const object = SCENE_GEOMETRIES[geometry_guid];
-
-    if (!object) {
-        return;
-    }
-
-    if (object) {
-        object.material = material;
-        return;
-    }
-
-    if (object instanceof THREE.ArrowHelper || object instanceof THREE.PlaneHelpers) {
-        object.setColor(material.color);
     }
 }

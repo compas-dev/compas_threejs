@@ -34,7 +34,7 @@ import {
 import * as GEOCONV from "./geometry";
 import * as DATASTRUCTCONV from "./datastructures";
 
-export function convertToThreeJSMesh(object: any) {
+export function convertToThreeJSGeometry(object: any) {
     switch (true) {
         case object instanceof Arc:
             return GEOCONV.arcToThreeJS(object);

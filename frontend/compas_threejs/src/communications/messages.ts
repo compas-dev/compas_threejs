@@ -23,9 +23,7 @@ export function dispatchMessage(message: Uint8Array) {
 }
 
 export function decodeWebsocketMessage(message: Uint8Array) {
-    console.log(unpackMessage(message));
     const object = getObjectFromMessage(message);
-    console.log(object);
     return object;
 }
 
