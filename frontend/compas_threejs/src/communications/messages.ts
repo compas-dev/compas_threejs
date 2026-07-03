@@ -1,9 +1,5 @@
-import {
-    unpackMessageToGeometry,
-    unpackMessage,
-} from "@gramaziokohler/compas-pb-ts";
+import { unpackMessageToGeometry } from "@gramaziokohler/compas-pb-ts";
 import { Dictionary } from "@gramaziokohler/compas-pb-ts";
-import * as THREE from "three";
 import { lightManager } from "../viewer/light_manager";
 import { geometryManager } from "../viewer/geometry_manager";
 import { materialManager } from "../viewer/material_manager";
@@ -15,7 +11,8 @@ import { objectInfoManager } from "./objectInfo";
 import { objectActionManager } from "./objectInfo";
 import { removeObjectFromScene } from "../viewer/scene_manager";
 
-const SCENE_GEOMETRIES: { [guid: string]: THREE.Object3D } = {};
+// SCENE_GEOMETRIES is currently unused but kept for future tracking of scene objects
+// const SCENE_GEOMETRIES: { [guid: string]: THREE.Object3D } = {};
 
 export function dispatchMessage(message: Uint8Array) {
     try {

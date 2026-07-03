@@ -1,6 +1,5 @@
 import { reactive } from "vue";
 import { sendData } from "@/communications/communication";
-import type { Dictionary } from "@gramaziokohler/compas-pb-ts";
 import { sideBarInfoState } from "../store/store";
 
 // Define a type for the components we want to add.
@@ -10,13 +9,7 @@ interface ButtonComponent {
     component: "Button";
     label?: string;
     props: {
-        variant:
-            | "outline"
-            | "default"
-            | "destructive"
-            | "secondary"
-            | "ghost"
-            | "link";
+        variant: "outline" | "default" | "destructive" | "secondary" | "ghost" | "link";
         text: string;
     };
     action: string; // GUID for click action
@@ -49,13 +42,10 @@ interface NumberFieldComponent {
 }
 
 // --- The main type is now a union of all supported components ---
-export type DynamicComponent =
-    | ButtonComponent
-    | SliderComponent
-    | NumberFieldComponent;
+export type DynamicComponent = ButtonComponent | SliderComponent | NumberFieldComponent;
 export const sidebarComponents = reactive<DynamicComponent[]>([]);
 
-export function uiManager(data: { [key: string]: any }) {
+export function uiManager(data: Record<string, unknown>) {
     const type = data.type.value;
     switch (type) {
         case "button":
@@ -76,7 +66,7 @@ export function uiManager(data: { [key: string]: any }) {
 }
 
 // --- Function to add a Button ---
-export function addButton(data: { [key: string]: any }) {
+export function addButton(data: Record<string, unknown>) {
     const newButton: ButtonComponent = {
         id: Date.now(),
         component: "Button",
@@ -91,7 +81,7 @@ export function addButton(data: { [key: string]: any }) {
 }
 
 // --- Function to add a Slider ---
-export function addSlider(data: { [key: string]: any }) {
+export function addSlider(data: Record<string, unknown>) {
     const newSlider: SliderComponent = {
         id: Date.now(),
         component: "Slider",
@@ -107,7 +97,7 @@ export function addSlider(data: { [key: string]: any }) {
     sidebarComponents.push(newSlider);
 }
 
-export function addNumberField(data: { [key: string]: any }) {
+export function addNumberField(data: Record<string, unknown>) {
     const newNumberField: NumberFieldComponent = {
         id: Date.now(),
         component: "NumberField",
@@ -125,7 +115,7 @@ export function addNumberField(data: { [key: string]: any }) {
 
 // --- Updated Action Handler ---
 // It now accepts a payload, which will be the slider's value.
-export function handleAction(actionGuid: string, value?: any) {
+export function handleAction(actionGuid: string, value?: unknown) {
     const message = {
         dispatch: "ui_callback",
         action: actionGuid,

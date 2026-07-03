@@ -6,7 +6,7 @@ import { Sky } from "three/examples/jsm/objects/Sky.js";
 export const SCENE_LIGHTS: { [guid: string]: THREE.Material } = {};
 export const SCENE_LIGTH_HELPERS: { [guid: string]: THREE.Material } = {};
 
-export function lightManager(data: { [key: string]: any }) {
+export function lightManager(data: Record<string, unknown>) {
     if (data.type.value == "point_light") {
         buildPointLight(data);
     } else if (data.type.value == "spot_light") {
@@ -22,7 +22,7 @@ export function lightManager(data: { [key: string]: any }) {
     }
 }
 
-function buildPointLight(data: { [key: string]: any }) {
+function buildPointLight(data: Record<string, unknown>) {
     let pointLight: THREE.PointLight, helper: THREE.PointLightHelper;
 
     // Get the light
@@ -62,7 +62,7 @@ function buildPointLight(data: { [key: string]: any }) {
     }
 }
 
-function buildSpotLight(data: { [key: string]: any }) {
+function buildSpotLight(data: Record<string, unknown>) {
     let spotLight: THREE.SpotLight, helper: THREE.SpotLightHelper;
 
     // Get the light
@@ -110,7 +110,7 @@ function buildSpotLight(data: { [key: string]: any }) {
     }
 }
 
-function buildRectLight(data: { [key: string]: any }) {
+function buildRectLight(data: Record<string, unknown>) {
     let rectLight: THREE.RectAreaLight, helper: RectAreaLightHelper;
 
     // Get the light
@@ -151,7 +151,7 @@ function buildRectLight(data: { [key: string]: any }) {
     }
 }
 
-function buildSunlight(data: { [key: string]: any }) {
+function buildSunlight(data: Record<string, unknown>) {
     let sunlight: THREE.DirectionalLight, helper: THREE.DirectionalLightHelper;
 
     // Get the light
@@ -174,9 +174,7 @@ function buildSunlight(data: { [key: string]: any }) {
 
     // Helper
     if (SCENE_LIGTH_HELPERS[data.guid.value] && data.helper.value) {
-        helper = SCENE_LIGTH_HELPERS[
-            data.guid.value
-        ] as THREE.DirectionalLightHelper;
+        helper = SCENE_LIGTH_HELPERS[data.guid.value] as THREE.DirectionalLightHelper;
         helper.update();
     } else if (data.helper.value) {
         const helper = new THREE.DirectionalLightHelper(sunlight);
@@ -190,7 +188,7 @@ function buildSunlight(data: { [key: string]: any }) {
     }
 }
 
-function buildSky(data: { [key: string]: any }) {
+function buildSky(data: Record<string, unknown>) {
     let sky: Sky, sun: THREE.DirectionalLight, ambient: THREE.AmbientLight;
 
     if (SCENE_LIGHTS[data.guid.value]) {
@@ -215,10 +213,9 @@ function buildSky(data: { [key: string]: any }) {
     sky.material.uniforms["turbidity"].value = data.turbidity.value;
     sky.material.uniforms["rayleigh"].value = data.rayleigh.value;
     sky.material.uniforms["mieCoefficient"].value = data.mie_coefficient.value;
-    sky.material.uniforms["mieDirectionalG"].value =
-        data.mie_directional_g.value;
+    sky.material.uniforms["mieDirectionalG"].value = data.mie_directional_g.value;
 
-    let sunPosition = new THREE.Vector3();
+    const sunPosition = new THREE.Vector3();
     const phi = THREE.MathUtils.degToRad(90 - data.elevation.value);
     const theta = THREE.MathUtils.degToRad(data.azimuth.value);
     sunPosition.setFromSphericalCoords(1, phi, theta);
@@ -251,7 +248,7 @@ function getSunColor(elevation: number): THREE.Color {
     return new THREE.Color(0xffcc66);
 }
 
-function buildAmbientLight(data: { [key: string]: any }) {
+function buildAmbientLight(data: Record<string, unknown>) {
     let ambientLight: THREE.AmbientLight;
 
     // Get the light

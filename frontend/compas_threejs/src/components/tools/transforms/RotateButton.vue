@@ -27,12 +27,7 @@ import { Rotate3d } from "lucide-vue-next";
 import { setTransformMode } from "@/viewer/toolbar_actions";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-    TooltipProvider,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { pickerEnabled } from "@/store/store.ts";
 import { pickerMode } from "@/store/store.ts";
 

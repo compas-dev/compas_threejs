@@ -4,11 +4,7 @@
             <TooltipTrigger>
                 <Button variant="secondary" size="icon" @click="handleClick">
                     <span class="button-icon save-view-icon">
-                        <Camera
-                            :size="15"
-                            :stroke-width="2"
-                            aria-hidden="true"
-                        />
+                        <Camera :size="15" :stroke-width="2" aria-hidden="true" />
                         <span class="save-view-overlay" aria-hidden="true">
                             <Plus class="save-view-overlay-icon" />
                         </span>
@@ -27,12 +23,7 @@ import { Camera, Plus } from "lucide-vue-next";
 import { captureCurrentView, type SavedView } from "@/viewer/toolbar_actions";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipTrigger,
-    TooltipProvider,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 const props = defineProps<{
     defaultName: string;

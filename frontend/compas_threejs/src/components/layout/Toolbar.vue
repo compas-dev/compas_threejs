@@ -1,8 +1,6 @@
 <template>
     <div class="toolbar theme" id="toolbar">
-        <h1 class="text-lg font-bold" :class="{ dark: theme.value === 'dark' }">
-            COMPAS ThreeJs
-        </h1>
+        <h1 class="text-lg font-bold" :class="{ dark: theme.value === 'dark' }">COMPAS ThreeJs</h1>
         <TransformGroup />
         <ViewGroup />
         <DisplayGroup />

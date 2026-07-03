@@ -18,7 +18,7 @@ export const camera = new THREE.PerspectiveCamera(
     60,
     window.innerWidth / window.innerHeight,
     0.1,
-    1000,
+    1000
 );
 camera.position.set(8, -15, 15);
 camera.zoom = 1;
@@ -131,9 +131,7 @@ function applyViewPreset(preset: ViewPreset) {
     const direction = viewPresets[preset].clone().normalize();
     const distance = camera.position.distanceTo(target);
 
-    camera.position.copy(
-        target.clone().add(direction.multiplyScalar(distance)),
-    );
+    camera.position.copy(target.clone().add(direction.multiplyScalar(distance)));
     controls.update();
 }
 
@@ -145,7 +143,7 @@ function getViewPresetFromKey(code: string): ViewPreset | null {
     return NUMPAD_VIEW_MAP.get(code) ?? null;
 }
 
-export function sceneManager(data: { [key: string]: any }) {
+export function sceneManager(data: Record<string, unknown>) {
     switch (data.type.value) {
         case "background_color":
             updateSceneBackgroundColor(data);
@@ -190,14 +188,14 @@ export function sceneManager(data: { [key: string]: any }) {
     }
 }
 
-function updateSceneBackgroundColor(data: { [key: string]: any }) {
+function updateSceneBackgroundColor(data: Record<string, unknown>) {
     let color = data.color.value;
     color = color.replace("#", "0x");
     color = parseInt(color);
     setUserBackgroundColor(color);
 }
 
-export function removeObjectFromScene(data: { [key: string]: any }) {
+export function removeObjectFromScene(data: Record<string, unknown>) {
     const obj_guid = data.guid.value;
     if (obj_guid in SCENE_GEOMETRIES) {
         const obj = SCENE_GEOMETRIES[obj_guid];

@@ -5,16 +5,9 @@ import { showEdges } from "@/store/store";
 
 export const SCENE_GEOMETRIES: { [guid: string]: THREE.Object3D } = {};
 
-const ABSTRACT_GEOMETRIES = [
-    "Line",
-    "Point",
-    "Vector",
-    "Frame",
-    "Plane",
-    "Polyline",
-];
+const ABSTRACT_GEOMETRIES = ["Line", "Point", "Vector", "Frame", "Plane", "Polyline"];
 
-export function geometryManager(obj: any) {
+export function geometryManager(obj: unknown) {
     // FILTER
     // if the geometry is abstract, than send it to another workflow\
     if (ABSTRACT_GEOMETRIES.includes(obj.name)) {
@@ -73,7 +66,7 @@ export function geometryManager(obj: any) {
             const edgesGeometry = new THREE.EdgesGeometry(newMesh.geometry);
             const lineSegments = new THREE.LineSegments(
                 edgesGeometry,
-                new THREE.LineBasicMaterial({ color: 0x000000 }),
+                new THREE.LineBasicMaterial({ color: 0x000000 })
             );
             lineSegments.layers.set(1);
 
@@ -82,7 +75,7 @@ export function geometryManager(obj: any) {
     }
 }
 
-function abstractGeometryManager(obj: any) {
+function abstractGeometryManager(obj: unknown) {
     const geometry = obj.buildGeometry();
     const guid: string = obj.guid;
 
@@ -101,10 +94,7 @@ function abstractGeometryManager(obj: any) {
     // GEOMETRY
     if (geometry instanceof THREE.Line || geometry instanceof THREE.Points) {
         geometry.material = material;
-    } else if (
-        geometry instanceof THREE.ArrowHelper ||
-        geometry instanceof THREE.PlaneHelpers
-    ) {
+    } else if (geometry instanceof THREE.ArrowHelper || geometry instanceof THREE.PlaneHelpers) {
         geometry.setColor(material.color);
     }
 
@@ -112,10 +102,7 @@ function abstractGeometryManager(obj: any) {
     SCENE_GEOMETRIES[guid] = geometry;
 }
 
-export function updateMaterial(
-    geometry_guid: string,
-    material: THREE.MeshStandardMaterial,
-) {
+export function updateMaterial(geometry_guid: string, material: THREE.MeshStandardMaterial) {
     const object = SCENE_GEOMETRIES[geometry_guid];
 
     if (!object) {
@@ -127,10 +114,7 @@ export function updateMaterial(
         return;
     }
 
-    if (
-        object instanceof THREE.ArrowHelper ||
-        object instanceof THREE.PlaneHelpers
-    ) {
+    if (object instanceof THREE.ArrowHelper || object instanceof THREE.PlaneHelpers) {
         object.setColor(material.color);
     }
 }
