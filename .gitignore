@@ -329,3 +329,7 @@ storybook-static/
 # Temporary folders
 .tmp/
 temp/
+
+
+# Frontend is built from external repo
+src/compas_threejs/viewer/frontend/
