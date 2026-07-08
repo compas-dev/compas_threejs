@@ -53,19 +53,33 @@ python examples/your_example.py
 
 The viewer should open in your browser with the updated frontend.
 
-### 4. Commit Backend Changes
+### 4. Commit Both Repos
 
-The frontend build is **not tracked** in git (see `.gitignore` line 335). Before pushing:
+**Frontend repo:**
+```bash
+cd ../compas_threejs_ts
+git add .
+git commit -m "Your frontend changes"
+git push
+```
 
-1. Ensure `sync-frontend.py` has been run
-2. **TODO**: Decide if you want to commit the built frontend or build it in CI/CD
+**Backend repo (after syncing):**
+```bash
+cd ../compas_threejs
+git add src/compas_threejs/viewer/frontend/
+git commit -m "Update frontend build"
+git push
+```
+
+The frontend build **is committed** to the backend repo so users can install via pip without needing Node.js.
 
 ## Important Notes
 
 ### Current Setup
-- Frontend build is **gitignored** in this repo
-- You must run `python scripts/sync-frontend.py` to update the viewer
+- Frontend build **is committed** in this repo for easier pip installation
+- You must run `sync-frontend.bat` or `python scripts/sync-frontend.py` to update the viewer
 - Both repos should live in `C:\Users\egozzi\Documents\`
+- Users installing via pip don't need Node.js
 
 ### Path Configuration
 The sync script expects:
@@ -100,10 +114,10 @@ If you move repositories, update the path in `scripts/sync-frontend.py`.
 2. Build during Python package installation
 3. Users need Node.js installed
 
-### Option C: Commit Built Frontend (Current)
+### Option C: Commit Built Frontend ✅ **CURRENT**
 1. Run sync script before commits
 2. Commit built files to backend repo
 3. No Node.js required for users
 4. Larger git history due to binary files
 
-**Recommendation**: Start with Option C (current), migrate to Option A when frontend stabilizes.
+**Current strategy**: Option C. This keeps installation simple for end users.
