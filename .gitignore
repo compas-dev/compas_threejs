@@ -329,3 +329,8 @@ storybook-static/
 # Temporary folders
 .tmp/
 temp/
+
+
+# Frontend is built from external repo and committed to this repo
+# Uncomment the line below if you want to gitignore the frontend build:
+# src/compas_threejs/viewer/frontend/
