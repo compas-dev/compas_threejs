@@ -477,6 +477,12 @@ class Viewer:
         binary_data = compas_pb.pb_dump_bts(geometry)
         loop = get_server_loop()
 
+        # send geometry
+        if loop:
+            asyncio.run_coroutine_threadsafe(broadcast(binary_data, obj_id), loop)
+        else:
+            self.queued_messages.append((binary_data, obj_id))
+
         # send material
         if material:
             material._geometry_guid = str(obj_id)
@@ -495,12 +501,6 @@ class Viewer:
             self._object_actions_registry[str(obj_id)] = actions
             for action in actions:
                 self._buttons[str(action.guid)] = action.action
-
-        # send geometry
-        if loop:
-            asyncio.run_coroutine_threadsafe(broadcast(binary_data, obj_id), loop)
-        else:
-            self.queued_messages.append((binary_data, obj_id))
 
         # save the geometry for furture reference
         self._geometry_registry[str(obj_id)] = geometry

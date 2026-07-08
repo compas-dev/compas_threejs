@@ -47,6 +47,8 @@ function buildStandardMaterial(
         flatShading: data.flat_shading.value,
         wireframe: data.wireframe.value,
         side: THREE.DoubleSide,
+        transparent: data.transparent.value,
+        opacity: data.opacity.value,
     });
     return material;
 }

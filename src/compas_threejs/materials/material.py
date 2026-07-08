@@ -36,6 +36,8 @@ class Material(GenericMaterial):
         emissive_intensity: float = 0,
         flat_shading: bool = False,
         wireframe: bool = False,
+        transparent: bool = False,
+        opacity: float = 1,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -47,6 +49,8 @@ class Material(GenericMaterial):
         self.flat_shading = flat_shading
         self.wireframe = wireframe
         self._geometry_guid = ""
+        self.transparent = transparent
+        self.opacity = opacity
         self.guid = str(uuid4())
 
     def as_dict(self) -> dict:
@@ -61,6 +65,8 @@ class Material(GenericMaterial):
             "emissive_intensity": self.emissive_intensity,
             "flat_shading": self.flat_shading,
             "wireframe": self.wireframe,
+            "transparent": self.transparent,
+            "opacity": self.opacity,
             "guid": self.guid,
         }
 
@@ -133,3 +139,23 @@ class Material(GenericMaterial):
         if not isinstance(value, bool):
             raise TypeError("wireframe must be a boolean")
         self._wireframe = value
+
+    @property
+    def transparent(self) -> bool:
+        return self._transparent
+
+    @transparent.setter
+    def transparent(self, value: bool):
+        if not isinstance(value, bool):
+            raise TypeError("transparent must be a boolean")
+        self._transparent = value
+
+    @property
+    def opacity(self) -> float:
+        return self._opacity
+
+    @opacity.setter
+    def opacity(self, value: float):
+        if not (0 <= value <= 1):
+            raise ValueError("opacity must be between 0 and 1")
+        self._opacity = value
