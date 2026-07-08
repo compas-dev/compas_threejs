@@ -28,10 +28,11 @@ classifiers = [
 dependencies = [
     "compas",
     "compas_pb",
+    "compas_brep[occ]",
     "websockets",
     "fastapi",
     "uvicorn",
-    "rich"
+    "rich",
 ]
 
 [project.optional-dependencies]
