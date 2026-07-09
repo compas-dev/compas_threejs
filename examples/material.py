@@ -6,7 +6,7 @@ from compas_threejs.materials import Material
 from compas_threejs.ui import Button, Slider
 from compas_threejs.viewer import Viewer
 
-viz = Viewer()
+viz = Viewer("0.0.0.0")
 viz.default_lighting = True
 
 

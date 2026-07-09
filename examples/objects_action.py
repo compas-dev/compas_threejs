@@ -9,7 +9,7 @@ from compas_threejs.viewer import Viewer
 
 class App:
     def __init__(self):
-        self.viewer = Viewer()
+        self.viewer = Viewer("0.0.0.0")
         self.viewer.camera_position = Point(20, -20, 20)
         self.objects = []
         self.box_material = Material(

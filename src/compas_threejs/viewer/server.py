@@ -75,14 +75,14 @@ async def broadcast(binary_data: bytes, obj_id: str = None, persist: bool = True
     )
 
 
-def run_server(port=9001, viewer=None):
+def run_server(host="0.0.0.0", port=9001, viewer=None):
     global server_loop, viewer_instance
     viewer_instance = viewer
     server_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(server_loop)
 
     # Note: We run on the websocket_port (9001 by default)
-    config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning")
+    config = uvicorn.Config(app, host=host, port=port, log_level="warning")
     server = uvicorn.Server(config)
 
     try:

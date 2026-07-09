@@ -91,9 +91,10 @@ class Viewer:
 
     """
 
-    def __init__(self):
+    def __init__(self, host: str = "127.0.0.1", websocket_port: int = 9001):
         # Server
-        self.websocket_port = 9001
+        self.host = host
+        self.websocket_port = websocket_port
         self.websocket_server_thread = None
 
         # Setter Attributes
@@ -355,11 +356,16 @@ class Viewer:
 
     def _initialize_server(self):
         """Starts the consolidated FastAPI server."""
+
+        display_host = self.host if self.host != "0.0.0.0" else get_local_ip()
+
         console.log(
-            f"[green]Starting server on http://localhost:{self.websocket_port}...[/green]"
+            f"http://{display_host}:{self.websocket_port}/?ws_host={display_host}&ws_port={self.websocket_port}"
         )
         self.websocket_server_thread = threading.Thread(
-            target=run_server, args=(self.websocket_port, self), daemon=True
+            target=run_server,
+            args=(display_host, self.websocket_port, self),
+            daemon=True,
         )
         self.websocket_server_thread.start()
 
@@ -415,8 +421,24 @@ class Viewer:
         console.log("[green]Viewer stopped successfully![/green]")
 
     def show(self):
-        """Opens the viewer in the default web browser."""
-        webbrowser.open(f"http://localhost:{self.websocket_port}/")
+        """Generates the correct URL based on the host settings."""
+        frontend_port = 3000
+
+        # 1. Determine which host string the frontend needs to connect back to
+        if self.host == "0.0.0.0":
+            connect_host = get_local_ip()
+            console.log(f"[bold cyan]📱 Network Sharing Enabled[/bold cyan]")
+        else:
+            connect_host = self.host
+
+        # 2. Build the exact query-parameter string
+        shareable_url = f"http://{connect_host}:{frontend_port}/?ws_host={connect_host}&ws_port={self.websocket_port}"
+
+        console.log(f"[underline yellow]{shareable_url}[/underline yellow]")
+
+        import webbrowser
+
+        webbrowser.open(shareable_url)
 
     def _send_dictionary_message(self, msg: dict):
         """Helper method to send a dictionary message to the frontend.
@@ -763,3 +785,18 @@ class Viewer:
                 self._buttons[action_id](object, value)
         else:
             print(f"Unrecognized action or missing handler for action ID: {action_id}")
+
+
+import socket
+
+
+def get_local_ip():
+    """Gets the local IP address of this compute on the current network."""
+    try:
+        # We don't actually send any data or open a connection,
+        # this just tricks the OS into revealing our active LAN IP address.
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("8.8.8.8", 80))
+            return s.getsockname()[0]
+    except Exception:
+        return "127.0.0.1"  # Fallback if offline
