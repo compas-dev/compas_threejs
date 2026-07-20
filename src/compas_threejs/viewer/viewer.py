@@ -316,6 +316,13 @@ class Viewer:
         }
         self._send_dictionary_message(dict)
 
+    @property
+    def url(self) -> str:
+        """Get the URL to access the viewer in a web browser."""
+        display_host = self.host if self.host != "0.0.0.0" else get_local_ip()
+        url = f"http://{display_host}:{self.websocket_port}/?ws_host={display_host}&ws_port={self.websocket_port}"
+        return url
+
     def set_view(self, view: Union[CameraView, Point, tuple, list], target=None):
         """Set camera view from a preset or explicit point.
 
@@ -526,6 +533,7 @@ class Viewer:
 
         # save the geometry for furture reference
         self._geometry_registry[str(obj_id)] = geometry
+        return str(obj_id)
 
     def add_geometries(self, geometries: list, material=None):
         for geo in geometries:
@@ -705,6 +713,8 @@ class Viewer:
             self.manage_picked_object(action_dictionary)
         elif action_dictionary.get("dispatch") == "object_action_callback":
             self.manage_object_action_callback(action_dictionary)
+        elif action_dictionary.get("dispatch") == "loaded_json":
+            self.manage_incoming_json(action_dictionary)
         else:
             console.log(
                 f"[yellow]Received unrecognized message from frontend: {action_dictionary}[/yellow]"
@@ -769,6 +779,7 @@ class Viewer:
         return
 
     def manage_object_action_callback(self, action_dictionary):
+        print(action_dictionary)
         action_id = action_dictionary.get("action_guid")
         object_id = action_dictionary.get("object_guid")
         console.log(
@@ -778,7 +789,7 @@ class Viewer:
         if action_id and action_id in self._buttons:
             function = self._buttons[action_id]
             if function.__code__.co_argcount == 2:
-                self._buttons[action_id](object)
+                self._buttons[action_id](object_id)
             elif function.__code__.co_argcount == 3:
                 value = action_dictionary.get("value")
                 console.log(f"[blue]Value associated with the action: {value}[/blue]")
@@ -786,17 +797,13 @@ class Viewer:
         else:
             print(f"Unrecognized action or missing handler for action ID: {action_id}")
 
-
-import socket
-
-
-def get_local_ip():
-    """Gets the local IP address of this compute on the current network."""
-    try:
-        # We don't actually send any data or open a connection,
-        # this just tricks the OS into revealing our active LAN IP address.
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.connect(("8.8.8.8", 80))
-            return s.getsockname()[0]
-    except Exception:
-        return "127.0.0.1"  # Fallback if offline
+    def manage_incoming_json(self, action_dictionary):
+        print(action_dictionary)
+        json_data = action_dictionary.get("json_data")
+        console.log("[blue]Received loaded JSON from frontend.[/blue]")
+        action_id = action_dictionary.get("action")
+        print(action_id)
+        if action_id and action_id in self._buttons:
+            self._buttons[action_id](json_data)
+        # Here you can implement any logic to handle the incoming JSON data.
+        # For example, you might want to parse it and add new geometry or update existing objects in the viewer.
