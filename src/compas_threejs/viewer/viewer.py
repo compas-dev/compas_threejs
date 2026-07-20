@@ -386,20 +386,27 @@ class Viewer:
 
         # Update viewer settings
         self.background_color = self.background_color
-        # Ensure frontend receives current dark mode state on start
         self.dark_mode = self._dark_mode
         self.camera_damping = self.camera_damping
         self._send_default_view()
 
-        # Send default lighting
         if self._default_lighting:
             self._send_default_lighting()
 
-        # Send queued messages
-        for msg, obj_id in self.queued_messages:
+        # ✨ FIX: Handle workspace destination strings directly during loop setup unpacking
+        for item in self.queued_messages:
             loop = get_server_loop()
             if loop:
-                asyncio.run_coroutine_threadsafe(broadcast(msg, obj_id), loop)
+                if len(item) == 3:
+                    msg, obj_id, ws_id = item
+                    asyncio.run_coroutine_threadsafe(
+                        broadcast(msg, obj_id, workspace_id=ws_id), loop
+                    )
+                else:
+                    msg, obj_id = item
+                    asyncio.run_coroutine_threadsafe(
+                        broadcast(msg, obj_id, workspace_id="main"), loop
+                    )
         self.queued_messages = []
 
         if show:
@@ -447,93 +454,92 @@ class Viewer:
 
         webbrowser.open(shareable_url)
 
-    def _send_dictionary_message(self, msg: dict):
-        """Helper method to send a dictionary message to the frontend.
-
-        UI elements are not persisted in scene_state to avoid replaying them to new clients.
-        """
+    def _send_dictionary_message(self, msg: dict, workspace_id: str = "main"):
+        """Helper method to send a dictionary message to the frontend."""
         binary_data = compas_pb.pb_dump_bts(msg)
         dispatch = msg.get("dispatch", "")
         persist = dispatch not in ("ui", "remove_object")
+
         loop = get_server_loop()
         if loop:
             asyncio.run_coroutine_threadsafe(
-                broadcast(binary_data, "", persist=persist), loop
+                broadcast(binary_data, "", persist=persist, workspace_id=workspace_id),
+                loop,
             )
         else:
-            # Queue the message if the server is not running yet
-            self.queued_messages.append((binary_data, ""))
+            # ✨ FIX: Queue with the designated workspace id
+            self.queued_messages.append((binary_data, "", workspace_id))
 
     # ---- GEOMETRY --------------------------------------------------------------------------------
 
-    def add_geometry(
-        self,
-        geometry,
-        material: Optional[GenericMaterial] = None,
-        metadata: Optional[Metadata] = None,
-        actions: Optional[list[Button]] = None,
-    ):
-        """
-        Adds a geometry object to the viewer. Optionally, a material can be associated with the geometry.
+    # def add_geometry(
+    #     self,
+    #     geometry,
+    #     material: Optional[GenericMaterial] = None,
+    #     metadata: Optional[Metadata] = None,
+    #     actions: Optional[list[Button]] = None,
+    # ):
+    #     """
+    #     Adds a geometry object to the viewer. Optionally, a material can be associated with the geometry.
 
-        Parameters
-        ----------
-        geometry : compas.geometry.Geometry | compas.datastructures.Mesh
-            The geometry object to be added to the viewer. It must have a unique GUID.
-        material : compas_threejs.material.Material, optional
-            An optional material to be associated with the geometry.
-        metadata: compas_threejs.metadata.Metadata, optional
-            An optional metadata object to be associated with the geometry. This metadata can be sent back to the frontend when the geometry is picked, allowing for interactive exploration of object properties.
-        actions: list of compas_threejs.ui.Button, optional
-            An optional list of Button objects representing actions that can be performed on the geometry.
-            The function associated with the button need to accept `object` parameter.
+    #     Parameters
+    #     ----------
+    #     geometry : compas.geometry.Geometry | compas.datastructures.Mesh
+    #         The geometry object to be added to the viewer. It must have a unique GUID.
+    #     material : compas_threejs.material.Material, optional
+    #         An optional material to be associated with the geometry.
+    #     metadata: compas_threejs.metadata.Metadata, optional
+    #         An optional metadata object to be associated with the geometry. This metadata can be sent back to the frontend when the geometry is picked, allowing for interactive exploration of object properties.
+    #     actions: list of compas_threejs.ui.Button, optional
+    #         An optional list of Button objects representing actions that can be performed on the geometry.
+    #         The function associated with the button need to accept `object` parameter.
 
-        Returns
-        -------
-        None
+    #     Returns
+    #     -------
+    #     None
 
-        """
-        # if it is a Brep we need to get its wiewmesh
-        if isinstance(geometry, Brep):
-            brep_id = geometry.guid
-            brep_viewmesh = geometry.to_viewmesh()
-            self._brep_viewmesh_registry[brep_id] = brep_viewmesh
-            # the geometry variable now gets the viewmesh
-            geometry = brep_viewmesh
+    #     """
+    #     # if it is a Brep we need to get its wiewmesh
+    #     if isinstance(geometry, Brep):
+    #         brep_id = geometry.guid
+    #         brep_viewmesh = geometry.to_viewmesh()
+    #         self._brep_viewmesh_registry[brep_id] = brep_viewmesh
+    #         # the geometry variable now gets the viewmesh
+    #         geometry = brep_viewmesh
 
-        obj_id = geometry.guid
+    #     obj_id = geometry.guid
 
-        binary_data = compas_pb.pb_dump_bts(geometry)
-        loop = get_server_loop()
+    #     binary_data = compas_pb.pb_dump_bts(geometry)
+    #     loop = get_server_loop()
 
-        # send geometry
-        if loop:
-            asyncio.run_coroutine_threadsafe(broadcast(binary_data, obj_id), loop)
-        else:
-            self.queued_messages.append((binary_data, obj_id))
+    #     # send geometry
+    #     if loop:
+    #         asyncio.run_coroutine_threadsafe(broadcast(binary_data, obj_id), loop)
+    #     else:
+    #         self.queued_messages.append((binary_data, obj_id))
 
-        # send material
-        if material:
-            material._geometry_guid = str(obj_id)
-            material_data = compas_pb.pb_dump_bts(material.as_dict())
-            if loop:
-                asyncio.run_coroutine_threadsafe(
-                    broadcast(material_data, str(uuid4())), loop
-                )
-            else:
-                self.queued_messages.append((material_data, str(uuid4())))
+    #     # send material
+    #     if material:
+    #         material._geometry_guid = str(obj_id)
+    #         material_data = compas_pb.pb_dump_bts(material.as_dict())
+    #         if loop:
+    #             asyncio.run_coroutine_threadsafe(
+    #                 broadcast(material_data, str(uuid4())), loop
+    #             )
+    #         else:
+    #             self.queued_messages.append((material_data, str(uuid4())))
 
-        if metadata:
-            self._metadata_registry[str(obj_id)] = metadata
+    #     if metadata:
+    #         self._metadata_registry[str(obj_id)] = metadata
 
-        if actions:
-            self._object_actions_registry[str(obj_id)] = actions
-            for action in actions:
-                self._buttons[str(action.guid)] = action.action
+    #     if actions:
+    #         self._object_actions_registry[str(obj_id)] = actions
+    #         for action in actions:
+    #             self._buttons[str(action.guid)] = action.action
 
-        # save the geometry for furture reference
-        self._geometry_registry[str(obj_id)] = geometry
-        return str(obj_id)
+    #     # save the geometry for furture reference
+    #     self._geometry_registry[str(obj_id)] = geometry
+    #     return str(obj_id)
 
     def add_geometries(self, geometries: list, material=None):
         for geo in geometries:
@@ -630,13 +636,8 @@ class Viewer:
         light : compas_threejs.lights.Light
             The light object to be added to the viewer.
         """
-        obj_id = light.guid
-        binary_data = compas_pb.pb_dump_bts(light.as_dict())
-        loop = get_server_loop()
-        if loop:
-            asyncio.run_coroutine_threadsafe(broadcast(binary_data, obj_id), loop)
-        else:
-            self.queued_messages.append((binary_data, obj_id))
+        # Route it directly to the default 'main' workspace proxy wrapper
+        self.get_workspace("main").add_light(light)
 
     def update_light(self, light):
         """
@@ -650,14 +651,20 @@ class Viewer:
         self.add_light(light)
 
     def _send_default_lighting(self):
+        # Explicitly forward default lights to the main workspace layout engine
+        main_ws = self.get_workspace("main")
+
         sunlight = Sunlight(point=Point(30, -10, 30), intensity=1)
-        self.add_light(sunlight)
+        main_ws.add_light(sunlight)
+
         sunlight2 = Sunlight(point=Point(-30, -20, 30), intensity=0.5)
-        self.add_light(sunlight2)
+        main_ws.add_light(sunlight2)
+
         sunlight3 = Sunlight(point=Point(-30, 20, 10), intensity=0.5)
-        self.add_light(sunlight3)
+        main_ws.add_light(sunlight3)
+
         ambient_light = AmbientLight(color=Color.white(), intensity=0.5)
-        self.add_light(ambient_light)
+        main_ws.add_light(ambient_light)
         console.log("[green]Default lighting sent![/green]")
 
     # ---- MATERIALS ----------------------------------------------------------------------------------
@@ -681,23 +688,23 @@ class Viewer:
 
     # ---- BUTTONS ----------------------------------------------------------------------------------
 
-    def add_ui_element(self, element):
-        """
-        Adds a UI element (e.g., button) to the viewer and registers its associated action.
+    # def add_ui_element(self, element):
+    #     """
+    #     Adds a UI element (e.g., button) to the viewer and registers its associated action.
 
-        Parameters
-        ----------
-        element : compas_threejs.ui.UIElement
-            The UI element to be added to the viewer. It must have a unique GUID and an
-        """
-        if element.action is None:
-            console.log(
-                f"[yellow]Warning: UI element with GUID {element.guid} has no associated action.[/yellow]"
-            )
+    #     Parameters
+    #     ----------
+    #     element : compas_threejs.ui.UIElement
+    #         The UI element to be added to the viewer. It must have a unique GUID and an
+    #     """
+    #     if element.action is None:
+    #         console.log(
+    #             f"[yellow]Warning: UI element with GUID {element.guid} has no associated action.[/yellow]"
+    #         )
 
-        # register the function with the id
-        self._buttons[element.guid] = element.action
-        self._send_dictionary_message(element.as_dict())
+    #     # register the function with the id
+    #     self._buttons[element.guid] = element.action
+    #     self._send_dictionary_message(element.as_dict())
 
     # ---- MESSAGES ----------------------------------------------------------------------------------
 
@@ -807,3 +814,132 @@ class Viewer:
             self._buttons[action_id](json_data)
         # Here you can implement any logic to handle the incoming JSON data.
         # For example, you might want to parse it and add new geometry or update existing objects in the viewer.
+
+    def get_workspace(self, workspace_id: str) -> "WorkspaceProxy":
+        """Natively creates or accesses an isolated workspace viewport layout."""
+        return WorkspaceProxy(self, workspace_id)
+
+    def add_geometry(self, geometry, material=None, metadata=None, actions=None):
+        # Simply forward the main calls to the default "main" workspace wrapper!
+        self.get_workspace("main").add_geometry(geometry, material, metadata, actions)
+
+    def add_ui_element(self, element):
+        self.get_workspace("main").add_ui_element(element)
+
+
+class WorkspaceProxy:
+    """A proxy wrapper that forces viewer commands to execute inside a specific workspace."""
+
+    def __init__(self, viewer, workspace_id: str):
+        self.viewer = viewer
+        self.workspace_id = workspace_id
+
+    def add_default_lighting(self):
+        """Injects the standard light bundle explicitly into this workspace context."""
+        sunlight = Sunlight(point=Point(30, -10, 30), intensity=1)
+        self.add_light(sunlight)
+
+        sunlight2 = Sunlight(point=Point(-30, -20, 30), intensity=0.5)
+        self.add_light(sunlight2)
+
+        sunlight3 = Sunlight(point=Point(-30, 20, 10), intensity=0.5)
+        self.add_light(sunlight3)
+
+        ambient_light = AmbientLight(color=Color.white(), intensity=0.5)
+        self.add_light(ambient_light)
+
+    def add_light(self, light):
+        """Adds a light object exclusively to this workspace layout."""
+        obj_id = light.guid
+        binary_data = compas_pb.pb_dump_bts(light.as_dict())
+
+        loop = get_server_loop()
+        if loop:
+            asyncio.run_coroutine_threadsafe(
+                broadcast(binary_data, obj_id, workspace_id=self.workspace_id), loop
+            )
+        else:
+            self.viewer.queued_messages.append((binary_data, obj_id, self.workspace_id))
+
+    def add_geometry(self, geometry, material=None, metadata=None, actions=None):
+        if isinstance(geometry, Brep):
+            brep_id = geometry.guid
+            brep_viewmesh = geometry.to_viewmesh()
+            self.viewer._brep_viewmesh_registry[brep_id] = brep_viewmesh
+            geometry = brep_viewmesh
+
+        obj_id = geometry.guid
+        binary_data = compas_pb.pb_dump_bts(geometry)
+
+        loop = get_server_loop()
+        if loop:
+            asyncio.run_coroutine_threadsafe(
+                broadcast(binary_data, obj_id, workspace_id=self.workspace_id), loop
+            )
+        else:
+            self.viewer.queued_messages.append((binary_data, obj_id, self.workspace_id))
+
+        # ✨ FIX: Material handling needs explicit workspace assignment
+        if material:
+            material._geometry_guid = str(obj_id)
+            material_dict = material.as_dict()
+            # If your frontend expects 'geometryBackendGuid' at the top level of the JSON config:
+            material_dict["geometryBackendGuid"] = str(obj_id)
+            material_data = compas_pb.pb_dump_bts(material_dict)
+
+            if loop:
+                asyncio.run_coroutine_threadsafe(
+                    broadcast(
+                        material_data, str(uuid4()), workspace_id=self.workspace_id
+                    ),
+                    loop,
+                )
+            else:
+                self.viewer.queued_messages.append(
+                    (material_data, str(uuid4()), self.workspace_id)
+                )
+
+        self.viewer._geometry_registry[str(obj_id)] = geometry
+        if metadata:
+            self.viewer._metadata_registry[str(obj_id)] = metadata
+        if actions:
+            self.viewer._object_actions_registry[str(obj_id)] = actions
+            for action in actions:
+                self.viewer._buttons[str(action.guid)] = action.action
+
+    def add_ui_element(self, element):
+        """Adds a UI element (like a button) exclusively to this workspace viewport."""
+        self.viewer._buttons[element.guid] = element.action
+        msg = element.as_dict()
+
+        # Add workspace details to the dictionary message so the server knows where to rout it
+        msg["workspace_id"] = self.workspace_id
+        binary_data = compas_pb.pb_dump_bts(msg)
+
+        loop = get_server_loop()
+        if loop:
+            asyncio.run_coroutine_threadsafe(
+                broadcast(
+                    binary_data, "", persist=False, workspace_id=self.workspace_id
+                ),
+                loop,
+            )
+        else:
+            # ✨ FIX: Queue the UI element with its explicit workspace target
+            self.viewer.queued_messages.append((binary_data, "", self.workspace_id))
+
+    def open_in_browser(self):
+        """Launches a dedicated browser window tracking only this workspace."""
+        import webbrowser
+
+        connect_host = (
+            self.viewer.host if self.viewer.host != "0.0.0.0" else "127.0.0.1"
+        )
+
+        url = (
+            f"http://{connect_host}:{self.viewer.websocket_port}/?"
+            f"ws_host={connect_host}&"
+            f"ws_port={self.viewer.websocket_port}&"
+            f"workspace={self.workspace_id}"
+        )
+        webbrowser.open(url)
