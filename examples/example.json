@@ -1,0 +1,6 @@
+{
+    "name": "example",
+    "version": "1.0.0",
+    "description": "An example project for COMPAS Three.js",
+    "number": 42
+}

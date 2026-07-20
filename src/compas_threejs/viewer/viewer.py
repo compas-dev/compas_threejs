@@ -705,6 +705,8 @@ class Viewer:
             self.manage_picked_object(action_dictionary)
         elif action_dictionary.get("dispatch") == "object_action_callback":
             self.manage_object_action_callback(action_dictionary)
+        elif action_dictionary.get("dispatch") == "loaded_json":
+            self.manage_incoming_json(action_dictionary)
         else:
             console.log(
                 f"[yellow]Received unrecognized message from frontend: {action_dictionary}[/yellow]"
@@ -786,17 +788,13 @@ class Viewer:
         else:
             print(f"Unrecognized action or missing handler for action ID: {action_id}")
 
-
-import socket
-
-
-def get_local_ip():
-    """Gets the local IP address of this compute on the current network."""
-    try:
-        # We don't actually send any data or open a connection,
-        # this just tricks the OS into revealing our active LAN IP address.
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.connect(("8.8.8.8", 80))
-            return s.getsockname()[0]
-    except Exception:
-        return "127.0.0.1"  # Fallback if offline
+    def manage_incoming_json(self, action_dictionary):
+        print(action_dictionary)
+        json_data = action_dictionary.get("json_data")
+        console.log("[blue]Received loaded JSON from frontend.[/blue]")
+        action_id = action_dictionary.get("action")
+        print(action_id)
+        if action_id and action_id in self._buttons:
+            self._buttons[action_id](json_data)
+        # Here you can implement any logic to handle the incoming JSON data.
+        # For example, you might want to parse it and add new geometry or update existing objects in the viewer.
