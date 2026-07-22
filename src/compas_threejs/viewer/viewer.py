@@ -924,17 +924,20 @@ class WorkspaceProxy:
         if loop:
             asyncio.run_coroutine_threadsafe(
                 broadcast(
-                    binary_data, "", persist=False, workspace_id=self.workspace_id
+                    binary_data,
+                    element.guid,
+                    persist=True,
+                    workspace_id=self.workspace_id,
                 ),
                 loop,
             )
         else:
-            # ✨ FIX: Queue the UI element with its explicit workspace target
-            self.viewer.queued_messages.append((binary_data, "", self.workspace_id))
+            self.viewer.queued_messages.append(
+                (binary_data, element.guid, self.workspace_id)
+            )
 
     def open_in_browser(self):
         """Launches a dedicated browser window tracking only this workspace."""
-        import webbrowser
 
         connect_host = (
             self.viewer.host if self.viewer.host != "0.0.0.0" else "127.0.0.1"
