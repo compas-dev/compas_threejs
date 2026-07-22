@@ -906,6 +906,7 @@ class WorkspaceProxy:
             self.viewer._object_actions_registry[str(obj_id)] = actions
             for action in actions:
                 self.viewer._buttons[str(action.guid)] = action.action
+        return str(obj_id)
 
     def add_ui_element(self, element):
         """Adds a UI element (like a button) exclusively to this workspace viewport."""
