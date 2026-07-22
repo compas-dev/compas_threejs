@@ -821,7 +821,10 @@ class Viewer:
 
     def add_geometry(self, geometry, material=None, metadata=None, actions=None):
         # Simply forward the main calls to the default "main" workspace wrapper!
-        self.get_workspace("main").add_geometry(geometry, material, metadata, actions)
+        obj_id = self.get_workspace("main").add_geometry(
+            geometry, material, metadata, actions
+        )
+        return obj_id
 
     def add_ui_element(self, element):
         self.get_workspace("main").add_ui_element(element)
