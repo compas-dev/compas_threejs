@@ -3,9 +3,9 @@ from compas.geometry import Box
 
 from compas_threejs.materials import Material
 from compas_threejs.metadata import Metadata
-from compas_threejs.viewer import Viewer
+from compas_threejs.viewer import App
 
-viz = Viewer()
+viz = App()
 
 box = Box(1, 1, 1)
 

@@ -5,9 +5,9 @@ from compas.geometry import Box, Frame, Line, Point, Sphere, Vector
 
 from compas_threejs.lights import PointLight, RectLight, SpotLight, Sunlight
 from compas_threejs.materials import Material
-from compas_threejs.viewer import Viewer
+from compas_threejs.viewer import App
 
-viz = Viewer()
+viz = App()
 
 
 line = Line([0, 0, 0], [10, 10, 10])

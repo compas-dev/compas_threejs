@@ -1,14 +1,14 @@
 """
-Example: Using Remote class to connect to a Viewer
+Example: Using Remote class to connect to a App
 
 This example demonstrates the basic usage of the Remote class.
-The Remote class allows you to connect to a running Viewer instance
+The Remote class allows you to connect to a running App instance
 and send geometry updates to it from a separate process or terminal.
 
 To use this example:
-1. First, run a Viewer in one terminal
+1. First, run a App in one terminal
 2. Then run this script in another terminal
-3. The geometry will appear in the Viewer window
+3. The geometry will appear in the App window
 
 For a complete working example, see:
 - remote_viewer.py (the server)
@@ -31,9 +31,9 @@ remote.connect()
 
 if not remote.connected:
     print("ERROR: Could not connect to viewer.")
-    print("Make sure a Viewer is running first:")
-    print("  from compas_threejs.viewer import Viewer")
-    print("  viz = Viewer()")
+    print("Make sure a App is running first:")
+    print("  from compas_threejs.viewer import App")
+    print("  viz = App()")
     print("  viz.start(show=True)")
     exit(1)
 

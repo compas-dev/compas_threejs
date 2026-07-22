@@ -10,10 +10,10 @@ This tutorial covers the various ways you can add COMPAS geometry to the `compas
 
 ```python
 from compas.geometry import Box
-from compas_threejs.viewer import Viewer
+from compas_threejs.viewer import App
 
 # 1. Create a viewer instance
-viz = Viewer()
+viz = App()
 
 # 2. Create a COMPAS geometry
 box = Box(1, 1, 1)
@@ -34,9 +34,9 @@ You can add as many geometries as you like to the scene by calling `add_geometry
 
 ```python
 from compas.geometry import Box, Sphere
-from compas_threejs.viewer import Viewer
+from compas_threejs.viewer import App
 
-viz = Viewer()
+viz = App()
 
 # Create multiple geometries
 box = Box(1, 1, 1)
@@ -64,10 +64,10 @@ By default, geometries are rendered with a standard compas-blue material. To cus
 
 from compas.geometry import Torus
 from compas.colors import Color
-from compas_threejs.viewer import Viewer
+from compas_threejs.viewer import App
 from compas_threejs.materials import Material
 
-viz = Viewer()
+viz = App()
 
 # Create a geometry
 torus = Torus(radius_axis=1, radius_pipe=0.3)

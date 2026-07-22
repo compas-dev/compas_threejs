@@ -1,25 +1,25 @@
-# Remote Viewer Examples
+# Remote App Examples
 
-These examples demonstrate how to use the `Remote` class to connect to a running `Viewer` instance and send geometry updates to it from separate processes or terminals.
+These examples demonstrate how to use the `Remote` class to connect to a running `App` instance and send geometry updates to it from separate processes or terminals.
 
 ## Overview
 
 The Remote functionality allows you to:
-- Run a Viewer in one terminal and update it from multiple other terminals
+- Run a App in one terminal and update it from multiple other terminals
 - Separate visualization from computation
 - Create collaborative or distributed visualization workflows
 - Update a long-running viewer from different scripts
 
 ## Quick Start
 
-### 1. Start a Viewer Server
+### 1. Start a App Server
 
 In **Terminal 1**, run:
 ```bash
 python remote_viewer.py
 ```
 
-This starts a Viewer that listens for connections on `ws://localhost:9001/ws`
+This starts a App that listens for connections on `ws://localhost:9001/ws`
 
 ### 2. Connect from a Remote
 
@@ -28,15 +28,15 @@ In **Terminal 2** (or more), run:
 python remote_client.py
 ```
 
-This connects to the Viewer and adds random geometries to it.
+This connects to the App and adds random geometries to it.
 
 ## Example Files
 
 ### `remote_viewer.py` - The Server
-A simple Viewer setup that acts as a server. This is what you run first and keep running.
+A simple App setup that acts as a server. This is what you run first and keep running.
 
 **Features:**
-- Starts a Viewer instance
+- Starts a App instance
 - Opens a browser window
 - Waits for Remote connections
 - Displays all geometries sent by Remote instances
@@ -45,7 +45,7 @@ A simple Viewer setup that acts as a server. This is what you run first and keep
 Demonstrates basic Remote usage by adding random boxes and spheres.
 
 **Features:**
-- Connects to a running Viewer
+- Connects to a running App
 - Adds 5 random boxes
 - Adds 5 random spheres
 - Each with random colors and positions
@@ -114,7 +114,7 @@ python remote_client.py
 python remote_animated.py
 ```
 
-All geometries from all Remote instances will appear in the same Viewer window!
+All geometries from all Remote instances will appear in the same App window!
 
 ## API Highlights
 
@@ -243,4 +243,4 @@ while True:
 ## See Also
 
 - [Remote Documentation](../docs/remote.md) - Detailed API reference
-- [Viewer Documentation](../docs/) - Main Viewer documentation
+- [App Documentation](../docs/) - Main App documentation

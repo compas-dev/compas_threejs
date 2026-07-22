@@ -16,7 +16,7 @@
                            │ HTTP/WebSocket
                            │
 ┌──────────────────────────┴──────────────────────────────────┐
-│                   Viewer Server Process                     │
+│                   App Server Process                     │
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │  FastAPI Server (port 9001)                         │   │
 │  │  - Serves HTML/JS frontend                          │   │
@@ -40,7 +40,7 @@
 ### Adding Geometry
 
 ```
-Remote Instance                    Viewer Server
+Remote Instance                    App Server
      │                                   │
      │  1. Create geometry               │
      │     box = Box(1,1,1)              │
@@ -68,7 +68,7 @@ Remote Instance                    Viewer Server
 ### Update Geometry
 
 ```
-Remote Instance                    Viewer Server
+Remote Instance                    App Server
      │                                   │
      │  1. Modify geometry               │
      │     box.xsize = 2                 │
@@ -176,9 +176,9 @@ Main Thread                      Background Thread
 └──────────────────────────────────────┘
 ```
 
-## Comparison: Viewer vs Remote
+## Comparison: App vs Remote
 
-| Feature           | Viewer                    | Remote                   |
+| Feature           | App                    | Remote                   |
 |-------------------|---------------------------|--------------------------|
 | Server            | ✓ Starts FastAPI server   | ✗ Connects as client    |
 | Browser           | ✓ Opens automatically     | ✗ N/A                   |
@@ -195,15 +195,15 @@ Main Thread                      Background Thread
 
 ## Use Cases
 
-### Single Viewer
+### Single App
 ```
-[Viewer] ←→ [Browser]
+[App] ←→ [Browser]
 ```
 Traditional usage - single process visualization
 
 ### Distributed Computation
 ```
-                    [Viewer] ←→ [Browser]
+                    [App] ←→ [Browser]
                        ↑
             ┌──────────┼──────────┐
             │          │          │
@@ -214,7 +214,7 @@ Multiple computation processes updating shared visualization
 
 ### Interactive Development
 ```
-    [Viewer] ←→ [Browser]
+    [App] ←→ [Browser]
        ↑
     [Remote]
     Script.py (run multiple times)
@@ -223,7 +223,7 @@ Keep viewer open, run different scripts
 
 ### Monitoring/Debugging
 ```
-    [Viewer] ←→ [Browser]
+    [App] ←→ [Browser]
        ↑
        │
     [Remote]

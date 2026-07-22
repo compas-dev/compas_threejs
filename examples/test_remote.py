@@ -1,6 +1,6 @@
 """
 Quick test to verify the Remote class can be imported and instantiated.
-This doesn't test the actual connection (which requires a running Viewer).
+This doesn't test the actual connection (which requires a running App).
 """
 
 from compas_threejs.viewer import Remote

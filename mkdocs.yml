@@ -130,7 +130,7 @@ nav:
           - Basic Geometry: tutorials/basic_geometry.md
     - API Reference:
           - Viewer:
-                - Viewer: reference/viewer/viewer.md
+                - App: reference/viewer/viewer.md
           - Materials:
                 - Generic: reference/materials/generic_material.md
                 - Material: reference/materials/material.md

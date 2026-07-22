@@ -2,7 +2,7 @@
 Example: Multi-Process Visualization
 
 This example demonstrates a more realistic use case where multiple independent
-processes are performing computations and visualizing their results in a shared Viewer.
+processes are performing computations and visualizing their results in a shared App.
 
 Scenario: Three different algorithms running in parallel, each visualizing their progress.
 

@@ -1,1 +1,1 @@
-# ::: compas_threejs.viewer.viewer
+# ::: compas_threejs.viewer.app

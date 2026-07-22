@@ -10,12 +10,12 @@ pip install compas_threejs
 
 ### Import
 ```python
-from compas_threejs.viewer import Remote, Viewer
+from compas_threejs.viewer import Remote, App
 ```
 
-### Start a Viewer (Terminal 1)
+### Start a App (Terminal 1)
 ```python
-viz = Viewer()
+viz = App()
 viz.start(show=True)
 ```
 

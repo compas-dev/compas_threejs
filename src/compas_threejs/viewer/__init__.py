@@ -1,4 +1,5 @@
+from .app import App
 from .remote import Remote
-from .viewer import CameraView, Viewer, WorkspaceProxy
+from .workspace import CameraView, Workspace
 
-__all__ = ["CameraView", "Remote", "WorkspaceProxy", "Works"]
+__all__ = ["App", "CameraView", "Remote", "Workspace"]

@@ -1,18 +1,18 @@
-# Remote Viewer
+# Remote App
 
-The `Remote` class allows you to connect to a running `Viewer` instance from a separate process or terminal and send geometry updates to it. This enables collaborative or distributed visualization workflows where multiple scripts can update the same viewer.
+The `Remote` class allows you to connect to a running `App` instance from a separate process or terminal and send geometry updates to it. This enables collaborative or distributed visualization workflows where multiple scripts can update the same viewer.
 
 ## Basic Usage
 
-### Step 1: Start a Viewer Server
+### Step 1: Start a App Server
 
-In one terminal, start a `Viewer` instance:
+In one terminal, start a `App` instance:
 
 ```python
-from compas_threejs.viewer import Viewer
+from compas_threejs.viewer import App
 
 # Create and start the viewer
-viz = Viewer()
+viz = App()
 viz.start(show=True)
 ```
 
@@ -20,7 +20,7 @@ This creates a server at `http://localhost:9001` that will receive updates from 
 
 ### Step 2: Connect from a Remote
 
-In another terminal (or process), create a `Remote` instance to connect to the Viewer:
+In another terminal (or process), create a `Remote` instance to connect to the App:
 
 ```python
 from compas.geometry import Box
@@ -30,7 +30,7 @@ from compas_threejs.viewer import Remote
 remote = Remote(host="localhost", port=9001)
 remote.connect()
 
-# Add geometry - it will appear in the Viewer
+# Add geometry - it will appear in the App
 box = Box(1, 1, 1)
 remote.add_geometry(box)
 
@@ -40,7 +40,7 @@ remote.disconnect()
 
 ## Features
 
-The `Remote` class provides the same geometry and visualization API as the `Viewer` class, including:
+The `Remote` class provides the same geometry and visualization API as the `App` class, including:
 
 - **Geometry Management**: `add_geometry()`, `add_geometries()`, `update_geometry()`, `remove_object()`
 - **Materials**: Support for all material types
@@ -51,12 +51,12 @@ The `Remote` class provides the same geometry and visualization API as the `View
 
 ## Multiple Remote Instances
 
-You can run multiple `Remote` instances simultaneously, all updating the same `Viewer`:
+You can run multiple `Remote` instances simultaneously, all updating the same `App`:
 
 ```python
 # Terminal 1: Start the viewer
-from compas_threejs.viewer import Viewer
-viz = Viewer()
+from compas_threejs.viewer import App
+viz = App()
 viz.start(show=True)
 
 # Terminal 2: Remote instance #1
@@ -171,14 +171,14 @@ Remote(host="localhost", port=9001)
 ```
 
 **Parameters:**
-- `host` (str): The hostname or IP address of the Viewer server. Default is `"localhost"`.
-- `port` (int): The websocket port of the Viewer server. Default is `9001`.
+- `host` (str): The hostname or IP address of the App server. Default is `"localhost"`.
+- `port` (int): The websocket port of the App server. Default is `9001`.
 
 ### Methods
 
-All geometry and visualization methods from the `Viewer` class are available:
+All geometry and visualization methods from the `App` class are available:
 
-- `connect()`: Establish connection to the Viewer
+- `connect()`: Establish connection to the App
 - `disconnect()`: Close the connection
 - `add_geometry(geometry, material=None, metadata=None, actions=None)`: Add geometry
 - `add_geometries(geometries, material=None)`: Add multiple geometries

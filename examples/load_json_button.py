@@ -1,7 +1,7 @@
 from compas.geometry import Box
 
 from compas_threejs.ui import LoadJsonButton
-from compas_threejs.viewer import Viewer
+from compas_threejs.viewer import App
 
 
 def load_json(json_data: dict):
@@ -11,7 +11,7 @@ def load_json(json_data: dict):
     print(json_data["number"])
 
 
-viz = Viewer()
+viz = App()
 
 jsonButton = LoadJsonButton(
     text="Load JSON",

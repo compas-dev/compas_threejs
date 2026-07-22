@@ -4,12 +4,12 @@ from compas.geometry import Box, Frame, Point, Sphere
 from compas_threejs.materials import Material
 from compas_threejs.metadata import Metadata
 from compas_threejs.ui import Button
-from compas_threejs.viewer import Viewer
+from compas_threejs.viewer import App
 
 
 class App:
     def __init__(self):
-        self.viewer = Viewer("0.0.0.0")
+        self.viewer = App("0.0.0.0")
         self.viewer.camera_position = Point(20, -20, 20)
         self.objects = []
         self.box_material = Material(

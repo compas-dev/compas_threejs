@@ -2,7 +2,7 @@
 
 ## Overview
 
-A `Remote` class has been added to `compas_threejs.viewer` that enables connecting to a running `Viewer` instance via websocket and sending geometry updates to it. This allows multiple Remote instances to update a single Viewer from different terminals or processes.
+A `Remote` class has been added to `compas_threejs.viewer` that enables connecting to a running `App` instance via websocket and sending geometry updates to it. This allows multiple Remote instances to update a single App from different terminals or processes.
 
 ## Files Created/Modified
 
@@ -10,7 +10,7 @@ A `Remote` class has been added to `compas_threejs.viewer` that enables connecti
 - **`src/compas_threejs/viewer/remote.py`** (NEW)
   - Main `Remote` class implementation
   - ~460 lines of code
-  - Full API matching the Viewer for geometry operations
+  - Full API matching the App for geometry operations
 
 - **`src/compas_threejs/viewer/__init__.py`** (MODIFIED)
   - Added `Remote` to exports
@@ -25,7 +25,7 @@ A `Remote` class has been added to `compas_threejs.viewer` that enables connecti
 
 ### Examples
 - **`examples/remote_viewer.py`** (NEW)
-  - Simple Viewer server setup
+  - Simple App server setup
   - Entry point for testing Remote functionality
 
 - **`examples/remote_client.py`** (NEW)
@@ -52,13 +52,13 @@ A `Remote` class has been added to `compas_threejs.viewer` that enables connecti
 ## Key Features
 
 ### Connection Management
-- Connect to Viewer via websocket (`ws://host:port/ws`)
+- Connect to App via websocket (`ws://host:port/ws`)
 - Automatic message queueing before connection
 - Clean disconnect handling
 - Context manager support
 
 ### Geometry Operations
-All main Viewer methods are supported:
+All main App methods are supported:
 - `add_geometry()` - Add geometry with optional material and metadata
 - `add_geometries()` - Add multiple geometries at once
 - `update_geometry()` - Update existing geometry
@@ -83,7 +83,7 @@ Properties that can be set:
 ### Architecture
 ```
 ┌─────────────────┐
-│  Viewer Server  │  (Terminal 1)
+│  App Server  │  (Terminal 1)
 │  Port: 9001     │
 └────────┬────────┘
          │ WebSocket
@@ -98,11 +98,11 @@ Properties that can be set:
 
 ## Usage Example
 
-### Terminal 1 - Start Viewer
+### Terminal 1 - Start App
 ```python
-from compas_threejs.viewer import Viewer
+from compas_threejs.viewer import App
 
-viz = Viewer()
+viz = App()
 viz.start(show=True)
 ```
 
@@ -126,10 +126,10 @@ remote.disconnect()
 - `websockets` - Already in project dependencies
 - `asyncio` - Standard library
 - `threading` - Standard library
-- All other dependencies same as Viewer
+- All other dependencies same as App
 
 ### Message Protocol
-- Uses same binary protocol as Viewer (compas_pb)
+- Uses same binary protocol as App (compas_pb)
 - Messages queued if not connected
 - Automatic retry on connection
 
@@ -156,7 +156,7 @@ python examples/remote_client.py
 
 ## Known Limitations
 
-1. **One-way communication**: Remote sends to Viewer but doesn't receive UI callbacks
+1. **One-way communication**: Remote sends to App but doesn't receive UI callbacks
 2. **No scene state sync**: Remote doesn't receive existing scene state on connect
 3. **Connection required**: Must connect before geometry appears (though messages are queued)
 
@@ -171,7 +171,7 @@ python examples/remote_client.py
 ## Implementation Notes
 
 The Remote class follows these design principles:
-- **API Parity**: Same interface as Viewer for easy switching
+- **API Parity**: Same interface as App for easy switching
 - **Minimal Dependencies**: No new dependencies required
 - **Clean Architecture**: Separation of connection and messaging logic
 - **User-Friendly**: Context managers, automatic queueing, clear error messages

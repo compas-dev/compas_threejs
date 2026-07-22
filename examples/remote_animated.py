@@ -1,7 +1,7 @@
 """
-Example: Remote Viewer - Animated Client
+Example: Remote App - Animated Client
 
-This script demonstrates continuous updates to a Viewer from a Remote instance.
+This script demonstrates continuous updates to a App from a Remote instance.
 It creates animated geometries that update in real-time.
 
 Usage:
@@ -19,7 +19,7 @@ from compas.geometry import Box, Point
 from compas_threejs.materials import Material
 from compas_threejs.viewer import Remote
 
-# Create a Remote instance and connect to the Viewer
+# Create a Remote instance and connect to the App
 remote = Remote(host="localhost", port=9001)
 remote.connect()
 

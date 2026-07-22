@@ -3,9 +3,9 @@ from compas.geometry import Box, Sphere
 
 from compas_threejs.materials import Material
 from compas_threejs.ui import Button
-from compas_threejs.viewer import Viewer, WorkspaceProxy
+from compas_threejs.viewer import App, Workspace
 
-viz = Viewer()
+viz = App()
 
 box = Box(1, 1, 1)
 viz.add_geometry(box)

@@ -1,12 +1,12 @@
 from compas.geometry import Frame, Sphere
 
 from compas_threejs.ui import NumberField
-from compas_threejs.viewer import Viewer
+from compas_threejs.viewer import App
 
 
 class GridMaker:
     def __init__(self):
-        self.view = Viewer()
+        self.view = App()
         self.nx = 3
         self.ny = 3
         self.nz = 3

@@ -5,9 +5,9 @@ from compas.geometry import Box, Frame, Sphere, Transformation, Translation, Vec
 from compas_brep import Brep
 
 from compas_threejs.materials import Material
-from compas_threejs.viewer import Viewer
+from compas_threejs.viewer import App
 
-viz = Viewer()
+viz = App()
 
 
 box = Box(1, 1, 1, Frame([0.5, 0.5, 0.5]))

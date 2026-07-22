@@ -4,9 +4,9 @@ from compas.geometry import Point, Vector
 from compas_threejs.materials import Material
 from compas_threejs.text import TextGeometry
 from compas_threejs.ui import Slider
-from compas_threejs.viewer import Viewer
+from compas_threejs.viewer import App
 
-viz = Viewer()
+viz = App()
 viz.world_axis = False
 viz.picker = True
 viz.default_lighting = True

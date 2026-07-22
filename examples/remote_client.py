@@ -1,8 +1,8 @@
 """
-Example: Remote Viewer - Client
+Example: Remote App - Client
 
 This script demonstrates how to use a Remote instance to connect to a running
-Viewer and send geometry updates to it.
+App and send geometry updates to it.
 
 Usage:
 1. First, run remote_viewer.py in one terminal
@@ -19,7 +19,7 @@ from compas.geometry import Box, Sphere, Vector
 from compas_threejs.materials import Material
 from compas_threejs.viewer import Remote
 
-# Create a Remote instance and connect to the Viewer
+# Create a Remote instance and connect to the App
 remote = Remote(host="localhost", port=9001)
 remote.connect()
 

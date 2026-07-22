@@ -4,9 +4,9 @@ from compas.geometry import Box, Frame, Sphere, Vector
 from compas_threejs.lights import PointLight, RectLight, Sky, SpotLight, Sunlight
 from compas_threejs.materials import Material
 from compas_threejs.ui import Button, Slider
-from compas_threejs.viewer import Viewer
+from compas_threejs.viewer import App
 
-viz = Viewer()
+viz = App()
 viz.default_lighting = True
 
 

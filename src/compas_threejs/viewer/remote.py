@@ -1,208 +1,90 @@
 import asyncio
 import threading
 import time
-from typing import Optional
 
 import compas_pb
 import websockets
-from compas.colors import Color
-from compas.geometry import Point
-from compas_brep import Brep
 from rich.console import Console
 
-from compas_threejs.materials.generic_material import GenericMaterial
-from compas_threejs.metadata import Metadata
-from compas_threejs.ui import Button
+from .inbox import Inbox
+from .workspace import Workspace
 
 console = Console()
 
 
+class RemoteOutbox:
+    """Sends outgoing messages to a running App over a websocket connection, queuing until connected.
+
+    Implements the same `send_bytes`/`send_dict` interface as `Outbox`, so a `Workspace` can be
+    driven by either one without knowing whether it's talking to an in-process server or a remote
+    connection.
+    """
+
+    def __init__(self, remote):
+        self.remote = remote
+        self._queue = []
+
+    def send_bytes(self, binary_data: bytes, obj_id: str = "", *, persist: bool = True, workspace_id: str = "main"):
+        if self.remote.connected and self.remote.loop and self.remote.websocket:
+            asyncio.run_coroutine_threadsafe(self.remote.websocket.send(binary_data), self.remote.loop)
+        else:
+            self._queue.append(binary_data)
+
+    def send_dict(self, message: dict, *, workspace_id: str = "main"):
+        self.send_bytes(compas_pb.pb_dump_bts(message), "")
+
+    async def _drain(self, websocket):
+        """Sends queued messages directly; must be awaited from the connection's own event loop."""
+        for binary_data in self._queue:
+            await websocket.send(binary_data)
+        self._queue.clear()
+
+
 class Remote:
     """
-    The Remote class provides the same interface as Viewer but connects to an existing
-    Viewer instance via websocket instead of starting its own server.
+    The Remote class provides the same interface as App but connects to an existing
+    App instance via websocket instead of starting its own server.
 
-    This allows multiple Remote instances to update a single Viewer from different
+    This allows multiple Remote instances to update a single App from different
     terminals or processes.
 
     Parameters
     ----------
     host : str, optional
-        The host address of the Viewer server. Default is "localhost".
+        The host address of the App server. Default is "localhost".
     port : int, optional
-        The websocket port of the Viewer server. Default is 9001.
-
-    Attributes
-    ----------
-    background_color : Color
-        The background color of the viewer.
-    camera_damping : bool
-        Whether camera damping is enabled.
-    camera_fov : float
-        The camera field of view (FOV) in degrees.
-    camera_zoom : float
-        The camera zoom level.
-    dark_mode : bool
-        Whether to enable dark mode for the viewer.
-    camera_position : Point
-        The camera position in world coordinates.
-    camera_target : Point
-        The camera target point used by orbit controls.
-    show_edges : bool
-        Whether to show edges of the mesh.
+        The websocket port of the App server. Default is 9001.
+    workspace_id : str, optional
+        The workspace on the App to connect to. Default is "main".
     """
 
-    def __init__(self, host: str = "localhost", port: int = 9001):
+    def __init__(self, host: str = "localhost", port: int = 9001, workspace_id: str = "main"):
         # Connection settings
         self.host = host
-        self.port = port
-        self.ws_url = f"ws://{host}:{port}/ws"
+        self.websocket_port = port
+        self.ws_url = f"ws://{host}:{port}/ws?workspace={workspace_id}"
         self.websocket = None
         self.connected = False
         self.connection_thread = None
         self.loop = None
 
-        # Setter Attributes (matching Viewer)
-        self._background_color = Color(0.9, 0.9, 0.9)
-        self._dark_mode = False
-        self._camera_damping = True
-        self._camera_fov = 60
-        self._camera_zoom = 1
-        self._camera_position = Point(8, -15, 15)
-        self._camera_target = Point(0, 0, 0)
-        self._show_edges = False
-
-        # Registry
-        self._geometry_registry = dict()
-        self._metadata_registry = dict()
-        self._object_actions_registry = dict()
-        self._brep_viewmesh_registry = dict()
-
-        # Message queue for when not connected
-        self.queued_messages = []
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, *args):
-        self.disconnect()
-
-    # ---- PROPERTIES -------------------------------------------------------------------------
-
-    @property
-    def background_color(self) -> Color:
-        """The background color of the viewer."""
-        return self._background_color
-
-    @background_color.setter
-    def background_color(self, value: Color):
-        """Sets the background color and sends it to the viewer."""
-        self._background_color = value
-        r, g, b = value.rgb255
-        message = {"dispatch": "background_color", "r": r, "g": g, "b": b}
-        self._send_dictionary_message(message)
-
-    @property
-    def camera_damping(self) -> bool:
-        """Whether camera damping is enabled."""
-        return self._camera_damping
-
-    @camera_damping.setter
-    def camera_damping(self, value: bool):
-        """Sets the camera damping and sends it to the viewer."""
-        self._camera_damping = value
-        message = {"dispatch": "camera_damping", "enabled": value}
-        self._send_dictionary_message(message)
-
-    @property
-    def camera_fov(self) -> float:
-        """The camera field of view (FOV) in degrees."""
-        return self._camera_fov
-
-    @camera_fov.setter
-    def camera_fov(self, value: float):
-        """Sets the camera FOV and sends it to the viewer."""
-        self._camera_fov = value
-        message = {"dispatch": "camera_fov", "fov": value}
-        self._send_dictionary_message(message)
-
-    @property
-    def dark_mode(self) -> bool:
-        """Whether dark mode is enabled."""
-        return self._dark_mode
-
-    @dark_mode.setter
-    def dark_mode(self, value: bool):
-        """Sets dark mode and sends it to the viewer."""
-        self._dark_mode = value
-        message = {"dispatch": "dark_mode", "enabled": value}
-        self._send_dictionary_message(message)
-
-    @property
-    def camera_zoom(self) -> float:
-        """The camera zoom level."""
-        return self._camera_zoom
-
-    @camera_zoom.setter
-    def camera_zoom(self, value: float):
-        """Sets the camera zoom and sends it to the viewer."""
-        self._camera_zoom = value
-        message = {"dispatch": "camera_zoom", "zoom": value}
-        self._send_dictionary_message(message)
-
-    @property
-    def camera_position(self) -> Point:
-        """The camera position in world coordinates."""
-        return self._camera_position
-
-    @camera_position.setter
-    def camera_position(self, value: Point):
-        """Sets the camera position and sends it to the viewer."""
-        self._camera_position = value
-        x, y, z = value
-        message = {"dispatch": "camera_position", "x": x, "y": y, "z": z}
-        self._send_dictionary_message(message)
-
-    @property
-    def camera_target(self) -> Point:
-        """The camera target point."""
-        return self._camera_target
-
-    @camera_target.setter
-    def camera_target(self, value: Point):
-        """Sets the camera target and sends it to the viewer."""
-        self._camera_target = value
-        x, y, z = value
-        message = {"dispatch": "camera_target", "x": x, "y": y, "z": z}
-        self._send_dictionary_message(message)
-
-    @property
-    def show_edges(self) -> bool:
-        """Whether to show edges of meshes."""
-        return self._show_edges
-
-    @show_edges.setter
-    def show_edges(self, value: bool):
-        """Sets edge visibility and sends it to the viewer."""
-        self._show_edges = value
-        message = {"dispatch": "show_edges", "enabled": value}
-        self._send_dictionary_message(message)
+        self.outbox = RemoteOutbox(self)
+        self.inbox = Inbox()
+        self.main = Workspace(self, workspace_id)
 
     # ---- CONNECTION -------------------------------------------------------------------------
 
     async def _connect_websocket(self):
         """Establishes and maintains websocket connection."""
         try:
-            console.log(f"[green]Connecting to viewer at {self.ws_url}...[/green]")
+            console.log(f"[green]Connecting to App at {self.ws_url}...[/green]")
             async with websockets.connect(self.ws_url) as websocket:
                 self.websocket = websocket
                 self.connected = True
-                console.log("[green]Connected to viewer![/green]")
+                console.log("[green]Connected to App![/green]")
 
-                # Send all queued messages
-                for msg in self.queued_messages:
-                    await websocket.send(msg)
-                self.queued_messages = []
+                # Send all messages that were queued while disconnected
+                await self.outbox._drain(websocket)
 
                 # Keep connection alive and handle incoming messages
                 try:
@@ -211,9 +93,9 @@ class Remote:
                         # but we keep the connection alive
                         pass
                 except websockets.exceptions.ConnectionClosed:
-                    console.log("[yellow]Connection to viewer closed[/yellow]")
+                    console.log("[yellow]Connection to App closed[/yellow]")
         except Exception as e:
-            console.log(f"[red]Failed to connect to viewer: {e}[/red]")
+            console.log(f"[red]Failed to connect to App: {e}[/red]")
         finally:
             self.connected = False
             self.websocket = None
@@ -228,7 +110,7 @@ class Remote:
             self.loop.close()
 
     def connect(self):
-        """Connects to the Viewer server."""
+        """Connects to the App server."""
         if self.connected:
             console.log("[yellow]Already connected[/yellow]")
             return
@@ -248,222 +130,128 @@ class Remote:
             console.log("[red]Connection timeout[/red]")
 
     def disconnect(self):
-        """Disconnects from the Viewer server."""
+        """Disconnects from the App server."""
         if self.loop and self.websocket:
             asyncio.run_coroutine_threadsafe(self.websocket.close(), self.loop)
         self.connected = False
-        console.log("[green]Disconnected from viewer[/green]")
+        console.log("[green]Disconnected from App[/green]")
 
-    # ---- MESSAGING --------------------------------------------------------------------------
+    # ---- CAMERA / SCENE ATTRIBUTES (forwarded to the workspace) -----------------------------
 
-    def _send_binary_message(self, binary_data: bytes):
-        """Sends binary data to the viewer."""
-        if self.connected and self.loop and self.websocket:
-            asyncio.run_coroutine_threadsafe(
-                self.websocket.send(binary_data), self.loop
-            )
-        else:
-            # Queue the message if not connected yet
-            self.queued_messages.append(binary_data)
+    @property
+    def background_color(self):
+        """Set or get the background color of the workspace."""
+        return self.main.background_color
 
-    def _send_dictionary_message(self, msg: dict):
-        """Converts a dictionary to binary and sends it to the viewer."""
-        binary_data = compas_pb.pb_dump_bts(msg)
-        self._send_binary_message(binary_data)
+    @background_color.setter
+    def background_color(self, value):
+        self.main.background_color = value
 
-    # ---- GEOMETRY METHODS -------------------------------------------------------------------
+    @property
+    def camera_damping(self):
+        """Set or get whether camera damping is enabled."""
+        return self.main.camera_damping
 
-    def add_geometry(
-        self,
-        geometry,
-        material: Optional[GenericMaterial] = None,
-        metadata: Optional[Metadata] = None,
-        actions: Optional[list[Button]] = None,
-    ):
-        """
-        Adds a geometry object to the viewer.
+    @camera_damping.setter
+    def camera_damping(self, value):
+        self.main.camera_damping = value
 
-        Parameters
-        ----------
-        geometry : compas.geometry.Geometry | compas.datastructures.Mesh
-            The geometry object to be added to the viewer.
-        material : compas_threejs.material.Material, optional
-            An optional material to be associated with the geometry.
-        metadata : compas_threejs.metadata.Metadata, optional
-            An optional metadata object to be associated with the geometry.
-        actions : list of compas_threejs.ui.Button, optional
-            An optional list of Button objects representing actions.
+    @property
+    def camera_fov(self):
+        """Set or get the camera field of view (FOV) in degrees."""
+        return self.main.camera_fov
 
-        Returns
-        -------
-        None
-        """
-        # Handle Brep geometry
-        if isinstance(geometry, Brep):
-            brep_id = geometry.guid
-            brep_viewmesh = geometry.to_viewmesh()
-            self._brep_viewmesh_registry[brep_id] = brep_viewmesh
-            geometry = brep_viewmesh
+    @camera_fov.setter
+    def camera_fov(self, value):
+        self.main.camera_fov = value
 
-        obj_id = geometry.guid
+    @property
+    def dark_mode(self):
+        """Set or get dark mode for the workspace."""
+        return self.main.dark_mode
 
-        # Send material if provided
-        if material:
-            material._geometry_guid = str(obj_id)
-            material_data = compas_pb.pb_dump_bts(material.as_dict())
-            self._send_binary_message(material_data)
+    @dark_mode.setter
+    def dark_mode(self, value):
+        self.main.dark_mode = value
 
-        if metadata:
-            self._metadata_registry[str(obj_id)] = metadata
+    @property
+    def camera_zoom(self):
+        """Set or get the camera zoom level."""
+        return self.main.camera_zoom
 
-        if actions:
-            self._object_actions_registry[str(obj_id)] = actions
+    @camera_zoom.setter
+    def camera_zoom(self, value):
+        self.main.camera_zoom = value
 
-        # Send geometry
-        binary_data = compas_pb.pb_dump_bts(geometry)
-        self._send_binary_message(binary_data)
+    @property
+    def camera_position(self):
+        """Set or get the camera position in world coordinates."""
+        return self.main.camera_position
 
-        # Save the geometry for future reference
-        self._geometry_registry[str(obj_id)] = geometry
+    @camera_position.setter
+    def camera_position(self, value):
+        self.main.camera_position = value
+
+    @property
+    def camera_target(self):
+        """Set or get the camera target point used by orbit controls."""
+        return self.main.camera_target
+
+    @camera_target.setter
+    def camera_target(self, value):
+        self.main.camera_target = value
+
+    @property
+    def show_edges(self):
+        """Set or get if edges of the mesh should be shown."""
+        return self.main.show_edges
+
+    @show_edges.setter
+    def show_edges(self, value):
+        self.main.show_edges = value
+
+    def set_view(self, view, target=None):
+        """Set the workspace's camera view from a preset or explicit point."""
+        self.main.set_view(view, target)
+
+    # ---- GEOMETRY / LIGHTS / MATERIALS / TEXT / UI (forwarded to the workspace) -------------
+
+    def add_geometry(self, geometry, material=None, metadata=None, actions=None):
+        """Adds a geometry object to the workspace. See `Workspace.add_geometry`."""
+        return self.main.add_geometry(geometry, material, metadata, actions)
 
     def add_geometries(self, geometries: list, material=None):
-        """Adds multiple geometries to the viewer."""
-        for geo in geometries:
-            self.add_geometry(geo, material)
+        """Adds multiple geometry objects to the workspace."""
+        self.main.add_geometries(geometries, material)
 
     def update_geometry(self, geometry):
-        """
-        Updates an existing geometry object in the viewer.
-
-        Parameters
-        ----------
-        geometry : compas.geometry.Geometry | compas.datastructures.Mesh
-            The geometry object to be updated.
-        """
-        obj_id = geometry.guid
-
-        # Handle Brep geometry
-        if isinstance(geometry, Brep):
-            viewmesh = self._brep_viewmesh_registry.get(geometry.guid)
-            if viewmesh:
-                obj_id = viewmesh.guid
-            geometry = geometry.to_viewmesh()
-
-        binary_data = compas_pb.pb_dump_bts(geometry)
-        self._send_binary_message(binary_data)
+        """Updates an existing geometry object in the workspace."""
+        self.main.update_geometry(geometry)
 
     def remove_object(self, geometry):
-        """
-        Removes a geometry object from the viewer.
+        """Removes a geometry object from the workspace."""
+        self.main.remove_object(geometry)
 
-        Parameters
-        ----------
-        geometry : compas.geometry.Geometry | compas.datastructures.Mesh
-            The geometry object to be removed.
-        """
-        # Handle Brep geometry
-        if isinstance(geometry, Brep):
-            viewmesh = self._brep_viewmesh_registry.get(geometry.guid)
-            if viewmesh:
-                geometry = viewmesh
+    def update_metadata(self, metadata):
+        """Updates the metadata associated with a geometry object previously added by this Remote."""
+        self.inbox.update_metadata(metadata)
 
-        obj_id = geometry.guid
-        message = {"dispatch": "remove_object", "guid": str(obj_id)}
-        self._send_dictionary_message(message)
-
-    def update_metadata(self, geometry, metadata: Metadata):
-        """
-        Updates metadata for a geometry object.
-
-        Parameters
-        ----------
-        geometry : compas.geometry.Geometry | compas.datastructures.Mesh
-            The geometry object whose metadata is to be updated.
-        metadata : compas_threejs.metadata.Metadata
-            The new metadata to associate with the geometry.
-        """
-        obj_id = str(geometry.guid)
-        self._metadata_registry[obj_id] = metadata
-        message = {"dispatch": "update_metadata", "object_id": obj_id, "data": metadata}
-        self._send_dictionary_message(message)
-
-    def add_text(
-        self,
-        text: str,
-        position: Point,
-        size: float = 1.0,
-        color: Optional[Color] = None,
-    ):
-        """
-        Adds text to the viewer.
-
-        Parameters
-        ----------
-        text : str
-            The text to display.
-        position : Point
-            The position of the text in world coordinates.
-        size : float, optional
-            The size of the text. Default is 1.0.
-        color : Color, optional
-            The color of the text. Default is black.
-        """
-        if color is None:
-            color = Color(0, 0, 0)
-
-        message = {
-            "dispatch": "add_text",
-            "text": text,
-            "position": {"x": position.x, "y": position.y, "z": position.z},
-            "size": size,
-            "color": {"r": color.r, "g": color.g, "b": color.b},
-        }
-        self._send_dictionary_message(message)
+    def add_text(self, text, material=None):
+        """Adds a text object to the workspace."""
+        self.main.add_text(text, material)
 
     def add_light(self, light):
-        """
-        Adds a light to the viewer.
-
-        Parameters
-        ----------
-        light : compas_threejs.lights.Light
-            The light object to add.
-        """
-        binary_data = compas_pb.pb_dump_bts(light.as_dict())
-        self._send_binary_message(binary_data)
+        """Adds a light object to the workspace."""
+        self.main.add_light(light)
 
     def update_light(self, light):
-        """
-        Updates a light in the viewer.
+        """Updates an existing light object in the workspace."""
+        self.main.update_light(light)
 
-        Parameters
-        ----------
-        light : compas_threejs.lights.Light
-            The light object to update.
-        """
-        binary_data = compas_pb.pb_dump_bts(light.as_dict())
-        self._send_binary_message(binary_data)
-
-    def update_material(self, material: GenericMaterial):
-        """
-        Updates a material in the viewer.
-
-        Parameters
-        ----------
-        material : compas_threejs.materials.GenericMaterial
-            The material to update.
-        """
-        binary_data = compas_pb.pb_dump_bts(material.as_dict())
-        self._send_binary_message(binary_data)
+    def update_material(self, material):
+        """Updates an existing material in the workspace."""
+        self.main.update_material(material)
 
     def add_ui_element(self, element):
-        """
-        Adds a UI element to the viewer.
-
-        Parameters
-        ----------
-        element : compas_threejs.ui element
-            The UI element to add.
-        """
-        message = element.as_dict()
-        self._send_dictionary_message(message)
+        """Adds a UI element (e.g. button) to the workspace."""
+        self.main.add_ui_element(element)

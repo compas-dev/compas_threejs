@@ -5,7 +5,7 @@ from compas.geometry import Box, Frame, Sphere, Vector
 
 from compas_threejs.lights import PointLight, RectLight, SpotLight, Sunlight
 from compas_threejs.materials import Material
-from compas_threejs.viewer import Viewer
+from compas_threejs.viewer import App
 
 
 class Ball:
@@ -24,7 +24,7 @@ class Ball:
         self.geometry.frame.point += self.vector
 
 
-viz = Viewer()
+viz = App()
 viz.default_lighting = True
 viz.background_color = Color(0.1, 0.1, 0.1)
 
