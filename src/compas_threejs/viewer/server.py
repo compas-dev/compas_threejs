@@ -54,7 +54,7 @@ class AppServer:
                     data = message["text"].encode("utf-8")
                     if self.app_instance:
                         # Handles button clicks back to python
-                        self.app_instance.on_message(data)
+                        self.app_instance.on_message(data, workspace_id=workspace_id)
                 elif "bytes" in message:
                     data = message["bytes"]
                     await self.broadcast(data, workspace_id=workspace_id)

@@ -327,9 +327,9 @@ class App:
 
     # ---- INCOMING MESSAGES ------------------------------------------------------------------------
 
-    def on_message(self, message):
+    def on_message(self, message, workspace_id: str = "main"):
         """Default handler for messages received from the frontend."""
-        self.inbox.handle(message, self.outbox)
+        self.inbox.handle(message, self.outbox, workspace_id=workspace_id)
 
     def update_metadata(self, metadata):
         """

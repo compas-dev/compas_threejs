@@ -46,12 +46,12 @@ class Inbox:
 
     # ---- ROUTING --------------------------------------------------------------------------------
 
-    def handle(self, raw_message, outbox):
+    def handle(self, raw_message, outbox, workspace_id: str = "main"):
         """Decodes and routes a raw message received from the frontend."""
         message = self._decode(raw_message)
         handler = self._handlers.get(message.get("dispatch"))
         if handler:
-            handler(message, outbox)
+            handler(message, outbox, workspace_id)
         else:
             console.log(
                 f"[yellow]Received unrecognized message from frontend: {message}[/yellow]"
@@ -62,7 +62,7 @@ class Inbox:
         message_str = message_in_bytes.decode("utf-8")
         return json.loads(message_str)
 
-    def _handle_ui_callback(self, message, outbox):
+    def _handle_ui_callback(self, message, outbox, workspace_id):
         """Handles all actions that are tied to an user-defined action in a ui-element."""
         action_id = message.get("action")
         console.log(f"[blue]Received message from frontend: {message}[/blue]")
@@ -86,7 +86,7 @@ class Inbox:
                 f"[yellow]Unrecognized action or missing handler for action ID: {action_id}[/yellow]"
             )
 
-    def _handle_object_picked(self, message, outbox):
+    def _handle_object_picked(self, message, outbox, workspace_id):
         object_id = message.get("guid")
         console.log(
             f"[blue]Received object picked message from frontend. Object ID: {object_id}[/blue]"
@@ -95,13 +95,14 @@ class Inbox:
         if metadata:
             metadata["dispatch"] = "object_infos"
             console.log(f"[blue]Metadata associated with the object: {metadata}[/blue]")
-            outbox.send_dict(metadata.metadata)
+            outbox.send_dict(metadata.metadata, workspace_id=workspace_id)
         else:
             outbox.send_dict(
                 {
                     "dispatch": "object_infos",
                     "No metadata associated with this object.": "",
-                }
+                },
+                workspace_id=workspace_id,
             )
 
         object_actions = self.object_actions_registry.get(object_id)
@@ -110,9 +111,9 @@ class Inbox:
                 action_message = action.as_dict()
                 action_message["dispatch"] = "object_action"
                 action_message["object_guid"] = object_id
-                outbox.send_dict(action_message)
+                outbox.send_dict(action_message, workspace_id=workspace_id)
 
-    def _handle_object_action_callback(self, message, outbox):
+    def _handle_object_action_callback(self, message, outbox, workspace_id):
         action_id = message.get("action_guid")
         object_id = message.get("object_guid")
         console.log(
@@ -132,7 +133,7 @@ class Inbox:
                 f"[yellow]Unrecognized action or missing handler for action ID: {action_id}[/yellow]"
             )
 
-    def _handle_loaded_json(self, message, outbox):
+    def _handle_loaded_json(self, message, outbox, workspace_id):
         console.log("[blue]Received loaded JSON from frontend.[/blue]")
         json_data = message.get("json_data")
         action_id = message.get("action")
