@@ -77,7 +77,8 @@ class Workspace:
 
     def _send_scene_message(self, type_: str, **fields):
         self.app.outbox.send_dict(
-            {"dispatch": "scene", "type": type_, **fields}, workspace_id=self.workspace_id
+            {"dispatch": "scene", "type": type_, **fields},
+            workspace_id=self.workspace_id,
         )
 
     # ---- CAMERA / SCENE ATTRIBUTES ------------------------------------------------------------
@@ -221,7 +222,9 @@ class Workspace:
         """Re-sends the current camera position and target, e.g. once the server becomes ready."""
         self.camera_position = self.camera_position
         self.camera_target = self.camera_target
-        console.log(f"[green]Default view sent to workspace '{self.workspace_id}'![/green]")
+        console.log(
+            f"[green]Default view sent to workspace '{self.workspace_id}'![/green]"
+        )
 
     # ---- LIGHTS ---------------------------------------------------------------------------------
 
@@ -238,7 +241,9 @@ class Workspace:
 
         ambient_light = AmbientLight(color=Color.white(), intensity=0.5)
         self.add_light(ambient_light)
-        console.log(f"[green]Default lighting sent to workspace '{self.workspace_id}'![/green]")
+        console.log(
+            f"[green]Default lighting sent to workspace '{self.workspace_id}'![/green]"
+        )
 
     def add_light(self, light):
         """Adds a light object to this workspace.
@@ -345,7 +350,46 @@ class Workspace:
 
         obj_id = geometry.guid
         self.app.outbox.send_dict(
-            {"dispatch": "remove_object", "guid": str(obj_id)}, workspace_id=self.workspace_id
+            {"dispatch": "handle_geometry", "type": "remove", "guid": str(obj_id)},
+            workspace_id=self.workspace_id,
+        )
+
+    def hide_geometry(self, geometry):
+        """Hides a geometry object in this workspace without removing it.
+
+        Parameters
+        ----------
+        geometry : compas.geometry.Geometry | compas.datastructures.Mesh
+            The geometry object to hide.
+        """
+        self._set_geometry_visibility(geometry, visible=False)
+
+    def show_geometry(self, geometry):
+        """Shows a previously hidden geometry object in this workspace.
+
+        Parameters
+        ----------
+        geometry : compas.geometry.Geometry | compas.datastructures.Mesh
+            The geometry object to show.
+        """
+        self._set_geometry_visibility(geometry, visible=True)
+
+    def _set_geometry_visibility(self, geometry, visible):
+        # If the geometry is a Brep, target its displayed viewmesh instead
+        if isinstance(geometry, Brep):
+            viewmesh = self.app.inbox.brep_viewmesh_registry.get(geometry.guid)
+            if viewmesh:
+                geometry = viewmesh
+
+        obj_id = geometry.guid
+        self.app.outbox.send_dict(
+            {
+                "dispatch": "handle_geometry",
+                "type": "set_visibility",
+                "guid": str(obj_id),
+                "visible": visible,
+            },
+            workspace_id=self.workspace_id,
         )
 
     # ---- TEXT -----------------------------------------------------------------------------------

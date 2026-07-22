@@ -360,6 +360,14 @@ class App:
         """Removes a geometry object from the main workspace."""
         self.main.remove_object(geometry)
 
+    def hide_geometry(self, geometry):
+        """Hides a geometry object in the main workspace without removing it."""
+        self.main.hide_geometry(geometry)
+
+    def show_geometry(self, geometry):
+        """Shows a previously hidden geometry object in the main workspace."""
+        self.main.show_geometry(geometry)
+
     def add_text(self, text, material=None):
         """Adds a text object to the main workspace."""
         self.main.add_text(text, material)

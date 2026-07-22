@@ -25,7 +25,8 @@ class Outbox:
         """Serializes a dictionary message and sends it."""
         binary_data = compas_pb.pb_dump_bts(message)
         dispatch = message.get("dispatch", "")
-        persist = dispatch not in ("ui", "remove_object")
+        is_remove = dispatch == "handle_geometry" and message.get("type") == "remove"
+        persist = dispatch != "ui" and not is_remove
         self.send_bytes(binary_data, "", persist=persist, workspace_id=workspace_id)
 
     def flush(self):

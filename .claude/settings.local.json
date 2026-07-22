@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c \"import ast; ast.parse\\(open\\('src/compas_threejs/viewer/workspace.py'\\).read\\(\\)\\); ast.parse\\(open\\('src/compas_threejs/viewer/outbox.py'\\).read\\(\\)\\); ast.parse\\(open\\('src/compas_threejs/viewer/app.py'\\).read\\(\\)\\); ast.parse\\(open\\('src/compas_threejs/viewer/remote.py'\\).read\\(\\)\\); print\\('OK'\\)\")"
+    ]
+  }
+}

@@ -43,12 +43,20 @@ assuming any of this has landed.
 
 The frontend source isn't in this repo — only the built bundle at
 `src/compas_threejs/viewer/frontend/assets/index.js` (minified). **When in doubt about message
-shape, grep that file rather than guessing.** The full set of `dispatch` values the frontend
-recognizes (found via `handleSceneUpdate`'s switch statement) is:
+shape, grep that file rather than guessing.** As of the last bundle rebuild, the full set of
+`dispatch` values the frontend recognizes (found via `handleSceneUpdate`'s switch statement) is:
 
 ```
 material, light, scene, theme, ui, text, object_infos, object_action, remove_object
 ```
+
+`remove_object` has since been superseded on the Python side by a unified `handle_geometry`
+dispatch (`Workspace._set_geometry_visibility` / `Workspace.remove_object`), with a `"type"` field
+of `"remove"`, `"set_visibility"`, or `"toggle_visibility"` (handled by the frontend's
+`geometryHandler`). **This is not in the built bundle yet** — until the frontend is rebuilt,
+`remove_object`/`hide_geometry`/`show_geometry` will hit the frontend's
+`default: console.warn("Unknown dispatch value", ...)` and be silently dropped. Re-grep the bundle
+after the next frontend build to confirm `handle_geometry` landed before trusting this section.
 
 Scene/theme control messages have the shape `{"dispatch": "scene", "type": "<name>", ...fields}`
 (see `Workspace._send_scene_message`) or `{"dispatch": "theme", "type": "background_mode", "mode": "dark"|"light"}`.

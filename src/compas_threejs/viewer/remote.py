@@ -232,6 +232,14 @@ class Remote:
         """Removes a geometry object from the workspace."""
         self.main.remove_object(geometry)
 
+    def hide_geometry(self, geometry):
+        """Hides a geometry object in the workspace without removing it."""
+        self.main.hide_geometry(geometry)
+
+    def show_geometry(self, geometry):
+        """Shows a previously hidden geometry object in the workspace."""
+        self.main.show_geometry(geometry)
+
     def update_metadata(self, metadata):
         """Updates the metadata associated with a geometry object previously added by this Remote."""
         self.inbox.update_metadata(metadata)
