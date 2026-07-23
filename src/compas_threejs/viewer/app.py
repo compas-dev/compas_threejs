@@ -380,6 +380,14 @@ class App:
         """Updates an existing text tag in the main workspace."""
         self.main.update_tag(tag)
 
+    def hide_tag(self, tag):
+        """Hides a text tag in the main workspace without removing it."""
+        self.main.hide_tag(tag)
+
+    def show_tag(self, tag):
+        """Shows a previously hidden text tag in the main workspace."""
+        self.main.show_tag(tag)
+
     def add_light(self, light):
         """Adds a light object to the main workspace."""
         self.main.add_light(light)

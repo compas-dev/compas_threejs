@@ -256,6 +256,14 @@ class Remote:
         """Updates an existing text tag in the workspace."""
         self.main.update_tag(tag)
 
+    def hide_tag(self, tag):
+        """Hides a text tag in the workspace without removing it."""
+        self.main.hide_tag(tag)
+
+    def show_tag(self, tag):
+        """Shows a previously hidden text tag in the workspace."""
+        self.main.show_tag(tag)
+
     def add_light(self, light):
         """Adds a light object to the workspace."""
         self.main.add_light(light)

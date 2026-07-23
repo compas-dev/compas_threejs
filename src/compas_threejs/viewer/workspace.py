@@ -441,6 +441,38 @@ class Workspace:
         """
         self.add_tag(tag)
 
+    def hide_tag(self, tag):
+        """Hides a text tag in this workspace without removing it.
+
+        Parameters
+        ----------
+        tag : compas_threejs.tag.TextTag
+            The tag object to hide.
+        """
+        self._set_tag_visibility(tag, visible=False)
+
+    def show_tag(self, tag):
+        """Shows a previously hidden text tag in this workspace.
+
+        Parameters
+        ----------
+        tag : compas_threejs.tag.TextTag
+            The tag object to show.
+        """
+        self._set_tag_visibility(tag, visible=True)
+
+    def _set_tag_visibility(self, tag, visible):
+        obj_id = tag.guid
+        self.app.outbox.send_dict(
+            {
+                "dispatch": "handle_geometry",
+                "type": "set_visibility",
+                "guid": str(obj_id),
+                "visible": visible,
+            },
+            workspace_id=self.workspace_id,
+        )
+
     # ---- MATERIALS --------------------------------------------------------------------------------
 
     def update_material(self, material):
