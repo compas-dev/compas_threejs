@@ -22,6 +22,7 @@ from compas.colors import Color
 from compas.geometry import Box, Point, Sphere, Vector
 
 from compas_threejs.materials import Material
+from compas_threejs.tag import TextTag
 from compas_threejs.viewer import Remote
 
 # Create and connect to the viewer
@@ -43,12 +44,14 @@ print("Connected!")
 box = Box(2, 2, 2)
 box.frame.point = Point(0, 0, 0)
 remote.add_geometry(box, Material(color=Color.red(), metalness=0.8, roughness=0.2))
+remote.add_tag(TextTag(point=Point(0, 0, 1), text="The Box", color=Color.red()))
 print("Added red box")
 
 # Add a sphere
 sphere = Sphere(1.5)
 sphere.frame.point = Point(5, 0, 0)
 remote.add_geometry(sphere, Material(color=Color.blue(), metalness=0.3, roughness=0.7))
+remote.add_tag(TextTag(point=Point(5, 0, 1.5), text="The Sphere", color=Color.blue()))
 print("Added blue sphere")
 
 # Update the camera

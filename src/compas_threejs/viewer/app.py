@@ -372,6 +372,14 @@ class App:
         """Adds a text object to the main workspace."""
         self.main.add_text(text, material)
 
+    def add_tag(self, tag):
+        """Adds a screen-space text tag to the main workspace."""
+        self.main.add_tag(tag)
+
+    def update_tag(self, tag):
+        """Updates an existing text tag in the main workspace."""
+        self.main.update_tag(tag)
+
     def add_light(self, light):
         """Adds a light object to the main workspace."""
         self.main.add_light(light)

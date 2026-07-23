@@ -415,6 +415,32 @@ class Workspace:
                 material_data, str(uuid4()), workspace_id=self.workspace_id
             )
 
+    # ---- TAGS -----------------------------------------------------------------------------------
+
+    def add_tag(self, tag):
+        """
+        Adds a screen-space text tag to this workspace, anchored to a 3D point in the scene.
+
+        Parameters
+        ----------
+        tag : compas_threejs.tag.TextTag
+            The tag object to be added to the viewer. It must have a unique GUID.
+        """
+        obj_id = tag.guid
+        binary_data = compas_pb.pb_dump_bts(tag.as_dict())
+        self.app.outbox.send_bytes(binary_data, obj_id, workspace_id=self.workspace_id)
+
+    def update_tag(self, tag):
+        """
+        Updates an existing text tag in this workspace.
+
+        Parameters
+        ----------
+        tag : compas_threejs.tag.TextTag
+            The tag object to be updated.
+        """
+        self.add_tag(tag)
+
     # ---- MATERIALS --------------------------------------------------------------------------------
 
     def update_material(self, material):
