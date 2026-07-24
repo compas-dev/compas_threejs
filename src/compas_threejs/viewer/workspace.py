@@ -290,7 +290,10 @@ class Workspace:
         str
             The string GUID the geometry was registered under.
         """
-        # if it is a Brep we need to get its viewmesh
+        # if it is a Brep we need to get its viewmesh, but keep the Brep itself as the
+        # object registered against its guid, so pick/action callbacks receive the Brep
+        # the caller added rather than the internal viewmesh.
+        original_geometry = geometry
         if isinstance(geometry, Brep):
             brep_id = geometry.guid
             brep_viewmesh = geometry.to_viewmesh()
@@ -311,7 +314,7 @@ class Workspace:
                 material_data, str(uuid4()), workspace_id=self.workspace_id
             )
 
-        self.app.inbox.register_geometry(obj_id, geometry, metadata, actions)
+        self.app.inbox.register_geometry(obj_id, original_geometry, metadata, actions)
         return str(obj_id)
 
     def add_geometries(self, geometries: list, material=None):
