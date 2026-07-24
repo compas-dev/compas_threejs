@@ -7,9 +7,9 @@ from compas_threejs.ui import Button
 from compas_threejs.viewer import App
 
 
-class App:
+class AppApp:
     def __init__(self):
-        self.viewer = App("0.0.0.0")
+        self.viewer = App()
         self.viewer.camera_position = Point(20, -20, 20)
         self.objects = []
         self.box_material = Material(
@@ -56,7 +56,7 @@ class App:
             actions=[blue_button, red_button, bigger_button, smaller_button],
         )
 
-    def make_it_blue(self, object):
+    def make_it_blue(self, object, value):
         if object is self.box:
             self.box_material.color = Color.blue()
             self.viewer.update_material(self.box_material)
@@ -65,7 +65,7 @@ class App:
             self.spehere_material.color = Color.blue()
             self.viewer.update_material(self.spehere_material)
 
-    def make_it_red(self, object):
+    def make_it_red(self, object, value):
         if object is self.box:
             self.box_material.color = Color.red()
             self.viewer.update_material(self.box_material)
@@ -74,11 +74,11 @@ class App:
             self.spehere_material.color = Color.red()
             self.viewer.update_material(self.spehere_material)
 
-    def make_it_bigger(self, object):
+    def make_it_bigger(self, object, value):
         object.scale(1.5)
         self.viewer.update_geometry(object)
 
-    def make_it_smaller(self, object):
+    def make_it_smaller(self, object, value):
         object.scale(0.5)
         self.viewer.update_geometry(object)
 
@@ -86,6 +86,6 @@ class App:
         self.viewer.start()
 
 
-app = App()
+app = AppApp()
 app.add_geometries()
 app.start()

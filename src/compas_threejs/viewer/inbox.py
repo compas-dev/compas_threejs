@@ -121,13 +121,9 @@ class Inbox:
         )
         obj = self.geometry_registry.get(object_id)
         if action_id and action_id in self.buttons:
-            function = self.buttons[action_id]
-            if function.__code__.co_argcount == 2:
-                self.buttons[action_id](object_id)
-            elif function.__code__.co_argcount == 3:
-                value = message.get("value")
-                console.log(f"[blue]Value associated with the action: {value}[/blue]")
-                self.buttons[action_id](obj, value)
+            value = message.get("value")
+            console.log(f"[blue]Value associated with the action: {value}[/blue]")
+            self.buttons[action_id](obj, value)
         else:
             console.log(
                 f"[yellow]Unrecognized action or missing handler for action ID: {action_id}[/yellow]"

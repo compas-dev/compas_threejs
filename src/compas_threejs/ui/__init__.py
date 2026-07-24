@@ -2,6 +2,7 @@ from .button import Button
 from .checkbox import Checkbox
 from .load_json_button import LoadJsonButton
 from .number_field import NumberField
+from .select_menu import Selection
 from .slider import Slider
 
-__all__ = ["Button", "Slider", "NumberField", "LoadJsonButton", "Checkbox"]
+__all__ = ["Button", "Slider", "NumberField", "LoadJsonButton", "Checkbox", "Selection"]
