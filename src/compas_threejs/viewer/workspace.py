@@ -288,7 +288,8 @@ class Workspace:
         Returns
         -------
         str
-            The string GUID the geometry was registered under.
+            The GUID of the `geometry` object passed in. For a `Brep`, this is the Brep's
+            own GUID, not the GUID of the internal viewmesh sent to the frontend.
         """
         # if it is a Brep we need to get its viewmesh, but keep the Brep itself as the
         # object registered against its guid, so pick/action callbacks receive the Brep
@@ -315,7 +316,7 @@ class Workspace:
             )
 
         self.app.inbox.register_geometry(obj_id, original_geometry, metadata, actions)
-        return str(obj_id)
+        return str(original_geometry.guid)
 
     def add_geometries(self, geometries: list, material=None):
         """Adds multiple geometry objects to this workspace."""
