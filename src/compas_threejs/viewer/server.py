@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 class AppServer:
     """Owns the FastAPI app, websocket connections, and per-workspace scene state for one App."""
 
-    def __init__(self):
+    def __init__(self, frontend_dir=None):
         self.workspaces = defaultdict(set)
         self.workspace_states = defaultdict(dict)
         self.app_instance = None
@@ -19,11 +19,34 @@ class AppServer:
         self.loop = None
         self.shutdown_event = threading.Event()
 
+        self._frontend_dir = Path(frontend_dir) if frontend_dir else Path(__file__).parent / "frontend"
+        self._frontend_mounted = False
+
         self.fastapi_app = FastAPI()
         self.fastapi_app.add_api_websocket_route("/ws", self._websocket_endpoint)
 
-        dist_dir = Path(__file__).parent / "frontend"
-        self.fastapi_app.mount("/", StaticFiles(directory=dist_dir, html=True), name="frontend")
+    def add_static_mount(self, path, directory, name=None):
+        """
+        Serves `directory` at `path` on this same app/port, alongside the main frontend.
+
+        Must be called before `App.start()`. The main frontend is deliberately mounted at "/"
+        last of all, right as the server starts (see `_mount_frontend`/`run`), specifically so
+        that anything registered here first takes priority over it - a catch-all mount at "/"
+        would otherwise shadow every path, since Starlette tries routes in registration order.
+        """
+        self.fastapi_app.mount(path, StaticFiles(directory=Path(directory), html=True), name=name or path)
+
+    def add_route(self, path, endpoint, methods=("GET",)):
+        """
+        Registers an additional HTTP route on this same app/port. Same before-`App.start()`
+        timing requirement as `add_static_mount`, for the same reason.
+        """
+        self.fastapi_app.add_api_route(path, endpoint, methods=list(methods))
+
+    def _mount_frontend(self):
+        if not self._frontend_mounted:
+            self.fastapi_app.mount("/", StaticFiles(directory=self._frontend_dir, html=True), name="frontend")
+            self._frontend_mounted = True
 
     async def _websocket_endpoint(self, websocket: WebSocket):
         await websocket.accept()
@@ -92,6 +115,7 @@ class AppServer:
 
     def run(self, host="0.0.0.0", port=9001, app_instance=None):
         self.app_instance = app_instance
+        self._mount_frontend()
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 

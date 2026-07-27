@@ -79,13 +79,23 @@ class App:
 
     """
 
-    def __init__(self, host: str = "127.0.0.1", websocket_port: int = 9001):
+    def __init__(self, host: str = "127.0.0.1", websocket_port: int = 9001, frontend_dir=None):
+        """
+        Parameters
+        ----------
+        frontend_dir : str | pathlib.Path, optional
+            Directory of a built frontend (an `index.html` plus its assets) to serve instead of
+            this package's own bundled one at `viewer/frontend/`. Lets a consumer pin the served
+            frontend to its own copy - e.g. one it rebuilds itself from a branch or fork of the
+            frontend source - independent of whatever happens to be bundled in this installed
+            package.
+        """
         # Server
         self.host = host
         self.websocket_port = websocket_port
         self.websocket_server_thread = None
 
-        self.server = AppServer()
+        self.server = AppServer(frontend_dir=frontend_dir)
         self.outbox = Outbox(self.server)
         self.inbox = Inbox()
 
@@ -251,6 +261,20 @@ class App:
         self.main.set_view(view, target)
 
     # ---- SERVER ---------------------------------------------------------------------------------
+
+    def add_static_mount(self, path, directory, name=None):
+        """
+        Serves `directory` at `path` on this App's own host/port, alongside its main frontend.
+        Must be called before `start()`. See `AppServer.add_static_mount` for why.
+        """
+        self.server.add_static_mount(path, directory, name=name)
+
+    def add_route(self, path, endpoint, methods=("GET",)):
+        """
+        Registers an additional HTTP route on this App's own host/port. Must be called before
+        `start()`. See `AppServer.add_route` for why.
+        """
+        self.server.add_route(path, endpoint, methods=methods)
 
     def _initialize_server(self):
         """Starts the server in a background thread."""
