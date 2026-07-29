@@ -366,6 +366,21 @@ class App:
         """
         self.inbox.update_metadata(metadata)
 
+    def register_action(self, name: str, callable_function):
+        """
+        Manually registers a callable against a fixed action name, for frontend elements that
+        weren't created by a backend UI element and so have no auto-registered guid - e.g. a
+        frontend button sending `{"dispatch": "other_action", "action": name, ...}`.
+
+        Parameters
+        ----------
+        name : str
+            The action name the frontend sends in its message.
+        callable_function : callable
+            Called with the message's `json_data` value when the action is received.
+        """
+        self.inbox.register_action(name, callable_function)
+
     # ---- GEOMETRY / LIGHTS / MATERIALS / TEXT / UI (forwarded to the main workspace) -----------
 
     def add_geometry(self, geometry, material=None, metadata=None, actions=None):

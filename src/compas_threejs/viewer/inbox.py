@@ -14,12 +14,16 @@ class Inbox:
         self.metadata_registry = dict()
         self.object_actions_registry = dict()
         self.brep_viewmesh_registry = dict()  # brep_id -> viewmesh
+        self.action_registry = (
+            dict()
+        )  # action name -> callable, for manually-registered actions
 
         self._handlers = {
             "ui_callback": self._handle_ui_callback,
             "object_picked": self._handle_object_picked,
             "object_action_callback": self._handle_object_action_callback,
             "loaded_json": self._handle_loaded_json,
+            "other_action": self._handle_other_action,
         }
 
     # ---- REGISTRATION (called by Workspace when something is sent out) -------------------------
@@ -36,6 +40,15 @@ class Inbox:
 
     def register_button(self, guid, action):
         self.buttons[guid] = action
+
+    def register_action(self, name, callable_function):
+        """Manually registers a callable against a fixed action name.
+
+        Used for frontend elements that weren't created by a backend UI element (and so have no
+        auto-registered guid), but instead send a `dispatch: "other_action"` message with a fixed
+        `action` name, e.g. `{"dispatch": "other_action", "action": "load_timber_model", ...}`.
+        """
+        self.action_registry[name] = callable_function
 
     def update_metadata(self, metadata):
         """Updates the metadata associated with a geometry object in the viewer."""
@@ -135,3 +148,21 @@ class Inbox:
         action_id = message.get("action")
         if action_id and action_id in self.buttons:
             self.buttons[action_id](json_data)
+
+    def _handle_other_action(self, message, outbox, workspace_id):
+        """Handles messages from frontend elements not tied to a backend-registered guid,
+        dispatched by a fixed action name instead - see `register_action`."""
+        action_name = message.get("action")
+        console.log(
+            f"[blue]Received other_action message from frontend: {message}[/blue]"
+        )
+
+        callable_function = self.action_registry.get(action_name)
+        if not callable_function:
+            console.log(
+                f"[yellow]Unrecognized or unregistered action name: {action_name}[/yellow]"
+            )
+            return
+
+        json_data = message.get("json_data")
+        callable_function(json_data)
