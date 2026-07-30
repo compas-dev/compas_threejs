@@ -2,7 +2,7 @@ import socket
 import threading
 import time
 import webbrowser
-from typing import Union
+from typing import Optional, Union
 
 from compas.geometry import Point
 from rich.console import Console
@@ -442,3 +442,16 @@ class App:
     def add_ui_element(self, element):
         """Adds a UI element (e.g. button) to the main workspace."""
         self.main.add_ui_element(element)
+
+    # ---- SPINNER ------------------------------------------------------------------------------
+
+    def start_spinner(self, message: Optional[str] = None):
+        """Shows a loading spinner overlay in the main workspace's frontend.
+
+        See `Workspace.start_spinner`.
+        """
+        self.main.start_spinner(message)
+
+    def stop_spinner(self):
+        """Hides the loading spinner overlay in the main workspace's frontend."""
+        self.main.stop_spinner()

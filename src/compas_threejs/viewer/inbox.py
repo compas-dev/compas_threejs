@@ -153,8 +153,11 @@ class Inbox:
         """Handles messages from frontend elements not tied to a backend-registered guid,
         dispatched by a fixed action name instead - see `register_action`."""
         action_name = message.get("action")
+        # Logs the action name only, not the full message - for actions carrying a large
+        # `json_data` payload (e.g. a loaded model file), Rich's rendering of the full dict
+        # can itself take several seconds, delaying `callable_function` below for no benefit.
         console.log(
-            f"[blue]Received other_action message from frontend: {message}[/blue]"
+            f"[blue]Received other_action message from frontend: action={action_name}[/blue]"
         )
 
         callable_function = self.action_registry.get(action_name)

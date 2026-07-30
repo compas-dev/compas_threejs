@@ -1,7 +1,6 @@
 import webbrowser
 from enum import IntEnum
-from typing import Union
-from uuid import uuid4
+from typing import Optional, Union
 
 import compas_pb
 from compas.colors import Color
@@ -76,9 +75,14 @@ class Workspace:
         self._show_edges = False
 
     def _send_scene_message(self, type_: str, **fields):
+        # Each scene setting (camera position, background color, ...) represents a single
+        # current value, so it's persisted under one stable key per type - re-sending an
+        # updated value overwrites its own slot instead of piling up a new entry every time
+        # (e.g. every camera move).
         self.app.outbox.send_dict(
             {"dispatch": "scene", "type": type_, **fields},
             workspace_id=self.workspace_id,
+            obj_id=("scene", self.workspace_id, type_),
         )
 
     # ---- CAMERA / SCENE ATTRIBUTES ------------------------------------------------------------
@@ -141,6 +145,8 @@ class Workspace:
     @dark_mode.setter
     def dark_mode(self, value: bool):
         self._dark_mode = bool(value)
+        # Single current setting, like the scene messages above - stable key so toggling it
+        # repeatedly overwrites its own slot instead of accumulating a new entry each time.
         self.app.outbox.send_dict(
             {
                 "dispatch": "theme",
@@ -148,6 +154,7 @@ class Workspace:
                 "mode": "dark" if self._dark_mode else "light",
             },
             workspace_id=self.workspace_id,
+            obj_id=("theme", self.workspace_id),
         )
 
     @property
@@ -298,7 +305,12 @@ class Workspace:
         if isinstance(geometry, Brep):
             brep_id = geometry.guid
             brep_viewmesh = geometry.to_viewmesh()
-            self.app.inbox.brep_viewmesh_registry[brep_id] = brep_viewmesh
+            # Keyed by (workspace, brep guid), not just the brep guid: a Brep's `.geometry`
+            # is typically cached, so the *same* Brep instance can legitimately be added to
+            # more than one workspace (e.g. the main scene and a per-element viewer) - each
+            # needs its own mapping to its own viewmesh, or a later add in one workspace
+            # would silently overwrite the lookup the other workspace's remove/update relies on.
+            self.app.inbox.brep_viewmesh_registry[(self.workspace_id, brep_id)] = brep_viewmesh
             # the geometry variable now gets the viewmesh
             geometry = brep_viewmesh
 
@@ -311,8 +323,11 @@ class Workspace:
             material_dict = material.as_dict()
             material_dict["geometryBackendGuid"] = str(obj_id)
             material_data = compas_pb.pb_dump_bts(material_dict)
+            # Keyed off the geometry's own id (not a fresh uuid4 each call) so re-adding the
+            # same geometry's material overwrites this slot instead of leaving the previous
+            # one behind as a permanent orphan - and so remove_object can clean it up below.
             self.app.outbox.send_bytes(
-                material_data, str(uuid4()), workspace_id=self.workspace_id
+                material_data, ("material", obj_id), workspace_id=self.workspace_id
             )
 
         self.app.inbox.register_geometry(obj_id, original_geometry, metadata, actions)
@@ -336,7 +351,7 @@ class Workspace:
 
         # If the geometry is a Brep get its respective viewmesh
         if isinstance(geometry, Brep):
-            viewmesh = self.app.inbox.brep_viewmesh_registry.get(geometry.guid)
+            viewmesh = self.app.inbox.brep_viewmesh_registry.get((self.workspace_id, geometry.guid))
             if viewmesh:
                 obj_id = viewmesh.guid
             geometry = geometry.to_viewmesh()
@@ -348,7 +363,7 @@ class Workspace:
         """Removes a geometry object from this workspace."""
         # If the geometry is a Brep, remove its viewmesh from the registry
         if isinstance(geometry, Brep):
-            viewmesh = self.app.inbox.brep_viewmesh_registry.get(geometry.guid)
+            viewmesh = self.app.inbox.brep_viewmesh_registry.get((self.workspace_id, geometry.guid))
             if viewmesh:
                 geometry = viewmesh
 
@@ -356,7 +371,12 @@ class Workspace:
         self.app.outbox.send_dict(
             {"dispatch": "handle_geometry", "type": "remove", "guid": str(obj_id)},
             workspace_id=self.workspace_id,
+            remove_key=obj_id,
         )
+        # Drops the geometry's associated material/visibility slots too, if any - a no-op
+        # for whichever it never had.
+        self.app.outbox.forget(("material", obj_id), workspace_id=self.workspace_id)
+        self.app.outbox.forget(("visibility", obj_id), workspace_id=self.workspace_id)
 
     def hide_geometry(self, geometry):
         """Hides a geometry object in this workspace without removing it.
@@ -381,11 +401,14 @@ class Workspace:
     def _set_geometry_visibility(self, geometry, visible):
         # If the geometry is a Brep, target its displayed viewmesh instead
         if isinstance(geometry, Brep):
-            viewmesh = self.app.inbox.brep_viewmesh_registry.get(geometry.guid)
+            viewmesh = self.app.inbox.brep_viewmesh_registry.get((self.workspace_id, geometry.guid))
             if viewmesh:
                 geometry = viewmesh
 
         obj_id = geometry.guid
+        # A geometry's visibility is a single current value, so it's persisted under a key
+        # stable per object - re-toggling it overwrites its own slot instead of piling up a
+        # new entry every time (e.g. every hide/show of a processing feature).
         self.app.outbox.send_dict(
             {
                 "dispatch": "handle_geometry",
@@ -394,6 +417,7 @@ class Workspace:
                 "visible": visible,
             },
             workspace_id=self.workspace_id,
+            obj_id=("visibility", obj_id),
         )
 
     # ---- TEXT -----------------------------------------------------------------------------------
@@ -416,7 +440,7 @@ class Workspace:
             material._geometry_guid = obj_id
             material_data = compas_pb.pb_dump_bts(material.as_dict())
             self.app.outbox.send_bytes(
-                material_data, str(uuid4()), workspace_id=self.workspace_id
+                material_data, ("material", obj_id), workspace_id=self.workspace_id
             )
 
     # ---- TAGS -----------------------------------------------------------------------------------
@@ -467,6 +491,7 @@ class Workspace:
 
     def _set_tag_visibility(self, tag, visible):
         obj_id = tag.guid
+        # Same reasoning as _set_geometry_visibility above - stable per-tag key.
         self.app.outbox.send_dict(
             {
                 "dispatch": "handle_geometry",
@@ -475,6 +500,7 @@ class Workspace:
                 "visible": visible,
             },
             workspace_id=self.workspace_id,
+            obj_id=("visibility", obj_id),
         )
 
     # ---- MATERIALS --------------------------------------------------------------------------------
@@ -515,6 +541,32 @@ class Workspace:
         binary_data = compas_pb.pb_dump_bts(msg)
         self.app.outbox.send_bytes(
             binary_data, element.guid, persist=True, workspace_id=self.workspace_id
+        )
+
+    # ---- SPINNER ----------------------------------------------------------------------------------
+
+    def start_spinner(self, message: Optional[str] = None):
+        """
+        Shows a loading spinner overlay in this workspace's frontend.
+
+        Use around long-running backend work (e.g. deserializing and building geometry for a
+        large model) to give the user feedback while the UI would otherwise appear frozen.
+
+        Parameters
+        ----------
+        message : str, optional
+            A short description to display alongside the spinner, e.g. "Loading model...".
+        """
+        self.app.outbox.send_dict(
+            {"dispatch": "spinner", "visible": True, "message": message},
+            workspace_id=self.workspace_id,
+        )
+
+    def stop_spinner(self):
+        """Hides the loading spinner overlay in this workspace's frontend."""
+        self.app.outbox.send_dict(
+            {"dispatch": "spinner", "visible": False},
+            workspace_id=self.workspace_id,
         )
 
     def open_in_browser(self):

@@ -76,8 +76,11 @@ class AppServer:
                 if "text" in message:
                     data = message["text"].encode("utf-8")
                     if self.app_instance:
-                        # Handles button clicks back to python
-                        self.app_instance.on_message(data, workspace_id=workspace_id)
+                        # Handles button clicks / actions back to python. Run off the event loop
+                        # thread so a long-running handler (e.g. loading a large model) doesn't
+                        # block the loop from delivering messages the handler sends in the
+                        # meantime (e.g. a start_spinner() call made at the top of the handler).
+                        await asyncio.to_thread(self.app_instance.on_message, data, workspace_id)
                 elif "bytes" in message:
                     data = message["bytes"]
                     await self.broadcast(data, workspace_id=workspace_id)
@@ -93,11 +96,20 @@ class AppServer:
         obj_id: str = None,
         persist: bool = True,
         workspace_id: str = "main",
+        remove_key=None,
     ):
         """Broadcast binary data or dictionary configurations cleanly to workspace clients."""
-        if persist:
+        if remove_key is not None:
+            # Drops the object's earlier persisted "add" broadcast so it isn't replayed to
+            # clients that connect (or reconnect) after this removal.
+            self.workspace_states[workspace_id].pop(remove_key, None)
+        elif persist:
             key = obj_id or str(len(self.workspace_states[workspace_id]))
             self.workspace_states[workspace_id][key] = binary_data
+
+        if binary_data is None:
+            # Pure state cleanup (see Outbox.forget) - nothing to broadcast live.
+            return
 
         target_clients = self.workspaces[workspace_id]
         if not target_clients:
