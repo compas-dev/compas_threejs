@@ -44,11 +44,14 @@ dev = [
     "mkdocstrings-python",
     "compas_invocations2[mkdocs]>=1.0.2",
     "ruff",
-
+    "pytest>=8.4.2",
 ]
 
 [project.urls]
 Homepage = "https://github.com/gramaziokohler/compas_threejs"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 # -- DISCOVERY --
 # Tells setuptools that the code is inside the 'src' folder
