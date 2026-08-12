@@ -4,16 +4,17 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "compas_threejs"
-version = "0.1.0"
+dynamic = ["version"]
 description = "A lightweight Three.js viewer for COMPAS using Protobuf"
 readme = "README.md"
 requires-python = ">=3.9"
 authors = [
   { name = "Eric Gozzi", email = "eric.gozzi@arch.ethz.ch" },
-  { name = "Nicolas Benjamin Boscoboinik", email = "boscoboinik@arch.ethz.ch" }
+  { name = "Nicolas Benjamin Boscoboinik", email = "boscoboinik@arch.ethz.ch" },
 ]
 keywords = ["compas", "viewer", "threejs", "protobuf"]
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -27,7 +28,7 @@ classifiers = [
 ]
 dependencies = [
     "compas",
-    "compas_pb",
+    "compas-pb>=1,<2",
     "compas_brep[occ]",
     "websockets",
     "fastapi",
@@ -37,6 +38,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "build",
+    "bump-my-version",
     "invoke",
     "mkdocs",
     "mkdocs-material",
@@ -44,11 +47,62 @@ dev = [
     "mkdocstrings-python",
     "compas_invocations2[mkdocs]>=1.0.2",
     "ruff",
-
+    "wheel",
+    "pytest>=8.4.2",
 ]
 
 [project.urls]
-Homepage = "https://github.com/gramaziokohler/compas_threejs"
+Homepage = "https://compas.dev/compas_threejs"
+Documentation = "https://compas.dev/compas_threejs"
+Repository = "https://github.com/compas-dev/compas_threejs"
+Changelog = "https://github.com/compas-dev/compas_threejs/blob/main/CHANGELOG.md"
+Forum = "https://forum.compas-framework.org/"
+Issues = "https://github.com/compas-dev/compas_threejs/issues"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 179
+indent-width = 4
+target-version = "py39"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["I001"]
+"tasks.py" = ["I001"]
+
+[tool.ruff.lint.isort]
+force-single-line = true
+known-first-party = ["compas_threejs"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.pycodestyle]
+max-doc-length = 179
+
+[tool.ruff.format]
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
+
+[tool.bumpversion]
+current_version = "0.1.0"
+message = "Bump version to {new_version}"
+commit = true
+tag = true
+
+[[tool.bumpversion.files]]
+filename = "src/compas_threejs/__init__.py"
+search = "{current_version}"
+replace = "{new_version}"
+
+[[tool.bumpversion.files]]
+filename = "CHANGELOG.md"
+search = "Unreleased"
+replace = "[{new_version}] - {now:%Y-%m-%d}"
 
 # -- DISCOVERY --
 # Tells setuptools that the code is inside the 'src' folder
@@ -59,3 +113,6 @@ where = ["src"]
 # Critical: Tells setuptools to look at MANIFEST.in for non-python files (html, js)
 [tool.setuptools]
 include-package-data = true
+
+[tool.setuptools.dynamic]
+version = { attr = "compas_threejs.__version__" }

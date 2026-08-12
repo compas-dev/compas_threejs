@@ -20,7 +20,7 @@ We welcome contributions to COMPAS ThreeJS! Whether you're reporting bugs, sugge
 ### Prerequisites
 
 - Python 3.9 or higher
-- Node.js 18+ (for frontend development)
+- Node.js 22.12+ (for frontend development)
 
 ### Python Setup
 
@@ -32,12 +32,14 @@ pip install -e ".[dev]"
 
 ### Frontend Setup
 
-The frontend assets are built with Node.js and automatically synced to the Python package:
+The frontend is maintained in the separate `compas_threejs_ts` repository.
+Clone it next to this repository and install its dependencies:
 
 ```bash
-cd frontend/compas_threejs
-npm install
-npm run build
+cd ..
+git clone https://github.com/compas-dev/compas_threejs_ts.git
+cd compas_threejs_ts
+npm ci
 ```
 
 ## Making Changes
@@ -56,26 +58,46 @@ npm run build
 
 ### Testing
 
-Before submitting a pull request, ensure your code doesn't break existing functionality:
+Before submitting a pull request, run the formatter, linter, and tests:
 
 ```bash
-# Run tests (when available)
-pytest
+invoke format
+invoke lint
+invoke test
 ```
 
 ### Frontend Changes
 
-If you modify anything in `frontend/compas_threejs/`:
+If you modify the sibling `compas_threejs_ts` repository:
 
 1. Test your changes locally:
    ```bash
+   cd ../compas_threejs_ts
+   npm test
+   npm run lint
    npm run dev
    ```
-2. Build the production assets:
+2. Build and sync the production assets from this Python repository:
    ```bash
-   npm run build
+   cd ../compas_threejs
+   invoke sync-frontend
    ```
-3. Commit the built files from `src/compas_threejs/viewer/` along with your source changes
+3. Commit the TypeScript source in its repository and the generated files under
+   `src/compas_threejs/viewer/frontend/` in this repository.
+
+## Releasing (maintainers)
+
+Start from a clean, up-to-date `main` branch with all changes listed under
+`Unreleased` in `CHANGELOG.md`, then run:
+
+```bash
+invoke release --release-type=minor
+```
+
+Use `major`, `minor`, or `patch` as appropriate. The task updates the package
+version and changelog, commits and tags the release, builds the distributions,
+prepares the next `Unreleased` section, and asks before pushing. Pushing the tag
+triggers the Trusted Publishing workflow.
 
 ## Submitting Changes
 

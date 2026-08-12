@@ -4,7 +4,9 @@ from collections import defaultdict
 from pathlib import Path
 
 import uvicorn
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI
+from fastapi import WebSocket
+from fastapi import WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 
 

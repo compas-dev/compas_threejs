@@ -1,11 +1,13 @@
 site_name: COMPAS ThreeJS Docs
-# site_url: None
+site_url: https://compas.dev/compas_threejs
 
-repo_name: COMPAS ThreeJS
-repo_url: https://github.com/gramaziokohler/compas_threejs/
+repo_name: compas-dev/compas_threejs
+repo_url: https://github.com/compas-dev/compas_threejs
+edit_uri: blob/main/docs/
+copyright: Copyright &copy; 2026, COMPAS Association
 
 extra:
-    # homepage: None
+    homepage: https://compas.dev/compas_threejs
     version:
         provider: mike
 
@@ -121,10 +123,10 @@ plugins:
                       unwrap_annotated: true
 
 nav:
-    - Home: index.md
-    - Docs:
-          - Introduction: introduction.md
-          - Get Started: installation.md
+    - Introduction: index.md
+    - Get Started:
+          - Installation: installation.md
+          - Remote Viewer: remote.md
           - Shortcuts: shortcuts.md
     - Tutorials:
           - Basic Geometry: tutorials/basic_geometry.md

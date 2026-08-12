@@ -4,9 +4,6 @@ This tutorial covers the various ways you can add COMPAS geometry to the `compas
 
 
 ## 1. Adding a Single Geometry
-.
-
-### The Script
 
 ```python
 from compas.geometry import Box
@@ -28,7 +25,7 @@ viz.start()
 
 The `add_geometry()` method is the core function for adding objects to the scene. It takes a COMPAS geometry object as its primary argument. When you call `viz.start()`, this object is serialized and sent to the frontend to be rendered. A websocket connection is open for the bidirectional communication between the backend and frontend.
 
-## Adding multiple geometries
+## 2. Adding Multiple Geometries
 
 You can add as many geometries as you like to the scene by calling `add_geometry()` multiple times or by using `add_geometries()`.
 
@@ -44,7 +41,7 @@ sphere = Sphere(radius=0.5)
 
 # Add them to the viewer one by one
 viz.add_geometry(box)
-viz.add_geometry(sphere}) # You can also add metadata
+viz.add_geometry(sphere)
 
 # Or add them all at once
 # viz.add_geometries([box, sphere])
@@ -56,7 +53,7 @@ viz.start()
 The viewer maintains a registry of all objects in the scene. Each time you call `add_geometry()`, the new object is added to this registry. When the viewer starts, it sends all registered objects to the frontend. The `add_geometries()` method is a convenient way to add a list of objects in a single call.
 
 
-## 3 Adding Geometry with a custom material
+## 3. Adding Geometry with a Custom Material
 
 By default, geometries are rendered with a standard compas-blue material. To customize the appearance of an object, you can create a `Material` object and pass it to the `add_geometry()` method.
 

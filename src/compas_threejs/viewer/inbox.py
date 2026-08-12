@@ -14,9 +14,7 @@ class Inbox:
         self.metadata_registry = dict()
         self.object_actions_registry = dict()
         self.brep_viewmesh_registry = dict()  # brep_id -> viewmesh
-        self.action_registry = (
-            dict()
-        )  # action name -> callable, for manually-registered actions
+        self.action_registry = dict()  # action name -> callable, for manually-registered actions
 
         self._handlers = {
             "ui_callback": self._handle_ui_callback,
@@ -66,9 +64,7 @@ class Inbox:
         if handler:
             handler(message, outbox, workspace_id)
         else:
-            console.log(
-                f"[yellow]Received unrecognized message from frontend: {message}[/yellow]"
-            )
+            console.log(f"[yellow]Received unrecognized message from frontend: {message}[/yellow]")
 
     def _decode(self, message_in_bytes) -> dict:
         """Decodes a message from bytes to a string, then parses it as a JSON dictionary."""
@@ -84,9 +80,7 @@ class Inbox:
         callable_function = self.buttons[action_id]
 
         if not callable(callable_function):
-            console.log(
-                f"[yellow]Warning: The action associated with ID {action_id} did not return a callable function.[/yellow]"
-            )
+            console.log(f"[yellow]Warning: The action associated with ID {action_id} did not return a callable function.[/yellow]")
             return
 
         if value is not None and action_id and action_id in self.buttons:
@@ -95,15 +89,11 @@ class Inbox:
         elif action_id and action_id in self.buttons:
             self.buttons[action_id]()
         else:
-            console.log(
-                f"[yellow]Unrecognized action or missing handler for action ID: {action_id}[/yellow]"
-            )
+            console.log(f"[yellow]Unrecognized action or missing handler for action ID: {action_id}[/yellow]")
 
     def _handle_object_picked(self, message, outbox, workspace_id):
         object_id = message.get("guid")
-        console.log(
-            f"[blue]Received object picked message from frontend. Object ID: {object_id}[/blue]"
-        )
+        console.log(f"[blue]Received object picked message from frontend. Object ID: {object_id}[/blue]")
         metadata = self.metadata_registry.get(object_id)
         if metadata:
             metadata["dispatch"] = "object_infos"
@@ -129,18 +119,14 @@ class Inbox:
     def _handle_object_action_callback(self, message, outbox, workspace_id):
         action_id = message.get("action_guid")
         object_id = message.get("object_guid")
-        console.log(
-            f"[blue]Received object action callback from frontend. Action ID: {action_id}, Object ID: {object_id}[/blue]"
-        )
+        console.log(f"[blue]Received object action callback from frontend. Action ID: {action_id}, Object ID: {object_id}[/blue]")
         obj = self.geometry_registry.get(object_id)
         if action_id and action_id in self.buttons:
             value = message.get("value")
             console.log(f"[blue]Value associated with the action: {value}[/blue]")
             self.buttons[action_id](obj, value)
         else:
-            console.log(
-                f"[yellow]Unrecognized action or missing handler for action ID: {action_id}[/yellow]"
-            )
+            console.log(f"[yellow]Unrecognized action or missing handler for action ID: {action_id}[/yellow]")
 
     def _handle_loaded_json(self, message, outbox, workspace_id):
         console.log("[blue]Received loaded JSON from frontend.[/blue]")
@@ -156,15 +142,11 @@ class Inbox:
         # Logs the action name only, not the full message - for actions carrying a large
         # `json_data` payload (e.g. a loaded model file), Rich's rendering of the full dict
         # can itself take several seconds, delaying `callable_function` below for no benefit.
-        console.log(
-            f"[blue]Received other_action message from frontend: action={action_name}[/blue]"
-        )
+        console.log(f"[blue]Received other_action message from frontend: action={action_name}[/blue]")
 
         callable_function = self.action_registry.get(action_name)
         if not callable_function:
-            console.log(
-                f"[yellow]Unrecognized or unregistered action name: {action_name}[/yellow]"
-            )
+            console.log(f"[yellow]Unrecognized or unregistered action name: {action_name}[/yellow]")
             return
 
         json_data = message.get("json_data")

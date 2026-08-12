@@ -1,2 +1,2 @@
 compas
-compas_pb
+compas_pb>=1,<2

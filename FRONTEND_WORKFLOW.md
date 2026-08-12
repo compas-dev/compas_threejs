@@ -78,7 +78,7 @@ The frontend build **is committed** to the backend repo so users can install via
 ### Current Setup
 - Frontend build **is committed** in this repo for easier pip installation
 - You must run `sync-frontend.bat` or `python scripts/sync-frontend.py` to update the viewer
-- Both repos should live in `C:\Users\egozzi\Documents\`
+- The Python and TypeScript repositories must be sibling directories
 - Users installing via pip don't need Node.js
 
 ### Path Configuration

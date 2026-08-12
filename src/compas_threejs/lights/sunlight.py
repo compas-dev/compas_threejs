@@ -1,7 +1,8 @@
 import uuid
 
 from compas.colors import Color
-from compas.geometry import Point, Vector
+from compas.geometry import Point
+from compas.geometry import Vector
 
 from .light import Light
 

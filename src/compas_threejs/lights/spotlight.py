@@ -2,9 +2,7 @@ import math
 import uuid
 
 from compas.colors import Color
-from compas.geometry import Point, Vector
-
-from .light import Light
+from compas.geometry import Point
 
 
 class SpotLight:

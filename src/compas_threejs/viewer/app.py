@@ -2,7 +2,8 @@ import socket
 import threading
 import time
 import webbrowser
-from typing import Optional, Union
+from typing import Optional
+from typing import Union
 
 from compas.geometry import Point
 from rich.console import Console
@@ -10,7 +11,8 @@ from rich.console import Console
 from .inbox import Inbox
 from .outbox import Outbox
 from .server import AppServer
-from .workspace import CameraView, Workspace
+from .workspace import CameraView
+from .workspace import Workspace
 
 console = Console()
 
@@ -280,9 +282,7 @@ class App:
         """Starts the server in a background thread."""
         display_host = self.host if self.host != "0.0.0.0" else get_local_ip()
 
-        console.log(
-            f"http://{display_host}:{self.websocket_port}/?ws_host={display_host}&ws_port={self.websocket_port}"
-        )
+        console.log(f"http://{display_host}:{self.websocket_port}/?ws_host={display_host}&ws_port={self.websocket_port}")
         self.websocket_server_thread = threading.Thread(
             target=self.server.run,
             args=(display_host, self.websocket_port, self),
@@ -342,10 +342,7 @@ class App:
         else:
             connect_host = self.host
 
-        shareable_url = (
-            f"http://{connect_host}:{self.websocket_port}/?"
-            f"ws_host={connect_host}&ws_port={self.websocket_port}"
-        )
+        shareable_url = f"http://{connect_host}:{self.websocket_port}/?ws_host={connect_host}&ws_port={self.websocket_port}"
         console.log(f"[underline yellow]{shareable_url}[/underline yellow]")
         webbrowser.open(shareable_url)
 

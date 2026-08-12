@@ -10,12 +10,6 @@ from invoke.collection import Collection
 from invoke.tasks import task
 
 
-@task(default=True)
-def help(c):
-    """Show available invoke tasks."""
-    c.run("invoke --list")
-
-
 @task
 def sync_frontend(c):
     """Build frontend from external repo and copy into Python package."""
@@ -24,7 +18,7 @@ def sync_frontend(c):
 
     # 1. Build the frontend
     print("🔨 Building frontend...")
-    subprocess.run(["npm", "run", "build"], cwd=FRONTEND_REPO, check=True, shell=True)
+    subprocess.run(["npm", "run", "build"], cwd=FRONTEND_REPO, check=True)
 
     # 2. Clear old frontend files
     if BACKEND_DEST.exists():
@@ -38,7 +32,6 @@ def sync_frontend(c):
 
 
 ns = Collection(
-    help,
     sync_frontend,
     docs.help,
     style.check,

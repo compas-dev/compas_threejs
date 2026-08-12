@@ -1,6 +1,7 @@
 import webbrowser
 from enum import IntEnum
-from typing import Optional, Union
+from typing import Optional
+from typing import Union
 
 import compas_pb
 from compas.colors import Color
@@ -219,9 +220,7 @@ class Workspace:
             return
 
         if not isinstance(view, CameraView):
-            raise ValueError(
-                "Invalid view. Use CameraView for presets or Point/xyz for position"
-            )
+            raise ValueError("Invalid view. Use CameraView for presets or Point/xyz for position")
 
         self._send_scene_message("camera_view", preset=view.name.lower())
 
@@ -229,9 +228,7 @@ class Workspace:
         """Re-sends the current camera position and target, e.g. once the server becomes ready."""
         self.camera_position = self.camera_position
         self.camera_target = self.camera_target
-        console.log(
-            f"[green]Default view sent to workspace '{self.workspace_id}'![/green]"
-        )
+        console.log(f"[green]Default view sent to workspace '{self.workspace_id}'![/green]")
 
     # ---- LIGHTS ---------------------------------------------------------------------------------
 
@@ -248,9 +245,7 @@ class Workspace:
 
         ambient_light = AmbientLight(color=Color.white(), intensity=0.5)
         self.add_light(ambient_light)
-        console.log(
-            f"[green]Default lighting sent to workspace '{self.workspace_id}'![/green]"
-        )
+        console.log(f"[green]Default lighting sent to workspace '{self.workspace_id}'![/green]")
 
     def add_light(self, light):
         """Adds a light object to this workspace.
@@ -287,7 +282,9 @@ class Workspace:
         material : compas_threejs.material.Material, optional
             An optional material to be associated with the geometry.
         metadata: compas_threejs.metadata.Metadata, optional
-            An optional metadata object to be associated with the geometry. This metadata can be sent back to the frontend when the geometry is picked, allowing for interactive exploration of object properties.
+            An optional metadata object to be associated with the geometry. This metadata can be
+            sent back to the frontend when the geometry is picked, allowing interactive exploration
+            of object properties.
         actions: list of compas_threejs.ui.Button, optional
             An optional list of Button objects representing actions that can be performed on the geometry.
             The function associated with the button need to accept `object` parameter.
@@ -326,9 +323,7 @@ class Workspace:
             # Keyed off the geometry's own id (not a fresh uuid4 each call) so re-adding the
             # same geometry's material overwrites this slot instead of leaving the previous
             # one behind as a permanent orphan - and so remove_object can clean it up below.
-            self.app.outbox.send_bytes(
-                material_data, ("material", obj_id), workspace_id=self.workspace_id
-            )
+            self.app.outbox.send_bytes(material_data, ("material", obj_id), workspace_id=self.workspace_id)
 
         self.app.inbox.register_geometry(obj_id, original_geometry, metadata, actions)
         return str(original_geometry.guid)
@@ -439,9 +434,7 @@ class Workspace:
         if material:
             material._geometry_guid = obj_id
             material_data = compas_pb.pb_dump_bts(material.as_dict())
-            self.app.outbox.send_bytes(
-                material_data, ("material", obj_id), workspace_id=self.workspace_id
-            )
+            self.app.outbox.send_bytes(material_data, ("material", obj_id), workspace_id=self.workspace_id)
 
     # ---- TAGS -----------------------------------------------------------------------------------
 
@@ -530,18 +523,14 @@ class Workspace:
             The UI element to be added to the viewer. It must have a unique GUID and an action.
         """
         if element.action is None:
-            console.log(
-                f"[yellow]Warning: UI element with GUID {element.guid} has no associated action.[/yellow]"
-            )
+            console.log(f"[yellow]Warning: UI element with GUID {element.guid} has no associated action.[/yellow]")
 
         self.app.inbox.register_button(element.guid, element.action)
 
         msg = element.as_dict()
         msg["workspace_id"] = self.workspace_id
         binary_data = compas_pb.pb_dump_bts(msg)
-        self.app.outbox.send_bytes(
-            binary_data, element.guid, persist=True, workspace_id=self.workspace_id
-        )
+        self.app.outbox.send_bytes(binary_data, element.guid, persist=True, workspace_id=self.workspace_id)
 
     # ---- SPINNER ----------------------------------------------------------------------------------
 
@@ -573,10 +562,5 @@ class Workspace:
         """Launches a browser window tracking only this workspace."""
         connect_host = self.app.host if self.app.host != "0.0.0.0" else "127.0.0.1"
 
-        url = (
-            f"http://{connect_host}:{self.app.websocket_port}/?"
-            f"ws_host={connect_host}&"
-            f"ws_port={self.app.websocket_port}&"
-            f"workspace={self.workspace_id}"
-        )
+        url = f"http://{connect_host}:{self.app.websocket_port}/?ws_host={connect_host}&ws_port={self.app.websocket_port}&workspace={self.workspace_id}"
         webbrowser.open(url)
