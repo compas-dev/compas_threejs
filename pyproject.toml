@@ -48,7 +48,7 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/gramaziokohler/compas_threejs"
+Homepage = "https://github.com/compas-dev/compas_threejs"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

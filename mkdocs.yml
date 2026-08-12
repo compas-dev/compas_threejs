@@ -2,7 +2,7 @@ site_name: COMPAS ThreeJS Docs
 # site_url: None
 
 repo_name: COMPAS ThreeJS
-repo_url: https://github.com/gramaziokohler/compas_threejs/
+repo_url: https://github.com/compas-dev/compas_threejs/
 
 extra:
     # homepage: None
