@@ -1,6 +1,7 @@
 import uuid
 
-from compas.geometry import Point, Vector
+from compas.geometry import Point
+from compas.geometry import Vector
 
 
 class TextGeometry:

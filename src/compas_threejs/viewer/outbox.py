@@ -28,9 +28,7 @@ class Outbox:
         loop = self.server.get_loop()
         if loop:
             asyncio.run_coroutine_threadsafe(
-                self.server.broadcast(
-                    binary_data, obj_id, persist=persist, workspace_id=workspace_id, remove_key=remove_key
-                ),
+                self.server.broadcast(binary_data, obj_id, persist=persist, workspace_id=workspace_id, remove_key=remove_key),
                 loop,
             )
         else:
@@ -75,9 +73,7 @@ class Outbox:
             return
         for binary_data, obj_id, persist, workspace_id, remove_key in self._queue:
             asyncio.run_coroutine_threadsafe(
-                self.server.broadcast(
-                    binary_data, obj_id, persist=persist, workspace_id=workspace_id, remove_key=remove_key
-                ),
+                self.server.broadcast(binary_data, obj_id, persist=persist, workspace_id=workspace_id, remove_key=remove_key),
                 loop,
             )
         self._queue.clear()

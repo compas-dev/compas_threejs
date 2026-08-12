@@ -58,9 +58,11 @@ npm ci
 
 ### Testing
 
-Before submitting a pull request, ensure your code doesn't break existing functionality:
+Before submitting a pull request, run the formatter, linter, and tests:
 
 ```bash
+invoke format
+invoke lint
 invoke test
 ```
 
@@ -82,6 +84,20 @@ If you modify the sibling `compas_threejs_ts` repository:
    ```
 3. Commit the TypeScript source in its repository and the generated files under
    `src/compas_threejs/viewer/frontend/` in this repository.
+
+## Releasing (maintainers)
+
+Start from a clean, up-to-date `main` branch with all changes listed under
+`Unreleased` in `CHANGELOG.md`, then run:
+
+```bash
+invoke release --release-type=minor
+```
+
+Use `major`, `minor`, or `patch` as appropriate. The task updates the package
+version and changelog, commits and tags the release, builds the distributions,
+prepares the next `Unreleased` section, and asks before pushing. Pushing the tag
+triggers the Trusted Publishing workflow.
 
 ## Submitting Changes
 

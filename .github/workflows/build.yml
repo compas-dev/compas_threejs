@@ -16,4 +16,5 @@ jobs:
       - uses: compas-dev/compas-actions.build@v5
         with:
           python: "3.11"
+          invoke_lint: true
           invoke_test: true

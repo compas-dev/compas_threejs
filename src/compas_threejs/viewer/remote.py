@@ -115,9 +115,7 @@ class Remote:
             console.log("[yellow]Already connected[/yellow]")
             return
 
-        self.connection_thread = threading.Thread(
-            target=self._run_event_loop, daemon=True
-        )
+        self.connection_thread = threading.Thread(target=self._run_event_loop, daemon=True)
         self.connection_thread.start()
 
         # Wait for connection to establish

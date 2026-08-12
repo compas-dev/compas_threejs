@@ -157,9 +157,7 @@ class PhysicalMaterial(Material):
         if not isinstance(value, (int, float)):
             raise TypeError("attenuation_distance must be a number or None")
         if not math.isfinite(value) or value <= 0:
-            raise ValueError(
-                "attenuation_distance must be finite and greater than zero"
-            )
+            raise ValueError("attenuation_distance must be finite and greater than zero")
         self._attenuation_distance = value
 
     @property
@@ -190,7 +188,10 @@ class PhysicalMaterial(Material):
 
     @property
     def dispersion(self) -> float:
-        """Defines the strength of the angular separation of colors (chromatic aberration) transmitting through a relatively clear volume. Any value zero or larger is valid, the typical range of realistic values is [0, 1]."""
+        """Defines the strength of the angular separation of colors (chromatic aberration)
+        transmitting through a relatively clear volume. Any value zero or larger is valid;
+        the typical range of realistic values is [0, 1].
+        """
         return self._dispersion
 
     @dispersion.setter
@@ -242,23 +243,22 @@ class PhysicalMaterial(Material):
 
     @property
     def iridescence_thickness_range(self) -> list:
-        """Array of exactly 2 elements, specifying minimum and maximum thickness of the iridescence layer. Thickness of iridescence layer has an equivalent effect of the one thickness has on ior. Default is [100, 400]."""
+        """Array of exactly 2 elements specifying the iridescence layer's minimum and maximum
+        thickness. Iridescence layer thickness has an effect equivalent to the one thickness has
+        on IOR. Default is [100, 400].
+        """
         return self._iridescence_thickness_range
 
     @iridescence_thickness_range.setter
     def iridescence_thickness_range(self, value: list):
         if not isinstance(value, list) or len(value) != 2:
-            raise TypeError(
-                "iridescence_thickness_range must be a list of exactly 2 numbers"
-            )
+            raise TypeError("iridescence_thickness_range must be a list of exactly 2 numbers")
         if not all(isinstance(v, (int, float)) for v in value):
             raise TypeError("iridescence_thickness_range must contain only numbers")
         if value[0] < 0 or value[1] < 0:
             raise ValueError("iridescence_thickness_range values must be non-negative")
         if value[0] > value[1]:
-            raise ValueError(
-                "iridescence_thickness_range minimum value must not exceed maximum value"
-            )
+            raise ValueError("iridescence_thickness_range minimum value must not exceed maximum value")
         self._iridescence_thickness_range = value
 
     @property
@@ -340,7 +340,10 @@ class PhysicalMaterial(Material):
 
     @property
     def thickness(self) -> float:
-        """The thickness of the volume beneath the surface. The value is given in the coordinate space of the mesh. If the value is 0, the material is thin-walled. Otherwise, the material is a volume boundary. Default is 0."""
+        """The thickness of the volume beneath the surface, given in the coordinate space of the
+        mesh. If the value is 0, the material is thin-walled. Otherwise, the material is a volume
+        boundary. Default is 0.
+        """
         return self._thickness
 
     @thickness.setter
@@ -355,7 +358,9 @@ class PhysicalMaterial(Material):
     def transmission(self) -> float:
         """Degree of transmission (or optical transparency), from 0.0 to 1.0.
 
-        Thin, transparent or semitransparent, plastic or glass materials remain largely reflective even if they are fully transmissive. The transmission property can be used to model these materials.
+        Thin, transparent or semitransparent plastic or glass materials remain largely reflective,
+        even if they are fully transmissive. The transmission property can be used to model these
+        materials.
 
         When transmission is non-zero, opacity should be set to 1.
 

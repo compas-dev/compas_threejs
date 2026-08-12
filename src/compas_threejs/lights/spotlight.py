@@ -5,7 +5,6 @@ from compas.colors import Color
 from compas.geometry import Point
 
 
-
 class SpotLight:
     """
     A class representing a spotlight in a 3D environment.
