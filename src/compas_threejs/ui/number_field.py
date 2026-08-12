@@ -9,8 +9,6 @@ class NumberField(UIElement):
 
     Parameters
     ----------
-    name : str
-        The name of the number field.
     value : float, optional
         The initial value of the number field.
     min : float, optional
@@ -19,6 +17,10 @@ class NumberField(UIElement):
         The maximum value of the number field.
     step : float, optional
         The step size of the number field.
+    action : callable, optional
+        The callback invoked when the value changes.
+    label : str, optional
+        The label displayed with the number field.
 
     """
 

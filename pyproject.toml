@@ -13,7 +13,8 @@ authors = [
   { name = "Nicolas Benjamin Boscoboinik", email = "boscoboinik@arch.ethz.ch" }
 ]
 keywords = ["compas", "viewer", "threejs", "protobuf"]
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -49,6 +50,8 @@ dev = [
 
 [project.urls]
 Homepage = "https://github.com/compas-dev/compas_threejs"
+Source = "https://github.com/compas-dev/compas_threejs"
+Issues = "https://github.com/compas-dev/compas_threejs/issues"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

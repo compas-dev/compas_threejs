@@ -121,10 +121,10 @@ plugins:
                       unwrap_annotated: true
 
 nav:
-    - Home: index.md
-    - Docs:
-          - Introduction: introduction.md
-          - Get Started: installation.md
+    - Introduction: index.md
+    - Get Started:
+          - Installation: installation.md
+          - Remote Viewer: remote.md
           - Shortcuts: shortcuts.md
     - Tutorials:
           - Basic Geometry: tutorials/basic_geometry.md
