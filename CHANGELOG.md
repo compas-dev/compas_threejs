@@ -9,7 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Public package documentation and release-oriented README
+- Continuous integration for tests, documentation, and changelog verification
+
 ### Changed
+
+- Transferred project ownership and copyright to the COMPAS Association
+- Updated the bundled TypeScript viewer to the current public-release build
+- Made the default physical-material attenuation distance JSON-safe
 
 ### Removed
 
