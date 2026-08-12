@@ -1,6 +1,7 @@
 # Installation
 
-There are two ways to install `compas_threejs`: a stable release for regular users and a developer setup for those who want to contribute to the project.
+Install the released Python package with pip, or clone both repositories when
+working on the bundled TypeScript viewer.
 
 ## Stable Release
 
@@ -10,46 +11,42 @@ For the latest stable release, you can install `compas_threejs` directly from th
 pip install compas_threejs
 ```
 
-It is recommended to use a virtual environment to avoid conflicts with other packages.
+Using a virtual environment is recommended.
 
 ## Developer Setup
 
-COMPAS ThreeJS is composed by a python backend and a typescript frontend. To set up the development environment, clone the repository and install it in editable mode.
+Clone and install the Python package in editable mode:
 
 ### Python
 
 ```bash
 git clone https://github.com/compas-dev/compas_threejs.git
 cd compas_threejs
-pip install -e .
-```
-or for the full development version
-
-```bash
-pip install -e .["dev"]
+pip install -e ".[dev]"
 ```
 
 ### Typescript Frontend
 
-To set up the typescript frontend, navigate to the `frontend` directory and install the dependencies:
+The TypeScript viewer lives in a separate repository. Clone it next to the
+Python repository:
 
 ```bash
-cd frontend/compas_threejs
-npm install
-```
-
-You can now run the development server and build the static files. To start the development server.
-
-```bash
+cd ..
+git clone https://github.com/compas-dev/compas_threejs_ts.git
+cd compas_threejs_ts
+npm ci
 npm run dev
 ```
 
-To build the static files, run the following command:
+To rebuild the viewer and copy it into the Python package, run this from the
+Python repository:
 
 ```bash
-npm run build
+cd ../compas_threejs
+invoke sync-frontend
 ```
 
 ### Requirements
-- Python 3.8+
-- Node.js 14+
+
+- Python 3.9+
+- Node.js 22.12+ for frontend development

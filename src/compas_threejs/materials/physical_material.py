@@ -1,8 +1,9 @@
+import math
+from typing import Optional
 from uuid import uuid4
 
 from compas.colors import Color
 
-from .generic_material import GenericMaterial
 from .material import Material
 
 
@@ -19,7 +20,7 @@ class PhysicalMaterial(Material):
         anisotropy: float = 0.0,
         anisotropy_rotation: float = 0.0,
         attenuation_color: Color = Color.white(),
-        attenuation_distance: float = float("inf"),
+        attenuation_distance: Optional[float] = None,
         clearcoat: float = 0.0,
         clearcot_roughness: float = 0.0,
         dispersion: float = 0.0,
@@ -68,7 +69,7 @@ class PhysicalMaterial(Material):
         self.guid = str(uuid4())
 
     def as_dict(self) -> dict:
-        return {
+        data = {
             "dispatch": "material",
             "type": "physical_material",
             "geometry_guid": self._geometry_guid,
@@ -83,7 +84,6 @@ class PhysicalMaterial(Material):
             "anisotropy": self.anisotropy,
             "anisotropy_rotation": self.anisotropy_rotation,
             "attenuation_color": self.attenuation_color.hex,
-            "attenuation_distance": self.attenuation_distance,
             "clearcoat": self.clearcoat,
             "clearcoat_roughness": self.clearcot_roughness,
             "dispersion": self.dispersion,
@@ -101,6 +101,9 @@ class PhysicalMaterial(Material):
             "thickness": self.thickness,
             "transmission": self.transmission,
         }
+        if self.attenuation_distance is not None:
+            data["attenuation_distance"] = self.attenuation_distance
+        return data
 
     @property
     def anisotropy(self) -> float:
@@ -137,16 +140,26 @@ class PhysicalMaterial(Material):
         self._attenuation_color = value
 
     @property
-    def attenuation_distance(self) -> float:
-        """Density of the medium given as the average distance that light travels in the medium before interacting with a particle. The value is given in world space units, and must be greater than zero."""
+    def attenuation_distance(self) -> Optional[float]:
+        """Average distance light travels before attenuation.
+
+        ``None`` leaves the distance unbounded, matching the Three.js default.
+        Explicit values are expressed in world-space units and must be finite
+        and greater than zero.
+        """
         return self._attenuation_distance
 
     @attenuation_distance.setter
-    def attenuation_distance(self, value: float):
+    def attenuation_distance(self, value: Optional[float]):
+        if value is None:
+            self._attenuation_distance = None
+            return
         if not isinstance(value, (int, float)):
-            raise TypeError("attenuation_distance must be a number")
-        if value <= 0:
-            raise ValueError("attenuation_distance must be greater than zero")
+            raise TypeError("attenuation_distance must be a number or None")
+        if not math.isfinite(value) or value <= 0:
+            raise ValueError(
+                "attenuation_distance must be finite and greater than zero"
+            )
         self._attenuation_distance = value
 
     @property

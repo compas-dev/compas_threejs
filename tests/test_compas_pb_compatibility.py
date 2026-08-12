@@ -1,3 +1,4 @@
+import json
 import unittest
 
 import compas_pb
@@ -6,6 +7,7 @@ from compas.geometry import Frame
 from compas.geometry import Point
 from compas.geometry import Vector
 
+from compas_threejs.materials import PhysicalMaterial
 from compas_threejs.viewer.outbox import Outbox
 
 
@@ -15,6 +17,17 @@ class OfflineServer:
 
 
 class CompasPbCompatibilityTest(unittest.TestCase):
+    def test_physical_material_uses_json_safe_attenuation_distance(self):
+        default_payload = PhysicalMaterial().as_dict()
+        explicit_payload = PhysicalMaterial(attenuation_distance=12.5).as_dict()
+
+        self.assertNotIn("attenuation_distance", default_payload)
+        self.assertEqual(explicit_payload["attenuation_distance"], 12.5)
+        json.dumps(default_payload, allow_nan=False)
+
+        with self.assertRaises(ValueError):
+            PhysicalMaterial(attenuation_distance=float("inf"))
+
     def test_geometry_roundtrip(self):
         box = Box(
             1,
