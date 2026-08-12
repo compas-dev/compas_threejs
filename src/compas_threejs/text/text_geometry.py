@@ -1,5 +1,4 @@
 import uuid
-from typing import Optional
 
 from compas.geometry import Point, Vector
 
