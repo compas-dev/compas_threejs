@@ -1,5 +1,14 @@
 # COMPAS ThreeJS
 
+<p align="center">
+    <a href="https://pypi.org/project/compas-threejs/"><img src="https://img.shields.io/pypi/v/compas-threejs.svg" alt="PyPI version"></a>
+    <a href="https://pypi.org/project/compas-threejs/"><img src="https://img.shields.io/pypi/pyversions/compas-threejs.svg" alt="Python versions"></a>
+    <a href="https://github.com/compas-dev/compas_threejs/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License MIT"></a>
+    <a href="https://github.com/compas-dev/compas_threejs/actions"><img src="https://github.com/compas-dev/compas_threejs/actions/workflows/build.yml/badge.svg" alt="Build Status"></a>
+    <a href="https://compas.dev/compas_threejs"><img src="https://img.shields.io/badge/docs-latest-brightgreen.svg" alt="Documentation"></a>
+    <a href="https://compas.dev/mission-control/#compas_threejs"><img src="https://compas.dev/badge.svg" alt="Made with COMPAS"></a>
+</p>
+
 `compas_threejs` is a browser-based 3D viewer for COMPAS geometry. The Python
 package serves a bundled Three.js frontend and exchanges geometry, scene, and
 interaction messages through COMPAS Protobuf and WebSockets.
@@ -27,7 +36,7 @@ The viewer runs until interrupted with `Ctrl+C`.
 
 - [TypeScript viewer](https://github.com/compas-dev/compas_threejs_ts)
 - [COMPAS](https://github.com/compas-dev/compas)
-- [COMPAS Protobuf](https://github.com/gramaziokohler/compas_pb)
+- [COMPAS Protobuf](https://github.com/compas-dev/compas_pb)
 
 ## License
 

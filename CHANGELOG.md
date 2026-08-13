@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Aligned the release pipeline with `compas_pb` so publishing from `main` can proceed to GitHub release creation and documentation deployment
+- Added package, Python, license, build, documentation, and COMPAS badges to the README
+- Consolidated documentation automation in the release workflow
+
 ### Removed
 
 
