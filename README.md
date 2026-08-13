@@ -1,8 +1,8 @@
 # COMPAS ThreeJS
 
 <p align="center">
-    <a href="https://pypi.org/project/compas-threejs/"><img src="https://img.shields.io/pypi/v/compas-threejs.svg" alt="PyPI version"></a>
-    <a href="https://pypi.org/project/compas-threejs/"><img src="https://img.shields.io/pypi/pyversions/compas-threejs.svg" alt="Python versions"></a>
+    <a href="https://pypi.org/project/compas-threejs/"><img src="https://img.shields.io/pypi/v/compas_threejs.svg" alt="PyPI version"></a>
+    <a href="https://pypi.org/project/compas-threejs/"><img src="https://img.shields.io/pypi/pyversions/compas_threejs.svg" alt="Python versions"></a>
     <a href="https://github.com/compas-dev/compas_threejs/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License MIT"></a>
     <a href="https://github.com/compas-dev/compas_threejs/actions"><img src="https://github.com/compas-dev/compas_threejs/actions/workflows/build.yml/badge.svg" alt="Build Status"></a>
     <a href="https://compas.dev/compas_threejs"><img src="https://img.shields.io/badge/docs-latest-brightgreen.svg" alt="Documentation"></a>
