@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Removed
+
+
+## [1.0.0] - 2026-08-13
+
+### Added
+
 - Public package documentation and release-oriented README
 - Continuous integration for tests, documentation, and changelog verification
 
