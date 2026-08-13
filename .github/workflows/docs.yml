@@ -1,25 +1,19 @@
 name: docs
 
 on:
-  push:
-    branches:
-      - main
-    tags:
-      - "v*"
   pull_request:
     branches:
       - main
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: compas-dev/compas-actions.docs@v5
+      - uses: compas-dev/compas-actions/docs@v1
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          python: "3.11"
-          generator: mkdocs
+          python-version: "3.11"
           extras: dev
+          strict: false

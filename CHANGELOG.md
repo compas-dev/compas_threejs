@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Migrated CI, documentation, and trusted publishing to `compas-actions@v1` and repository-owned release pull requests
 - Transferred project ownership and copyright to the COMPAS Association
 - Updated the bundled TypeScript viewer to the current public-release build
 - Made the default physical-material attenuation distance JSON-safe
