@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Bidirectional sync between the frontend and live backend COMPAS objects: gizmo drags/rotations (`object_transform`), toolbar-added geometry (`create_geometry`), and material edits (`material_edit`) now mutate the same live objects a running script sees, instead of only flowing updates one way. See `src/compas_threejs/viewer/BIDIRECTIONAL_SYNC.md`.
+
 ### Changed
 
 - Bumped `compas-pb` to 1.2.0 (within the existing `>=1,<2` constraint), matching the version the bundled frontend's `compas-pb-ts` was upgraded to.
