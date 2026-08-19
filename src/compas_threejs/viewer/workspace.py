@@ -317,6 +317,7 @@ class Workspace:
 
         if material:
             material._geometry_guid = str(obj_id)
+            self.app.inbox.register_material(obj_id, material)
             material_dict = material.as_dict()
             material_dict["geometryBackendGuid"] = str(obj_id)
             material_data = compas_pb.pb_dump_bts(material_dict)

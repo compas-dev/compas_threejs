@@ -99,7 +99,7 @@ class App:
 
         self.server = AppServer(frontend_dir=frontend_dir)
         self.outbox = Outbox(self.server)
-        self.inbox = Inbox()
+        self.inbox = Inbox(self)
 
         # Setter Attributes
         self._loop_interval = 0.01
