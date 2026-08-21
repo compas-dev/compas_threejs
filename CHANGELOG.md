@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Bumped `compas-pb` to 1.2.0 (within the existing `>=1,<2` constraint), matching the version the bundled frontend's `compas-pb-ts` was upgraded to.
+
 ### Removed
 
 
