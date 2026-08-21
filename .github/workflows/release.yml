@@ -36,10 +36,14 @@ jobs:
     if: needs.release.outputs.is-release == 'true'
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - uses: compas-dev/compas-actions/prepare-release@v1
         with:
           python-version: "3.11"
           management-tool: uv
+          run-prebuild: "true"
 
   publish:
     needs: [release, prepare]
