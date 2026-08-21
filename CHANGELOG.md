@@ -11,8 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The bundled frontend is no longer committed to the repository. It's now built automatically at release time from the `compas_threejs_ts` version pinned in `FRONTEND_VERSION`, via a new `invoke pre-build` task wired into the release pipeline (`run-prebuild` on `prepare-release@v1`). `pip install compas_threejs` still requires no Node.js. See `FRONTEND_WORKFLOW.md`.
+
 ### Removed
 
+- `scripts/sync-frontend.py` and `sync-frontend.bat`, superseded by the `invoke sync-frontend` task.
 
 ## [1.0.1] - 2026-08-13
 
