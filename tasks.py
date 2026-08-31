@@ -3,17 +3,14 @@ from __future__ import print_function
 import os
 import shutil
 import subprocess
-import tarfile
 import tempfile
-import urllib.request
 from pathlib import Path
 
 from compas_invocations2 import build, docs, mkdocs, style, tests
 from invoke.collection import Collection
 from invoke.tasks import task
 
-FRONTEND_REPO_URL = "https://github.com/compas-dev/compas_threejs_ts.git"
-FRONTEND_RELEASE_ASSET_URL = "https://github.com/compas-dev/compas_threejs_ts/releases/download/v{version}/compas-threejs-ts-dist.tar.gz"
+FRONTEND_PACKAGE_NAME = "@compas-dev/compas-threejs-ts"
 FRONTEND_DEST = Path("src/compas_threejs/viewer/frontend")
 
 
@@ -52,35 +49,34 @@ def sync_frontend(c):
 
 @task
 def pre_build(c):
-    """Download the pinned compas_threejs_ts release build and vendor it into the package.
+    """Install the pinned compas_threejs_ts release from npm and vendor its build into the package.
 
     This is the pre-build hook the release pipeline runs (via `run-prebuild` on
     compas-dev/compas-actions/prepare-release) so that published wheels/sdists
-    bundle a prebuilt frontend and `pip install` never needs Node.js. It downloads
-    the prebuilt app that compas_threejs_ts's own release workflow attaches to the
-    tag recorded in FRONTEND_VERSION, so bumping that file is a deliberate,
-    reviewable step rather than always picking up whatever is newest, and no
-    Node.js toolchain is needed here to reproduce the build.
+    bundle a prebuilt frontend. It npm-installs compas_threejs_ts at the version
+    recorded in FRONTEND_VERSION into a throwaway prefix and copies the app build
+    out of node_modules, so bumping that file is a deliberate, reviewable step
+    rather than always picking up whatever is newest.
     """
     version = Path("FRONTEND_VERSION").read_text().strip()
-    url = FRONTEND_RELEASE_ASSET_URL.format(version=version)
+    npm = _npm_executable()
 
     with tempfile.TemporaryDirectory(prefix="compas_threejs_ts-") as tmp:
-        archive_path = Path(tmp) / "dist.tar.gz"
+        tmp_dir = Path(tmp)
 
-        print(f"Downloading compas_threejs_ts@v{version} release build...")
-        urllib.request.urlretrieve(url, archive_path)
+        print(f"Installing {FRONTEND_PACKAGE_NAME}@{version} via npm...")
+        subprocess.run(
+            [npm, "install", f"{FRONTEND_PACKAGE_NAME}@{version}", "--prefix", str(tmp_dir), "--no-save"],
+            check=True,
+        )
+
+        package_dir = tmp_dir / "node_modules" / FRONTEND_PACKAGE_NAME
 
         if FRONTEND_DEST.exists():
             shutil.rmtree(FRONTEND_DEST)
-        FRONTEND_DEST.mkdir(parents=True)
 
-        print("Extracting frontend build...")
-        with tarfile.open(archive_path) as archive:
-            try:
-                archive.extractall(FRONTEND_DEST, filter="data")
-            except TypeError:
-                archive.extractall(FRONTEND_DEST)
+        print("Copying frontend build...")
+        shutil.copytree(package_dir / "dist", FRONTEND_DEST)
 
     print(f"Frontend v{version} vendored into {FRONTEND_DEST}")
 

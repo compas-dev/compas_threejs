@@ -104,8 +104,8 @@ version and changelog, commits and tags the release, builds the distributions,
 prepares the next `Unreleased` section, and asks before pushing. Pushing the tag
 triggers the Trusted Publishing workflow.
 
-`invoke pre-build` downloads the `compas_threejs_ts` release build pinned in
-[`FRONTEND_VERSION`](FRONTEND_VERSION) and vendors it into
+`invoke pre-build` npm-installs the `compas_threejs_ts` release pinned in
+[`FRONTEND_VERSION`](FRONTEND_VERSION) and vendors its build into
 `src/compas_threejs/viewer/frontend/` so the distributions built by `invoke release`
 bundle it -- `invoke release` does not do this on its own. The automated GitHub
 Actions release pipeline runs the equivalent step itself, so this manual step is only
