@@ -15,11 +15,12 @@ That means a fresh clone has no working viewer until you run one of them once.
 
 ### `invoke pre-build` — reproduces a release build
 
-Clones `compas_threejs_ts` at the tag recorded in [`FRONTEND_VERSION`](FRONTEND_VERSION),
-builds it, and copies `dist/` into `src/compas_threejs/viewer/frontend/`. This is
-exactly what the release pipeline runs (see "Releasing" below), so it's the way to
-reproduce locally what a `pip install compas_threejs` will actually ship. No sibling
-checkout needed — it clones a throwaway copy into a temp directory.
+Downloads the prebuilt app that `compas_threejs_ts`'s own release workflow attaches
+to the tag recorded in [`FRONTEND_VERSION`](FRONTEND_VERSION) as a GitHub release
+asset, and extracts it into `src/compas_threejs/viewer/frontend/`. This is exactly
+what the release pipeline runs (see "Releasing" below), so it's the way to reproduce
+locally what a `pip install compas_threejs` will actually ship. No sibling checkout,
+Node.js, or build step needed — it just downloads and unpacks an archive.
 
 ```bash
 invoke pre-build
@@ -44,9 +45,10 @@ python examples/your_example.py   # test the integration
 
 Use this while actively developing `compas_threejs_ts` itself.
 
-Both tasks need Node.js available on `PATH` (see `compas_threejs_ts`'s `package.json`
-`engines` field for the minimum version) and, for `sync-frontend`, expect the Python
-and TypeScript repositories to be sibling directories.
+`sync-frontend` needs Node.js available on `PATH` (see `compas_threejs_ts`'s
+`package.json` `engines` field for the minimum version) and expects the Python and
+TypeScript repositories to be sibling directories. `pre-build` needs neither — it
+only downloads a prebuilt archive.
 
 ## Picking up a new compas_threejs_ts release
 
@@ -63,12 +65,12 @@ contract. Bumping `FRONTEND_VERSION` is a normal, reviewable PR.
 
 ## Releasing (maintainers)
 
-The GitHub Actions release pipeline (`.github/workflows/release.yml`) builds the
-frontend automatically: the `prepare` job sets up Node.js and calls
+The GitHub Actions release pipeline (`.github/workflows/release.yml`) vendors the
+frontend automatically: the `prepare` job calls
 `compas-dev/compas-actions/prepare-release@v1` with `run-prebuild: "true"`, which runs
 `invoke pre-build` before building the sdist/wheel. So published distributions always
-bundle the frontend pinned in `FRONTEND_VERSION` at release time, and `pip install
-compas_threejs` never needs Node.js on the end user's machine.
+bundle the frontend pinned in `FRONTEND_VERSION` at release time, and neither the
+release pipeline nor `pip install compas_threejs` ever needs Node.js.
 
 If you release locally instead (e.g. via `invoke release`), run `invoke pre-build`
 first — that path does not run it for you.
@@ -77,13 +79,15 @@ first — that path does not run it for you.
 
 ### "npm was not found on PATH"
 
-Install Node.js (matching `compas_threejs_ts`'s `engines.node` requirement) and make
-sure `npm` is on `PATH`.
+This only affects `sync-frontend`. Install Node.js (matching `compas_threejs_ts`'s
+`engines.node` requirement) and make sure `npm` is on `PATH`.
 
-### `invoke pre-build` fails to clone
+### `invoke pre-build` fails to download
 
 Check that `FRONTEND_VERSION` names a tag that actually exists on
-`compas_threejs_ts` (tags are `vX.Y.Z`, e.g. `v1.2.0`).
+`compas_threejs_ts` (tags are `vX.Y.Z`, e.g. `v1.2.0`) and that its release has a
+`compas-threejs-ts-dist.tar.gz` asset attached — this is what release-please's
+`release.yml` workflow attaches in that repo.
 
 ### "PlaneHelpers" import warnings during build
 

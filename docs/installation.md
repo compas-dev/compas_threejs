@@ -26,8 +26,9 @@ pip install -e ".[dev]"
 ```
 
 The built frontend isn't committed to this repo, so the viewer won't render yet.
-Run `invoke pre-build` to fetch and build the pinned `compas_threejs_ts` release (no
-extra clone needed), or see below to build against a local frontend checkout instead.
+Run `invoke pre-build` to download the pinned `compas_threejs_ts` release build (no
+extra clone or Node.js needed), or see below to build against a local frontend
+checkout instead.
 See [FRONTEND_WORKFLOW.md](../FRONTEND_WORKFLOW.md) for details.
 
 ### Typescript Frontend
