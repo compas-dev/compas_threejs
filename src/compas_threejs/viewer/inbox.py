@@ -39,6 +39,25 @@ class Inbox:
     def register_button(self, guid, action):
         self.buttons[guid] = action
 
+    def forget_geometry(self, obj_id: str) -> None:
+        """
+        Drops every registry entry register_geometry created for `obj_id` - called by
+        Workspace.remove_object, whose own cleanup only forgets the *outbox*'s persisted
+        material/visibility state (see there) and never touched these inbox-side registries.
+        Without this, a removed object's geometry/metadata/action-callback registrations stay
+        forever, and re-adding the same guid later (a Brep re-registered after
+        to_viewmesh()) would otherwise still work, but at the cost of a permanently growing
+        `buttons`/`object_actions_registry` for any workflow that repeatedly removes and
+        re-adds objects (e.g. a live-editable object action, or a viewer that clears and
+        rebuilds part of its own scene).
+        """
+        self.geometry_registry.pop(obj_id, None)
+        self.metadata_registry.pop(obj_id, None)
+        actions = self.object_actions_registry.pop(obj_id, None)
+        if actions:
+            for action in actions:
+                self.buttons.pop(str(action.guid), None)
+
     def register_action(self, name, callable_function):
         """Manually registers a callable against a fixed action name.
 

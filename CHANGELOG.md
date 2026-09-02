@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Bumped `compas-pb` to 1.2.0 (within the existing `>=1,<2` constraint), matching the version the bundled frontend's `compas-pb-ts` was upgraded to.
+- Fixed `Workspace.remove_object()` never clearing an object's `Inbox`-side registrations (`geometry_registry`, `metadata_registry`, `object_actions_registry`, the guid-keyed `buttons` callback map, and a removed `Brep`'s `brep_viewmesh_registry` entry) - only the `Outbox`'s persisted material/visibility slots were forgotten, so any workflow that repeatedly removes and re-adds objects under the same guid (e.g. a viewer that rebuilds part of its own scene, or an object action whose geometry gets refreshed to pick up a new default value) leaked a growing set of stale entries, unbounded, for the life of the process.
 
 ### Removed
 
