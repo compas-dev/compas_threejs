@@ -82,8 +82,12 @@ If you modify the sibling `compas_threejs_ts` repository:
    cd ../compas_threejs
    invoke sync-frontend
    ```
-3. Commit the TypeScript source in its repository and the generated files under
-   `src/compas_threejs/viewer/frontend/` in this repository.
+3. Commit and release the TypeScript source in its own repository. The build
+   `invoke sync-frontend` copied in is only for local testing here -- it is **not**
+   committed to this repository (see [FRONTEND_WORKFLOW.md](FRONTEND_WORKFLOW.md)).
+4. Once `compas_threejs_ts` has a new tagged release, bump
+   [`FRONTEND_VERSION`](FRONTEND_VERSION) in this repository to that version, verify
+   with `invoke pre-build`, and commit the bump as its own reviewable PR.
 
 ## Releasing (maintainers)
 
@@ -91,6 +95,7 @@ Start from a clean, up-to-date `main` branch with all changes listed under
 `Unreleased` in `CHANGELOG.md`, then run:
 
 ```bash
+invoke pre-build
 invoke release --release-type=minor
 ```
 
@@ -98,6 +103,13 @@ Use `major`, `minor`, or `patch` as appropriate. The task updates the package
 version and changelog, commits and tags the release, builds the distributions,
 prepares the next `Unreleased` section, and asks before pushing. Pushing the tag
 triggers the Trusted Publishing workflow.
+
+`invoke pre-build` npm-installs the `compas_threejs_ts` release pinned in
+[`FRONTEND_VERSION`](FRONTEND_VERSION) and vendors its build into
+`src/compas_threejs/viewer/frontend/` so the distributions built by `invoke release`
+bundle it -- `invoke release` does not do this on its own. The automated GitHub
+Actions release pipeline runs the equivalent step itself, so this manual step is only
+needed for local releases.
 
 ## Submitting Changes
 
