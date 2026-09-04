@@ -357,8 +357,10 @@ class Workspace:
     def remove_object(self, geometry):
         """Removes a geometry object from this workspace."""
         # If the geometry is a Brep, remove its viewmesh from the registry
+        brep_id = None
         if isinstance(geometry, Brep):
-            viewmesh = self.app.inbox.brep_viewmesh_registry.get((self.workspace_id, geometry.guid))
+            brep_id = geometry.guid
+            viewmesh = self.app.inbox.brep_viewmesh_registry.get((self.workspace_id, brep_id))
             if viewmesh:
                 geometry = viewmesh
 
@@ -372,6 +374,11 @@ class Workspace:
         # for whichever it never had.
         self.app.outbox.forget(("material", obj_id), workspace_id=self.workspace_id)
         self.app.outbox.forget(("visibility", obj_id), workspace_id=self.workspace_id)
+        # Drops the inbox-side registrations too (geometry/metadata/action-callbacks) - see
+        # Inbox.forget_geometry for why that matters on its own, not just as an outbox mirror.
+        self.app.inbox.forget_geometry(str(obj_id))
+        if brep_id is not None:
+            self.app.inbox.brep_viewmesh_registry.pop((self.workspace_id, brep_id), None)
 
     def hide_geometry(self, geometry):
         """Hides a geometry object in this workspace without removing it.
