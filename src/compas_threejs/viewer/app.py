@@ -392,6 +392,11 @@ class App:
         """Updates an existing geometry object in the main workspace."""
         self.main.update_geometry(geometry)
 
+    def transform_geometry(self, geometry, transformation):
+        """Applies a transformation to an existing geometry object in the main workspace.
+        See `Workspace.transform_geometry`."""
+        self.main.transform_geometry(geometry, transformation)
+
     def remove_object(self, geometry):
         """Removes a geometry object from the main workspace."""
         self.main.remove_object(geometry)

@@ -18,21 +18,27 @@ class Outbox:
         persist: bool = True,
         workspace_id: str = "main",
         remove_key=None,
+        broadcast: bool = True,
     ):
         """Sends raw binary data now if the server is running, otherwise queues it.
 
         `remove_key`, if given, tells the server to drop that key from its persisted scene
         state - used so a removed object's earlier "add" broadcast isn't replayed to clients
         that connect (or reconnect) after the removal.
+
+        `broadcast`, if False, still persists `binary_data` under `obj_id` for future
+        reconnects but skips sending it to clients already connected - used to silently
+        refresh the reconnect-replay snapshot after already notifying live clients through
+        a smaller message (see `Workspace.transform_geometry`).
         """
         loop = self.server.get_loop()
         if loop:
             asyncio.run_coroutine_threadsafe(
-                self.server.broadcast(binary_data, obj_id, persist=persist, workspace_id=workspace_id, remove_key=remove_key),
+                self.server.broadcast(binary_data, obj_id, persist=persist, workspace_id=workspace_id, remove_key=remove_key, broadcast=broadcast),
                 loop,
             )
         else:
-            self._queue.append((binary_data, obj_id, persist, workspace_id, remove_key))
+            self._queue.append((binary_data, obj_id, persist, workspace_id, remove_key, broadcast))
 
     def send_dict(self, message: dict, *, workspace_id: str = "main", remove_key=None, obj_id=None):
         """Serializes a dictionary message and sends it.
@@ -64,16 +70,16 @@ class Outbox:
                 loop,
             )
         else:
-            self._queue.append((None, "", False, workspace_id, key))
+            self._queue.append((None, "", False, workspace_id, key, True))
 
     def flush(self):
         """Sends any messages that were queued before the server was ready."""
         loop = self.server.get_loop()
         if not loop:
             return
-        for binary_data, obj_id, persist, workspace_id, remove_key in self._queue:
+        for binary_data, obj_id, persist, workspace_id, remove_key, broadcast in self._queue:
             asyncio.run_coroutine_threadsafe(
-                self.server.broadcast(binary_data, obj_id, persist=persist, workspace_id=workspace_id, remove_key=remove_key),
+                self.server.broadcast(binary_data, obj_id, persist=persist, workspace_id=workspace_id, remove_key=remove_key, broadcast=broadcast),
                 loop,
             )
         self._queue.clear()

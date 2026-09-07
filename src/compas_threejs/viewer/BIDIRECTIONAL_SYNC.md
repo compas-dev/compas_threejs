@@ -205,6 +205,56 @@ via the simulated `material_edit` path, then triggering the object's
 existing "Make it blue" action and confirming it saw the toolbar edit's
 changes.
 
+## The reverse direction: `Workspace.transform_geometry`
+
+Everything above is browser → backend. `Workspace.transform_geometry(geometry,
+transformation)` is the mirror image: a script applies a `compas.geometry.Transformation`
+(or `Translation`/`Rotation`, both subclasses) to an object already in the viewer, and only
+the transform — not the full geometry — is sent to the frontend.
+
+```mermaid
+sequenceDiagram
+    participant Script as Script (Python)
+    participant Workspace as Workspace.transform_geometry()
+    participant Outbox as Outbox
+    participant Browser as Browser (three.js)
+
+    Script->>Workspace: transform_geometry(geometry, transformation)
+    Workspace->>Workspace: geometry.transform(transformation) — in place
+    Workspace->>Outbox: send_dict({dispatch: "handle_geometry", type: "apply_transform", guid, matrix})
+    Outbox-->>Browser: small delta, applied via Object3D.applyMatrix4 (no mesh rebuild)
+    Workspace->>Outbox: send_bytes(pb_dump_bts(geometry), guid, broadcast=False)
+    Outbox->>Outbox: refreshes the reconnect-replay snapshot only — nothing sent live
+```
+
+Like `_handle_object_transform`, the mutation is applied **in place** via
+`geometry.transform(transformation)` — not a replacement — so anything else holding a
+reference to the same object (an `App.loop` callback, a script's local variable) sees the
+change automatically. Unlike `_handle_object_transform`'s delta, `matrix` here is not
+relative to the object's previous frontend state - it's exactly the `Transformation` the
+caller passed in, matching what `geometry.transform()` just did backend-side.
+
+**Brep exception**: a Brep's displayed viewmesh is a cached mesh generated independently of
+the Brep's own frame (see `add_geometry`/`update_geometry`). A rigid transform on the Brep
+doesn't rigidly move that cached mesh, so there's no lightweight path for Breps -
+`transform_geometry` detects this and falls back to `update_geometry` (full regenerate +
+resend), the same as calling it directly would.
+
+**Reconnect correctness**: live clients get the small delta message above; a client that
+connects *after* several `transform_geometry()` calls needs to see the object's *current*
+position, not the one from its original `add_geometry` broadcast. `transform_geometry`
+handles this by also re-serializing the geometry into the persisted reconnect-replay
+snapshot via `Outbox.send_bytes(..., broadcast=False)` — a new `broadcast` parameter
+threaded through `Outbox.send_bytes` → `AppServer.broadcast` that still updates
+`AppServer.workspace_states[workspace_id][guid]` but skips sending anything to
+already-connected clients (who already got the small delta live). This is the same
+`persist`/`remove_key` bookkeeping `AppServer.broadcast` already does for every other
+message, just decoupled from "and also broadcast it live."
+
+See the frontend doc's `apply_transform` section for the receiving side, and note it does
+**not** reuse `Inbox._handle_object_transform`'s delta-composition math — that machinery
+solves a different problem (interpreting an already-applied drag), not sending one.
+
 ## Wiring notes
 
 - `Inbox.__init__` now takes an optional `app=None` back-reference
@@ -215,14 +265,18 @@ changes.
   never routes inbound frontend messages today, so this is a no-op there,
   not a gap.
 - No changes were needed in `Outbox`, `AppServer`, or the websocket
-  plumbing — all three new handlers ride the existing inbound
+  plumbing for these three handlers — all three ride the existing inbound
   JSON-text-frame path (`AppServer._websocket_endpoint` → `App.on_message`
   → `Inbox.handle`) and existing outbound broadcast/persist machinery.
+  `Workspace.transform_geometry` (above) is the one addition here that did
+  need a small `Outbox`/`AppServer` change (a `broadcast` parameter), for
+  reconnect correctness on the *outbound* side - see its own section.
 
 ## Verifying changes here
 
-No test suite exists in this repo (see `CONTEXTE.md`). Verification during
-this work was ad hoc: start a real `App`, call
+`object_transform`/`create_geometry`/`material_edit` predate this repo's
+test suite (`tests/test_compas_pb_compatibility.py`) and were verified ad
+hoc during that work: start a real `App`, call
 `app.inbox._handle_object_transform(...)` /
 `_handle_create_geometry(...)` / `_handle_material_edit(...)` directly with
 a hand-built message dict (exactly what `App.on_message` would decode), and
@@ -234,3 +288,9 @@ names — the frontend build must be rebuilt and synced into
 local `compas_threejs_ts` checkout, or `invoke pre-build` for the pinned
 release version; see `FRONTEND_WORKFLOW.md`) before any of this is
 reachable from a real browser session.
+
+`Workspace.transform_geometry` does have automated coverage:
+`test_transform_geometry_sends_delta_and_refreshes_snapshot` in
+`tests/test_compas_pb_compatibility.py`, run with `pytest tests/` -
+asserts the geometry mutates in place, the queued delta message has the
+right `matrix`, and the queued snapshot refresh has `broadcast=False`.
