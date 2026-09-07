@@ -1,20 +1,40 @@
 import json
+import threading
 
+from compas.colors import Color
+from compas.geometry import Box
+from compas.geometry import Frame
+from compas.geometry import Point
+from compas.geometry import Sphere
+from compas.geometry import Transformation
 from rich.console import Console
 
+from compas_threejs.materials import Material
+
 console = Console()
+
+# Maps a frontend-creatable type name to its COMPAS constructor and the numeric
+# parameter names a "create_geometry" message is allowed to set on it.
+_CREATABLE_TYPES = {
+    "box": (Box, ("xsize", "ysize", "zsize")),
+    "sphere": (Sphere, ("radius",)),
+    "point": (Point, ()),
+}
 
 
 class Inbox:
     """Routes messages coming in from the frontend and owns the registries needed to resolve them."""
 
-    def __init__(self):
+    def __init__(self, app=None):
+        self.app = app  # back-reference to the owning App, used to reach Workspace.update_geometry
         self.buttons = dict()
         self.geometry_registry = dict()
+        self.material_registry = dict()
         self.metadata_registry = dict()
         self.object_actions_registry = dict()
         self.brep_viewmesh_registry = dict()  # brep_id -> viewmesh
         self.action_registry = dict()  # action name -> callable, for manually-registered actions
+        self.lock = threading.Lock()  # guards geometry mutation against concurrent App.loop callbacks
 
         self._handlers = {
             "ui_callback": self._handle_ui_callback,
@@ -22,6 +42,9 @@ class Inbox:
             "object_action_callback": self._handle_object_action_callback,
             "loaded_json": self._handle_loaded_json,
             "other_action": self._handle_other_action,
+            "object_transform": self._handle_object_transform,
+            "create_geometry": self._handle_create_geometry,
+            "material_edit": self._handle_material_edit,
         }
 
     # ---- REGISTRATION (called by Workspace when something is sent out) -------------------------
@@ -35,6 +58,9 @@ class Inbox:
             self.object_actions_registry[obj_id] = actions
             for action in actions:
                 self.buttons[str(action.guid)] = action.action
+
+    def register_material(self, obj_id, material):
+        self.material_registry[str(obj_id)] = material
 
     def register_button(self, guid, action):
         self.buttons[guid] = action
@@ -146,6 +172,109 @@ class Inbox:
             self.buttons[action_id](obj, value)
         else:
             console.log(f"[yellow]Unrecognized action or missing handler for action ID: {action_id}[/yellow]")
+
+    def _handle_object_transform(self, message, outbox, workspace_id):
+        """Applies a gizmo edit made in the frontend to the corresponding live backend object.
+
+        `matrix` is a delta transform (a 4x4 nested list, row-major) - the frontend computes
+        it as (matrix after drag) * (matrix before drag)^-1, so it represents the world-space
+        change the drag applied, regardless of where the object started. Applying it in place
+        (rather than replacing the registered object) means anything else still mutating this
+        same object - e.g. a `App.loop` callback rotating it every frame - continues from the
+        new position instead of the object snapping back.
+        """
+        guid = message.get("guid")
+        matrix = message.get("matrix")
+        console.log(f"[blue]Received object transform from frontend. Object ID: {guid}[/blue]")
+        geometry = self.geometry_registry.get(guid)
+        if geometry is None or matrix is None:
+            console.log(f"[yellow]Unrecognized object_transform target: {guid}[/yellow]")
+            return
+
+        transformation = Transformation.from_matrix(matrix)
+        with self.lock:
+            geometry.transform(transformation)
+
+        if self.app is not None:
+            self.app.get_workspace(workspace_id).update_geometry(geometry)
+
+    def _handle_create_geometry(self, message, outbox, workspace_id):
+        """Creates a new backend geometry object from a frontend "Add Box/Sphere/Point" action.
+
+        Reuses `Workspace.add_geometry` for the outbound side, so the created object is
+        registered and broadcast exactly like anything added by a running script - the
+        frontend needs no special handling to receive it, and it persists across
+        reconnects the same way any other geometry does.
+        """
+        type_name = message.get("type")
+        entry = _CREATABLE_TYPES.get(type_name)
+        if entry is None:
+            console.log(f"[yellow]Unrecognized create_geometry type: {type_name}[/yellow]")
+            return
+        if self.app is None:
+            console.log("[yellow]create_geometry received but Inbox has no App reference[/yellow]")
+            return
+
+        constructor, allowed_params = entry
+        point = message.get("point") or [0.0, 0.0, 0.0]
+        params = message.get("params") or {}
+        kwargs = {name: params.get(name, 1.0) for name in allowed_params}
+
+        if type_name == "point":
+            geometry = constructor(*point)
+        else:
+            frame = Frame(Point(*point), [1, 0, 0], [0, 1, 0])
+            geometry = constructor(frame=frame, **kwargs)
+
+        console.log(f"[blue]Creating {type_name} from frontend at {point}[/blue]")
+        self.app.get_workspace(workspace_id).add_geometry(geometry, Material())
+
+    def _handle_material_edit(self, message, outbox, workspace_id):
+        """Applies a toolbar material edit (color/metalness/roughness) made in the frontend
+        to the corresponding live backend Material instance.
+
+        Reuses `Workspace.update_material` for the outbound side - the same method
+        `examples/objects_action.py`'s "Make it blue" action already calls - so an edit made
+        here and a script-driven update both end up mutating and broadcasting through the
+        same live Material instance rather than drifting out of sync.
+        """
+        guid = message.get("guid")
+        if self.geometry_registry.get(guid) is None or self.app is None:
+            console.log(f"[yellow]Unrecognized material_edit target: {guid}[/yellow]")
+            return
+
+        material = self.material_registry.get(guid)
+        if material is None:
+            material = Material()
+            material._geometry_guid = str(guid)
+            self.material_registry[guid] = material
+
+        updates = {}
+        if "color" in message:
+            try:
+                updates["color"] = Color.from_hex(message["color"])
+            except (TypeError, ValueError) as error:
+                console.log(f"[yellow]Ignoring invalid material_edit color for {guid}: {error}[/yellow]")
+                return
+        if "metalness" in message:
+            updates["metalness"] = message["metalness"]
+        if "roughness" in message:
+            updates["roughness"] = message["roughness"]
+
+        # Apply through the property setters (which validate ranges) against a rollback
+        # snapshot, so a single invalid field can't leave `material` half-updated while
+        # still skipping the broadcast below - either every field commits, or none do.
+        original = {name: getattr(material, name) for name in updates}
+        try:
+            for name, value in updates.items():
+                setattr(material, name, value)
+        except (TypeError, ValueError) as error:
+            for name, value in original.items():
+                setattr(material, name, value)
+            console.log(f"[yellow]Ignoring invalid material_edit for {guid}: {error}[/yellow]")
+            return
+
+        self.app.get_workspace(workspace_id).update_material(material)
 
     def _handle_loaded_json(self, message, outbox, workspace_id):
         console.log("[blue]Received loaded JSON from frontend.[/blue]")

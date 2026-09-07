@@ -6,6 +6,7 @@ from typing import Union
 import compas_pb
 from compas.colors import Color
 from compas.geometry import Point
+from compas.geometry import Transformation
 from compas_brep import Brep
 from rich.console import Console
 
@@ -317,6 +318,7 @@ class Workspace:
 
         if material:
             material._geometry_guid = str(obj_id)
+            self.app.inbox.register_material(obj_id, material)
             material_dict = material.as_dict()
             material_dict["geometryBackendGuid"] = str(obj_id)
             material_data = compas_pb.pb_dump_bts(material_dict)
@@ -353,6 +355,44 @@ class Workspace:
 
         binary_data = compas_pb.pb_dump_bts(geometry)
         self.app.outbox.send_bytes(binary_data, obj_id, workspace_id=self.workspace_id)
+
+    def transform_geometry(self, geometry, transformation: Transformation):
+        """
+        Applies a transformation to an existing geometry object and sends only the
+        transform to the frontend, instead of re-sending the full geometry.
+
+        Parameters
+        ----------
+        geometry : compas.geometry.Geometry | compas.datastructures.Mesh
+            The geometry object to transform. Must already have been added via
+            `add_geometry`.
+        transformation : compas.geometry.Transformation
+            The transformation to apply. `Translation` and `Rotation` are also
+            accepted, since both are subclasses of `Transformation`.
+        """
+        obj_id = geometry.guid
+
+        if isinstance(geometry, Brep):
+            # A Brep's displayed viewmesh is a cached mesh generated independently
+            # of the Brep's own frame (see add_geometry/update_geometry) - a rigid
+            # transform on the Brep doesn't rigidly move that cached mesh, so
+            # there's no lightweight path here; fall back to a full regenerate+resend.
+            geometry.transform(transformation)
+            self.update_geometry(geometry)
+            return
+
+        geometry.transform(transformation)
+
+        self.app.outbox.send_dict(
+            {"dispatch": "handle_geometry", "type": "apply_transform", "guid": str(obj_id), "matrix": transformation.matrix},
+            workspace_id=self.workspace_id,
+        )
+        # Refresh the reconnect-replay snapshot to the new position too, so a client
+        # that connects after this call sees the object where it actually is -
+        # without re-broadcasting the full geometry to clients that already applied
+        # the small delta above live.
+        binary_data = compas_pb.pb_dump_bts(geometry)
+        self.app.outbox.send_bytes(binary_data, obj_id, workspace_id=self.workspace_id, broadcast=False)
 
     def remove_object(self, geometry):
         """Removes a geometry object from this workspace."""

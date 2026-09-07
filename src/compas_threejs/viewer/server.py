@@ -99,8 +99,14 @@ class AppServer:
         persist: bool = True,
         workspace_id: str = "main",
         remove_key=None,
+        broadcast: bool = True,
     ):
-        """Broadcast binary data or dictionary configurations cleanly to workspace clients."""
+        """Broadcast binary data or dictionary configurations cleanly to workspace clients.
+
+        `broadcast`, if False, still applies the persist/remove_key bookkeeping above but
+        skips sending anything to already-connected clients - used to silently refresh a
+        persisted snapshot for future reconnects only (see `Outbox.send_bytes`).
+        """
         if remove_key is not None:
             # Drops the object's earlier persisted "add" broadcast so it isn't replayed to
             # clients that connect (or reconnect) after this removal.
@@ -111,6 +117,9 @@ class AppServer:
 
         if binary_data is None:
             # Pure state cleanup (see Outbox.forget) - nothing to broadcast live.
+            return
+
+        if not broadcast:
             return
 
         target_clients = self.workspaces[workspace_id]

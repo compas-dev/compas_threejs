@@ -334,6 +334,7 @@ storybook-static/
 temp/
 
 
-# Frontend is built from external repo and committed to this repo
-# Uncomment the line below if you want to gitignore the frontend build:
-# src/compas_threejs/viewer/frontend/
+# Frontend is built from the compas_threejs_ts release pinned in FRONTEND_VERSION.
+# Run `invoke pre-build` (CI/release) or `invoke sync-frontend` (local dev against
+# a sibling checkout) to populate it -- see FRONTEND_WORKFLOW.md.
+src/compas_threejs/viewer/frontend/

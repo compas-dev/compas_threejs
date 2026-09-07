@@ -99,7 +99,7 @@ class App:
 
         self.server = AppServer(frontend_dir=frontend_dir)
         self.outbox = Outbox(self.server)
-        self.inbox = Inbox()
+        self.inbox = Inbox(self)
 
         # Setter Attributes
         self._loop_interval = 0.01
@@ -391,6 +391,11 @@ class App:
     def update_geometry(self, geometry):
         """Updates an existing geometry object in the main workspace."""
         self.main.update_geometry(geometry)
+
+    def transform_geometry(self, geometry, transformation):
+        """Applies a transformation to an existing geometry object in the main workspace.
+        See `Workspace.transform_geometry`."""
+        self.main.transform_geometry(geometry, transformation)
 
     def remove_object(self, geometry):
         """Removes a geometry object from the main workspace."""
