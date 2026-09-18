@@ -13,6 +13,71 @@ from compas_threejs.materials import Material
 
 console = Console()
 
+_SCALE_TOLERANCE = 1e-9
+
+
+def _apply_transform_with_scale(geometry, transformation) -> None:
+    """Applies `transformation` to `geometry`, resizing it too if the transformation
+    carries a scale component (e.g. a TransformControls "scale" gizmo drag).
+
+    `Shape.transform` (the base class for Box/Sphere/...) only ever applies to the
+    shape's frame, and explicitly does not support scale - see its own docstring:
+    "only (combinations of) translations and rotations are supported. To scale a
+    shape, use the Shape.scale method." A scale-mode gizmo drag produces exactly the
+    kind of delta transform that docstring warns about, so passing it straight to
+    `.transform()` silently drops the resize entirely (confirmed empirically:
+    `Box.xsize` never changes).
+    """
+    scale, _shear, rotation, translation, _projection = transformation.decomposed()
+    sx, sy, sz = scale.matrix[0][0], scale.matrix[1][1], scale.matrix[2][2]
+    has_scale = not (
+        abs(sx - 1.0) < _SCALE_TOLERANCE
+        and abs(sy - 1.0) < _SCALE_TOLERANCE
+        and abs(sz - 1.0) < _SCALE_TOLERANCE
+    )
+
+    if not has_scale:
+        # No resize at all - Shape.transform (== frame.transform) already does
+        # exactly the right thing here: moves the point, rotates the axes.
+        geometry.transform(translation * rotation)
+        return
+
+    if not hasattr(geometry, "frame"):
+        # Not a Shape (e.g. a Point/Mesh/Polyline, transformed via its own raw
+        # coordinates) - unlike Shape, these support a general affine `.transform()`
+        # including scale directly (Shape is the one deliberate exception - see its
+        # own docstring above), so the full delta can just be applied as-is.
+        geometry.transform(transformation)
+        return
+
+    # A Shape (Box, Sphere, ...) being resized: frame.point needs the *full* delta
+    # (translation AND scale) applied directly - not `Shape.transform()` (drops scale
+    # entirely, see above), and not just the rigid translation*rotation part either.
+    # A scale-mode gizmo drag keeps the object's own pivot fixed and only changes its
+    # scale factor, so relative to the object's own drag-start frame this delta is a
+    # "scale about that original point" transform (in 1D: T(pos*(1-k)) * S(k)) -
+    # applying only the rigid part to the point recovers pos*(2-k), not pos: a visible
+    # jump to the wrong location, not the pivot-preserving resize the gizmo showed.
+    # Applying the full delta to the point is the correct way to relocate a point
+    # under a pivot-relative scale; the frame's own axes only ever need the rotation
+    # part (a Vector's `.transformed` already ignores translation, and has no "size"
+    # for scale to distort).
+    geometry.frame.point = geometry.frame.point.transformed(transformation)
+    geometry.frame.xaxis = geometry.frame.xaxis.transformed(rotation)
+    geometry.frame.yaxis = geometry.frame.yaxis.transformed(rotation)
+
+    try:
+        geometry.scale(sx, sy, sz)
+    except TypeError:
+        # Uniform-scale-only geometry (e.g. Sphere.scale(factor)) - average the three
+        # factors rather than silently dropping a non-uniform resize on the floor.
+        geometry.scale((sx + sy + sz) / 3.0)
+    except NotImplementedError:
+        console.log(
+            f"[yellow]{type(geometry).__name__} does not support scaling - resize from this drag was dropped[/yellow]"
+        )
+
+
 # Maps a frontend-creatable type name to its COMPAS constructor and the numeric
 # parameter names a "create_geometry" message is allowed to set on it.
 _CREATABLE_TYPES = {
@@ -193,7 +258,7 @@ class Inbox:
 
         transformation = Transformation.from_matrix(matrix)
         with self.lock:
-            geometry.transform(transformation)
+            _apply_transform_with_scale(geometry, transformation)
 
         if self.app is not None:
             self.app.get_workspace(workspace_id).update_geometry(geometry)
