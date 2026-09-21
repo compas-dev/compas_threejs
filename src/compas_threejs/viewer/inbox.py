@@ -65,6 +65,39 @@ class Inbox:
     def register_button(self, guid, action):
         self.buttons[guid] = action
 
+    def register_toggle_action(self, name, callable_function):
+        """Manually registers a callable against a fixed action name for a checkbox-like
+        toggle control, dispatched the same way a `Checkbox` added via `add_ui_element`
+        already is - a `dispatch: "ui_callback"` message carrying `action: name` and the
+        toggle's current `value` (see `_handle_ui_callback`) - but, unlike `Checkbox`, with
+        no render side effect of its own: this only ever touches `self.buttons`, the same
+        registry `register_button` does, never the `add_ui_element`/`send_bytes` call that
+        actually pushes a widget to the frontend. Used to wire a backend callback to a
+        checkbox-like control the *frontend* defines and renders itself - e.g. a custom or
+        npm-installed toolbar button - which calls `runtime.handleUiAction(name, value)` on
+        toggle using this same `name`.
+        """
+        self.register_button(name, callable_function)
+
+    def register_select_action(self, name, callable_function):
+        """Manually registers a callable against a fixed action name for a select/dropdown
+        control - see `register_toggle_action` just above, which this mirrors exactly (a
+        `Selection` added via `add_ui_element` dispatches through the same `ui_callback`
+        path). Kept as a separate method from `register_toggle_action` purely for call-site
+        clarity about which kind of frontend control is being wired up; both currently do
+        the same thing.
+        """
+        self.register_button(name, callable_function)
+
+    def unregister_action(self, name) -> None:
+        """Drops a callable previously registered via `register_action`,
+        `register_toggle_action`, or `register_select_action` (whichever registry it
+        happens to be in - a given `name` is only ever registered in one). A no-op if
+        `name` isn't registered in either.
+        """
+        self.action_registry.pop(name, None)
+        self.buttons.pop(name, None)
+
     def forget_geometry(self, obj_id: str) -> None:
         """
         Drops every registry entry register_geometry created for `obj_id` - called by
