@@ -12,6 +12,7 @@ from rich.console import Console
 
 from compas_threejs.lights.ambientlight import AmbientLight
 from compas_threejs.lights.sunlight import Sunlight
+from compas_threejs.viewer.toolbar import Toolbar
 
 console = Console()
 
@@ -64,6 +65,7 @@ class Workspace:
     def __init__(self, app, workspace_id: str = "main"):
         self.app = app
         self.workspace_id = workspace_id
+        self.toolbar = Toolbar(self)
 
         self._background_color = Color(0.9, 0.9, 0.9)
         self._dark_mode = False

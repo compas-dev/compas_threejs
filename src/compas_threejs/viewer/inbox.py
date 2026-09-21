@@ -67,13 +67,15 @@ class Inbox:
 
     def register_toggle_action(self, name, callable_function):
         """Manually registers a callable against a fixed action name for a checkbox-like
-        toggle control, dispatched exactly the way a `Checkbox` added via `add_ui_element`
+        toggle control, dispatched the same way a `Checkbox` added via `add_ui_element`
         already is - a `dispatch: "ui_callback"` message carrying `action: name` and the
         toggle's current `value` (see `_handle_ui_callback`) - but, unlike `Checkbox`, with
         no render side effect of its own: this only ever touches `self.buttons`, the same
         registry `register_button` does, never the `add_ui_element`/`send_bytes` call that
-        actually pushes a widget to the frontend. Used by `Toolbar`, which renders this
-        item itself via the `toolbar` dispatch instead.
+        actually pushes a widget to the frontend. Used to wire a backend callback to a
+        checkbox-like control the *frontend* defines and renders itself - e.g. a custom or
+        npm-installed toolbar button - which calls `runtime.handleUiAction(name, value)` on
+        toggle using this same `name`.
         """
         self.register_button(name, callable_function)
 
@@ -82,18 +84,16 @@ class Inbox:
         control - see `register_toggle_action` just above, which this mirrors exactly (a
         `Selection` added via `add_ui_element` dispatches through the same `ui_callback`
         path). Kept as a separate method from `register_toggle_action` purely for call-site
-        clarity about which kind of `Toolbar` item is being wired up; both currently do the
-        same thing.
+        clarity about which kind of frontend control is being wired up; both currently do
+        the same thing.
         """
         self.register_button(name, callable_function)
 
     def unregister_action(self, name) -> None:
         """Drops a callable previously registered via `register_action`,
         `register_toggle_action`, or `register_select_action` (whichever registry it
-        happens to be in - a given `name` is only ever registered in one). Used by
-        `Toolbar.remove` so a removed item's id can be reused later without the old
-        callback lingering forever in either registry. A no-op if `name` isn't
-        registered in either.
+        happens to be in - a given `name` is only ever registered in one). A no-op if
+        `name` isn't registered in either.
         """
         self.action_registry.pop(name, None)
         self.buttons.pop(name, None)
