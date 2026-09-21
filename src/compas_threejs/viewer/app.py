@@ -378,6 +378,38 @@ class App:
         """
         self.inbox.register_action(name, callable_function)
 
+    def register_toggle_action(self, name: str, callable_function):
+        """
+        Manually registers a callable against a fixed action name for a checkbox-like toggle
+        control, dispatched the same way a `Checkbox` added via `add_ui_element` already is
+        (a `dispatch: "ui_callback"` message), but with no render side effect of its own -
+        see `Inbox.register_toggle_action`. Used by `Toolbar.add_checkbox`, which renders the
+        control itself instead.
+
+        Parameters
+        ----------
+        name : str
+            The action name the frontend sends in its message.
+        callable_function : callable
+            Called with the toggle's current value when the action is received.
+        """
+        self.inbox.register_toggle_action(name, callable_function)
+
+    def register_select_action(self, name: str, callable_function):
+        """
+        Manually registers a callable against a fixed action name for a select/dropdown
+        control - see `register_toggle_action` just above, which this mirrors exactly. Used
+        by `Toolbar.add_select`.
+
+        Parameters
+        ----------
+        name : str
+            The action name the frontend sends in its message.
+        callable_function : callable
+            Called with the selection's current value when the action is received.
+        """
+        self.inbox.register_select_action(name, callable_function)
+
     # ---- GEOMETRY / LIGHTS / MATERIALS / TEXT / UI (forwarded to the main workspace) -----------
 
     def add_geometry(self, geometry, material=None, metadata=None, actions=None):
