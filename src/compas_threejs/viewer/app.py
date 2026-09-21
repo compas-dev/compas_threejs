@@ -244,6 +244,12 @@ class App:
         self.main.show_edges = value
 
     @property
+    def toolbar(self):
+        """The main workspace's `Toolbar` - show/hide or enable/disable a frontend-defined
+        toolbar button by id, e.g. `app.toolbar.set_visible("add_objects", False)`."""
+        return self.main.toolbar
+
+    @property
     def url(self) -> str:
         """Get the URL to access the viewer in a web browser."""
         display_host = self.host if self.host != "0.0.0.0" else get_local_ip()
@@ -377,6 +383,39 @@ class App:
             Called with the message's `json_data` value when the action is received.
         """
         self.inbox.register_action(name, callable_function)
+
+    def register_toggle_action(self, name: str, callable_function):
+        """
+        Manually registers a callable against a fixed action name for a checkbox-like toggle
+        control that the *frontend* defines and renders itself (e.g. a custom or
+        npm-installed toolbar button), dispatched the same way a `Checkbox` added via
+        `add_ui_element` already is (a `dispatch: "ui_callback"` message) - see
+        `Inbox.register_toggle_action`. The frontend control should call
+        `runtime.handleUiAction(name, value)` on toggle, using this same `name`.
+
+        Parameters
+        ----------
+        name : str
+            The action name the frontend sends in its message.
+        callable_function : callable
+            Called with the toggle's current value when the action is received.
+        """
+        self.inbox.register_toggle_action(name, callable_function)
+
+    def register_select_action(self, name: str, callable_function):
+        """
+        Manually registers a callable against a fixed action name for a select/dropdown
+        control that the *frontend* defines and renders itself - see
+        `register_toggle_action` just above, which this mirrors exactly.
+
+        Parameters
+        ----------
+        name : str
+            The action name the frontend sends in its message.
+        callable_function : callable
+            Called with the selection's current value when the action is received.
+        """
+        self.inbox.register_select_action(name, callable_function)
 
     # ---- GEOMETRY / LIGHTS / MATERIALS / TEXT / UI (forwarded to the main workspace) -----------
 
