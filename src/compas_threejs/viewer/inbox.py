@@ -30,11 +30,7 @@ def _apply_transform_with_scale(geometry, transformation) -> None:
     """
     scale, _shear, rotation, translation, _projection = transformation.decomposed()
     sx, sy, sz = scale.matrix[0][0], scale.matrix[1][1], scale.matrix[2][2]
-    has_scale = not (
-        abs(sx - 1.0) < _SCALE_TOLERANCE
-        and abs(sy - 1.0) < _SCALE_TOLERANCE
-        and abs(sz - 1.0) < _SCALE_TOLERANCE
-    )
+    has_scale = not (abs(sx - 1.0) < _SCALE_TOLERANCE and abs(sy - 1.0) < _SCALE_TOLERANCE and abs(sz - 1.0) < _SCALE_TOLERANCE)
 
     if not has_scale:
         # No resize at all - Shape.transform (== frame.transform) already does
@@ -73,9 +69,7 @@ def _apply_transform_with_scale(geometry, transformation) -> None:
         # factors rather than silently dropping a non-uniform resize on the floor.
         geometry.scale((sx + sy + sz) / 3.0)
     except NotImplementedError:
-        console.log(
-            f"[yellow]{type(geometry).__name__} does not support scaling - resize from this drag was dropped[/yellow]"
-        )
+        console.log(f"[yellow]{type(geometry).__name__} does not support scaling - resize from this drag was dropped[/yellow]")
 
 
 # Maps a frontend-creatable type name to its COMPAS constructor and the numeric
