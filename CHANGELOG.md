@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Frontend drawing support, for tools such as `compas_threejs_draw`: `create_geometry` messages can create a `line`, `polyline`, `polygon` or three-point `arc` from a `points` list, and a `circle` from a location and radius (see `compas_threejs.viewer.drawing`). A `guid` in the message becomes the new object's guid.
 - `delete_geometry` messages remove an object, and `extrude_geometry` messages extrude a polygon into a new prism mesh, keeping the polygon.
 - `App.on_create` and `App.on_delete` register callbacks (usable as decorators) for objects the frontend creates or deletes.
+- `examples/draw.py`: reacts to geometry drawn in the viewer - drawn polygons become rooms with their floor area, lines are colored by length.
 
 ### Changed
 
