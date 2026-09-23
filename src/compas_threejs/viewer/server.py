@@ -142,7 +142,10 @@ class AppServer:
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.loop)
 
-        config = uvicorn.Config(self.fastapi_app, host=host, port=port, log_level="warning")
+        # Default ws_max_size (16 MiB) is too small for a large uploaded .stkm.json sent as a
+        # single WebSocket text frame (LoadTimberModel.vue) - a bigger file just silently drops
+        # the connection with no error surfaced anywhere. 256 MiB comfortably covers that path.
+        config = uvicorn.Config(self.fastapi_app, host=host, port=port, log_level="warning", ws_max_size=256 * 1024 * 1024)
         server = uvicorn.Server(config)
 
         try:

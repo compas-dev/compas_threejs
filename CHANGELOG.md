@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Fixed the spinner getting stuck after a WebSocket reconnect: spinner messages are now persisted (under a stable `obj_id="spinner"`) like other viewer state, so a reconnecting client sees the current spinner state instead of missing a "stop" it never received.
+- Fixed large model uploads silently dropping the WebSocket connection: the server's `ws_max_size` is raised from uvicorn's 16 MiB default to 256 MiB.
 
 ### Removed
 
