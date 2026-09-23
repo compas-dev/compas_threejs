@@ -24,9 +24,7 @@ class SpinnerPersistenceTest(unittest.TestCase):
         # (obj_id, persist) pair be inspected directly without a live event loop.
         app = App()
 
-        app.outbox.send_dict(
-            {"dispatch": "spinner", "visible": True}, workspace_id="test", obj_id="spinner"
-        )
+        app.outbox.send_dict({"dispatch": "spinner", "visible": True}, workspace_id="test", obj_id="spinner")
         app.outbox.send_dict({"dispatch": "ui", "text": "hello"}, workspace_id="test")
 
         persist_by_obj_id = {entry[1]: entry[2] for entry in app.outbox._queue}
