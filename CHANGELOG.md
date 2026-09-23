@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `Toolbar`: lets the backend show/hide or enable/disable a frontend-defined toolbar button by id (`app.toolbar.set_visible(id, bool)`, `app.toolbar.set_enabled(id, bool)`). `App.toolbar`/`Workspace.toolbar` expose it, delegated the same way as `background_color`, `world_axis`, etc.
+- `App(title=...)`: sets the browser tab title of the viewer page (default `"COMPAS ThreeJS"`), passed to the frontend as a `title` query param. `Workspace.open_in_browser(title=...)` overrides it per workspace, falling back to the App's title.
 
 ### Changed
 
