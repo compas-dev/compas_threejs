@@ -85,12 +85,27 @@ def geometry_from_message(message):
         return None
     if any(value <= 0 for value in sizes.values()):
         return None
-    frame = Frame(location, [1, 0, 0], [0, 1, 0])
+    frame = _frame(location, message.get("xaxis"), message.get("yaxis"))
+    if frame is None:
+        return None
     if type_name == "box":
         return Box(frame=frame, **sizes)
     if type_name == "sphere":
         return Sphere(frame=frame, **sizes)
     return Circle(frame=frame, **sizes)
+
+
+def _frame(location, xaxis, yaxis):
+    """A frame at `location` with the message's axes - the drawing plane a box or
+    circle was drawn on - or world XY if it sent none. None if they are invalid."""
+    if xaxis is None and yaxis is None:
+        return Frame(location, [1, 0, 0], [0, 1, 0])
+    xaxis, yaxis = _point(xaxis), _point(yaxis)
+    if xaxis is None or yaxis is None:
+        return None
+    if Vector(*xaxis).cross(Vector(*yaxis)).length < _EPS:
+        return None
+    return Frame(location, xaxis, yaxis)
 
 
 def arc_through_points(start, end, through):
@@ -142,7 +157,8 @@ def _profile_points(geometry):
 
 def extrude(geometry, height):
     """A closed prism mesh from a polygon (or closed polyline) extruded `height` along
-    world Z - or along its own normal if it is vertical - or None if it can't be.
+    its normal - turned to point up, so a horizontal polygon rises along world Z
+    whichever way its points run - or None if it can't be.
     """
     points = _profile_points(geometry)
     if points is None or len(points) < 3 or abs(height) < _EPS:
@@ -155,7 +171,7 @@ def extrude(geometry, height):
     if normal.length < _EPS:
         return None
     normal.unitize()
-    up = Vector(0, 0, 1) if abs(normal.z) > 1e-6 else normal
+    up = normal * -1 if normal.z < -1e-6 else normal
     direction = up * height
     # Wind the profile counterclockwise around the extrusion direction, so every face
     # of the prism ends up facing outward.

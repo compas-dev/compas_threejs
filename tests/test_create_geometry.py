@@ -95,6 +95,28 @@ class CreateGeometryTests(unittest.TestCase):
         [_, point] = self.create(type="point", point=[4, 5, 6])
         self.assertIsInstance(point, Point)
 
+    def test_box_and_circle_on_a_drawing_plane(self):
+        axes = {"xaxis": [1, 0, 0], "yaxis": [0, 0, 1]}
+        [box] = self.create(type="box", point=[1, -0.5, 0.5], params={"xsize": 2, "ysize": 1, "zsize": 1}, **axes)
+        [_, circle] = self.create(type="circle", point=[5, 0, 5], params={"radius": 1}, **axes)
+        for frame in (box.frame, circle.frame):
+            self.assertEqual([round(v, 9) for v in frame.zaxis], [0.0, -1.0, 0.0])
+        # Its corners sit on the XZ plane side, 1 deep toward -Y.
+        ys = sorted({round(p[1], 9) for p in box.points})
+        self.assertEqual(ys, [-1.0, 0.0])
+
+    def test_invalid_axes_are_ignored(self):
+        self.create(type="box", point=[0, 0, 0], params={"xsize": 1, "ysize": 1, "zsize": 1}, xaxis=[1, 0, 0], yaxis=[2, 0, 0])
+        self.create(type="circle", point=[0, 0, 0], params={"radius": 1}, xaxis=[1, 0])
+        self.assertEqual(self.app.workspace.added, [])
+
+    def test_extrude_a_vertical_polygon_along_its_normal(self):
+        # A 2 x 3 wall in the XZ plane, wound so its normal points to -Y.
+        prism = extrude(Polygon([[0, 0, 0], [2, 0, 0], [2, 0, 3], [0, 0, 3]]), 0.5)
+        self.assertAlmostEqual(prism.volume(), 3.0)
+        ys = sorted({round(prism.vertex_attribute(v, "y"), 9) for v in prism.vertices()})
+        self.assertEqual(ys, [-0.5, 0.0])
+
     def test_invalid_input_is_ignored(self):
         self.create(type="line", points=[[0, 0, 0]])
         self.create(type="line", points=[[0, 0, 0], [1, 1, 1], [2, 2, 2]])
