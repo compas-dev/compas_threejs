@@ -4,7 +4,9 @@ import threading
 from compas.colors import Color
 from compas.geometry import Box
 from compas.geometry import Frame
+from compas.geometry import Line
 from compas.geometry import Point
+from compas.geometry import Polyline
 from compas.geometry import Sphere
 from compas.geometry import Transformation
 from rich.console import Console
@@ -20,6 +22,31 @@ _CREATABLE_TYPES = {
     "sphere": (Sphere, ("radius",)),
     "point": (Point, ()),
 }
+
+# Types a "create_geometry" message builds from a list of points ("points":
+# [[x, y, z], ...]) instead of one location, with the fewest points each needs.
+_POINT_LIST_TYPES = {"line": 2, "polyline": 2, "polygon": 3}
+
+
+def _geometry_from_points(type_name, points):
+    """Builds a line, polyline or polygon from `points`, or returns None if they are invalid.
+
+    A polygon becomes a closed Polyline (its first point repeated at the end): the viewer
+    can't display COMPAS Polygons yet, and a closed polyline shows the same outline.
+    """
+    try:
+        if any(len(point) != 3 for point in points):
+            return None
+        points = [Point(*map(float, point)) for point in points]
+    except (TypeError, ValueError):
+        return None
+    if len(points) < _POINT_LIST_TYPES[type_name]:
+        return None
+    if type_name == "line":
+        return Line(points[0], points[1]) if len(points) == 2 else None
+    if type_name == "polygon":
+        return Polyline(points + [points[0]])
+    return Polyline(points)
 
 
 class Inbox:
@@ -199,7 +226,8 @@ class Inbox:
             self.app.get_workspace(workspace_id).update_geometry(geometry)
 
     def _handle_create_geometry(self, message, outbox, workspace_id):
-        """Creates a new backend geometry object from a frontend "Add Box/Sphere/Point" action.
+        """Creates a new backend geometry object from a frontend "Add Box/Sphere/Point" action,
+        or a line/polyline/polygon drawn point by point (see `_POINT_LIST_TYPES`).
 
         Reuses `Workspace.add_geometry` for the outbound side, so the created object is
         registered and broadcast exactly like anything added by a running script - the
@@ -207,6 +235,9 @@ class Inbox:
         reconnects the same way any other geometry does.
         """
         type_name = message.get("type")
+        if type_name in _POINT_LIST_TYPES:
+            self._create_from_points(type_name, message.get("points"), workspace_id)
+            return
         entry = _CREATABLE_TYPES.get(type_name)
         if entry is None:
             console.log(f"[yellow]Unrecognized create_geometry type: {type_name}[/yellow]")
@@ -227,6 +258,18 @@ class Inbox:
             geometry = constructor(frame=frame, **kwargs)
 
         console.log(f"[blue]Creating {type_name} from frontend at {point}[/blue]")
+        self.app.get_workspace(workspace_id).add_geometry(geometry, Material())
+
+    def _create_from_points(self, type_name, points, workspace_id):
+        """Creates a line/polyline/polygon drawn point by point in the frontend."""
+        if self.app is None:
+            console.log("[yellow]create_geometry received but Inbox has no App reference[/yellow]")
+            return
+        geometry = _geometry_from_points(type_name, points or [])
+        if geometry is None:
+            console.log(f"[yellow]Ignoring create_geometry {type_name} with invalid points: {points}[/yellow]")
+            return
+        console.log(f"[blue]Creating {type_name} from frontend with {len(points)} points[/blue]")
         self.app.get_workspace(workspace_id).add_geometry(geometry, Material())
 
     def _handle_material_edit(self, message, outbox, workspace_id):

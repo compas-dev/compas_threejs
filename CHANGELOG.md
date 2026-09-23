@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `create_geometry` messages can now create a `line`, `polyline` or `polygon` from a `points` list, for frontend drawing tools such as `compas_threejs_draw`. A polygon is created as a closed `Polyline`, since the viewer can't display COMPAS `Polygon`s yet.
+
 ### Changed
 
 ### Removed
