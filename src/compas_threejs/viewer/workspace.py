@@ -2,6 +2,7 @@ import webbrowser
 from enum import IntEnum
 from typing import Optional
 from typing import Union
+from urllib.parse import quote
 
 import compas_pb
 from compas.colors import Color
@@ -607,9 +608,19 @@ class Workspace:
             workspace_id=self.workspace_id,
         )
 
-    def open_in_browser(self):
-        """Launches a browser window tracking only this workspace."""
+    def open_in_browser(self, title: Optional[str] = None):
+        """Launches a browser window tracking only this workspace.
+
+        Parameters
+        ----------
+        title : str, optional
+            Browser tab title for this workspace's page. Defaults to the App's own `title`.
+        """
         connect_host = self.app.host if self.app.host != "0.0.0.0" else "127.0.0.1"
 
-        url = f"http://{connect_host}:{self.app.websocket_port}/?ws_host={connect_host}&ws_port={self.app.websocket_port}&workspace={self.workspace_id}"
+        url = (
+            f"http://{connect_host}:{self.app.websocket_port}/"
+            f"?ws_host={connect_host}&ws_port={self.app.websocket_port}"
+            f"&workspace={self.workspace_id}&title={quote(title or self.app.title)}"
+        )
         webbrowser.open(url)
