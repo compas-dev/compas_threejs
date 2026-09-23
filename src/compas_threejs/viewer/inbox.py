@@ -2,51 +2,13 @@ import json
 import threading
 
 from compas.colors import Color
-from compas.geometry import Box
-from compas.geometry import Frame
-from compas.geometry import Line
-from compas.geometry import Point
-from compas.geometry import Polyline
-from compas.geometry import Sphere
 from compas.geometry import Transformation
 from rich.console import Console
 
 from compas_threejs.materials import Material
+from compas_threejs.viewer import drawing
 
 console = Console()
-
-# Maps a frontend-creatable type name to its COMPAS constructor and the numeric
-# parameter names a "create_geometry" message is allowed to set on it.
-_CREATABLE_TYPES = {
-    "box": (Box, ("xsize", "ysize", "zsize")),
-    "sphere": (Sphere, ("radius",)),
-    "point": (Point, ()),
-}
-
-# Types a "create_geometry" message builds from a list of points ("points":
-# [[x, y, z], ...]) instead of one location, with the fewest points each needs.
-_POINT_LIST_TYPES = {"line": 2, "polyline": 2, "polygon": 3}
-
-
-def _geometry_from_points(type_name, points):
-    """Builds a line, polyline or polygon from `points`, or returns None if they are invalid.
-
-    A polygon becomes a closed Polyline (its first point repeated at the end): the viewer
-    can't display COMPAS Polygons yet, and a closed polyline shows the same outline.
-    """
-    try:
-        if any(len(point) != 3 for point in points):
-            return None
-        points = [Point(*map(float, point)) for point in points]
-    except (TypeError, ValueError):
-        return None
-    if len(points) < _POINT_LIST_TYPES[type_name]:
-        return None
-    if type_name == "line":
-        return Line(points[0], points[1]) if len(points) == 2 else None
-    if type_name == "polygon":
-        return Polyline(points + [points[0]])
-    return Polyline(points)
 
 
 class Inbox:
@@ -71,8 +33,14 @@ class Inbox:
             "other_action": self._handle_other_action,
             "object_transform": self._handle_object_transform,
             "create_geometry": self._handle_create_geometry,
+            "delete_geometry": self._handle_delete_geometry,
+            "extrude_geometry": self._handle_extrude_geometry,
             "material_edit": self._handle_material_edit,
         }
+        # Called with each object the frontend creates or deletes - see App.on_create /
+        # App.on_delete.
+        self.create_callbacks = []
+        self.delete_callbacks = []
 
     # ---- REGISTRATION (called by Workspace when something is sent out) -------------------------
 
@@ -226,51 +194,71 @@ class Inbox:
             self.app.get_workspace(workspace_id).update_geometry(geometry)
 
     def _handle_create_geometry(self, message, outbox, workspace_id):
-        """Creates a new backend geometry object from a frontend "Add Box/Sphere/Point" action,
-        or a line/polyline/polygon drawn point by point (see `_POINT_LIST_TYPES`).
+        """Creates a backend geometry object drawn or added in the frontend - see
+        `drawing.geometry_from_message` for the types and their fields.
 
         Reuses `Workspace.add_geometry` for the outbound side, so the created object is
         registered and broadcast exactly like anything added by a running script - the
         frontend needs no special handling to receive it, and it persists across
-        reconnects the same way any other geometry does.
+        reconnects the same way any other geometry does. A "guid" in the message becomes
+        the object's guid, so the frontend can refer to it later (e.g. to undo it).
         """
         type_name = message.get("type")
-        if type_name in _POINT_LIST_TYPES:
-            self._create_from_points(type_name, message.get("points"), workspace_id)
-            return
-        entry = _CREATABLE_TYPES.get(type_name)
-        if entry is None:
+        if type_name not in drawing.CREATABLE_TYPES:
             console.log(f"[yellow]Unrecognized create_geometry type: {type_name}[/yellow]")
             return
-        if self.app is None:
-            console.log("[yellow]create_geometry received but Inbox has no App reference[/yellow]")
-            return
-
-        constructor, allowed_params = entry
-        point = message.get("point") or [0.0, 0.0, 0.0]
-        params = message.get("params") or {}
-        kwargs = {name: params.get(name, 1.0) for name in allowed_params}
-
-        if type_name == "point":
-            geometry = constructor(*point)
-        else:
-            frame = Frame(Point(*point), [1, 0, 0], [0, 1, 0])
-            geometry = constructor(frame=frame, **kwargs)
-
-        console.log(f"[blue]Creating {type_name} from frontend at {point}[/blue]")
-        self.app.get_workspace(workspace_id).add_geometry(geometry, Material())
-
-    def _create_from_points(self, type_name, points, workspace_id):
-        """Creates a line/polyline/polygon drawn point by point in the frontend."""
-        if self.app is None:
-            console.log("[yellow]create_geometry received but Inbox has no App reference[/yellow]")
-            return
-        geometry = _geometry_from_points(type_name, points or [])
+        geometry = drawing.geometry_from_message(message)
         if geometry is None:
-            console.log(f"[yellow]Ignoring create_geometry {type_name} with invalid points: {points}[/yellow]")
+            console.log(f"[yellow]Ignoring invalid create_geometry {type_name}: {message}[/yellow]")
             return
-        console.log(f"[blue]Creating {type_name} from frontend with {len(points)} points[/blue]")
+        self._add_created(geometry, message.get("guid"), type_name, workspace_id)
+
+    def _handle_extrude_geometry(self, message, outbox, workspace_id):
+        """Extrudes a polygon (or closed polyline) into a prism mesh of the message's
+        "height", added as a new object - the original stays."""
+        source = self.geometry_registry.get(message.get("guid"))
+        try:
+            height = float(message.get("height"))
+        except (TypeError, ValueError):
+            height = 0.0
+        mesh = drawing.extrude(source, height) if source is not None else None
+        if mesh is None:
+            console.log(f"[yellow]Ignoring extrude_geometry for {message.get('guid')} (not a polygon, or no height)[/yellow]")
+            return
+        self._add_created(mesh, message.get("new_guid"), "extrusion", workspace_id)
+
+    def _add_created(self, geometry, guid, label, workspace_id):
+        if self.app is None:
+            console.log("[yellow]Frontend geometry received but Inbox has no App reference[/yellow]")
+            return
+        if guid is not None:
+            if not drawing.apply_guid(geometry, guid):
+                console.log(f"[yellow]Ignoring invalid guid from frontend: {guid}[/yellow]")
+                return
+            if str(geometry.guid) in self.geometry_registry:
+                console.log(f"[yellow]Ignoring {label} with a guid already in use: {guid}[/yellow]")
+                return
+        console.log(f"[blue]Creating {label} from frontend[/blue]")
         self.app.get_workspace(workspace_id).add_geometry(geometry, Material())
+        self._notify(self.create_callbacks, geometry)
+
+    def _handle_delete_geometry(self, message, outbox, workspace_id):
+        """Removes an object the frontend deleted, e.g. with the Delete key or an undo."""
+        guid = message.get("guid")
+        geometry = self.geometry_registry.get(guid)
+        if geometry is None or self.app is None:
+            console.log(f"[yellow]Unrecognized delete_geometry target: {guid}[/yellow]")
+            return
+        console.log(f"[blue]Deleting {type(geometry).__name__} from frontend[/blue]")
+        self.app.get_workspace(workspace_id).remove_object(geometry)
+        self._notify(self.delete_callbacks, geometry)
+
+    def _notify(self, callbacks, geometry):
+        for callback in list(callbacks):
+            try:
+                callback(geometry)
+            except Exception as error:  # a script's callback must not break the server
+                console.log(f"[red]Error in {getattr(callback, '__name__', callback)}: {error}[/red]")
 
     def _handle_material_edit(self, message, outbox, workspace_id):
         """Applies a toolbar material edit (color/metalness/roughness) made in the frontend
