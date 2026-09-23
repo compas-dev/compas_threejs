@@ -593,9 +593,16 @@ class Workspace:
         message : str, optional
             A short description to display alongside the spinner, e.g. "Loading model...".
         """
+        # obj_id="spinner" - a fixed, stable key (see Outbox.send_dict's own docstring) - so
+        # this overwrites the *same* persisted slot every call rather than each start/stop
+        # piling up as its own separate history entry. Combined with "spinner" no longer
+        # being excluded from persistence (see Outbox.send_dict), a client that reconnects
+        # mid-load (or right after) always replays whatever the CURRENT spinner state
+        # actually is, instead of only ever seeing whichever call happened to reach it live.
         self.app.outbox.send_dict(
             {"dispatch": "spinner", "visible": True, "message": message},
             workspace_id=self.workspace_id,
+            obj_id="spinner",
         )
 
     def stop_spinner(self):
@@ -603,6 +610,7 @@ class Workspace:
         self.app.outbox.send_dict(
             {"dispatch": "spinner", "visible": False},
             workspace_id=self.workspace_id,
+            obj_id="spinner",
         )
 
     def open_in_browser(self):
