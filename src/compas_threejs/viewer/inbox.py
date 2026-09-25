@@ -142,9 +142,12 @@ class Inbox:
         console.log(f"[blue]Received object picked message from frontend. Object ID: {object_id}[/blue]")
         metadata = self.metadata_registry.get(object_id)
         if metadata:
-            metadata["dispatch"] = "object_infos"
-            console.log(f"[blue]Metadata associated with the object: {metadata}[/blue]")
-            outbox.send_dict(metadata.metadata, workspace_id=workspace_id)
+            fields = dict(metadata.metadata)
+            console.log(f"[blue]Metadata associated with the object: {fields}[/blue]")
+            # The message is a protobuf map, which loses the fields' order: "__order__"
+            # carries it for the viewer to show them in.
+            message = {**fields, "dispatch": "object_infos", "__order__": list(fields)}
+            outbox.send_dict(message, workspace_id=workspace_id)
         else:
             outbox.send_dict(
                 {
