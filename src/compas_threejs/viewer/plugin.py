@@ -24,25 +24,35 @@ class Plugin:
 
     A subclass sets `name` and `static`, the folder holding the plugin's built frontend,
     `plugin.js` (and `plugin.css`, if it has one). `plugin.js` default-exports
-    `definePlugin({ name, buttons })` from `@compas-dev/compas-threejs-ts`, with the same
+    `definePlugin({ name, groups })` from `@compas-dev/compas-threejs-ts`, with the same
     `name`. Methods marked with `@action("...")` handle what the frontend sends; `send`
     talks back.
+
+    `hide`, `show`, `disable` and `enable` take the ids of button groups or single
+    buttons, as the frontend names them in `groups`. A subclass may list them in `ids`,
+    so that a misspelled id raises instead of doing nothing.
 
     Examples
     --------
     >>> app = App()
-    >>> app.plugins = [Standard(), Camera()]
+    >>> standard = Standard()
+    >>> app.plugins = [standard, Camera()]
+    >>> standard.hide("display")  # a whole group
+    >>> standard.disable("scale")  # one button
     >>> app.start()
     """
 
     name = None
     static = None
+    ids = None
 
     def __init__(self):
         if not self.name:
             raise ValueError(f"{type(self).__name__} has no plugin name")
         self.app = None
         self._handlers = {}
+        self._hidden = set()
+        self._disabled = set()
         for attribute in dir(type(self)):
             method = getattr(self, attribute, None)
             name = getattr(method, "_plugin_action", None)
@@ -81,6 +91,50 @@ class Plugin:
             return
         for handler in handlers:
             handler(data)
+
+    @property
+    def hidden(self):
+        """The ids of the hidden groups and buttons."""
+        return frozenset(self._hidden)
+
+    @property
+    def disabled(self):
+        """The ids of the disabled groups and buttons."""
+        return frozenset(self._disabled)
+
+    def hide(self, *ids):
+        """Hides these groups or buttons."""
+        self._hidden.update(self._known(ids))
+        self.send_buttons()
+
+    def show(self, *ids):
+        """Shows these groups or buttons again."""
+        self._hidden.difference_update(self._known(ids))
+        self.send_buttons()
+
+    def disable(self, *ids):
+        """Greys out these groups or buttons; their clicks and shortcuts do nothing."""
+        self._disabled.update(self._known(ids))
+        self.send_buttons()
+
+    def enable(self, *ids):
+        """Enables these groups or buttons again."""
+        self._disabled.difference_update(self._known(ids))
+        self.send_buttons()
+
+    def _known(self, ids):
+        if self.ids is not None:
+            unknown = [id_ for id_ in ids if id_ not in self.ids]
+            if unknown:
+                raise ValueError(f"Plugin {self.name!r} has no group or button {', '.join(map(repr, unknown))}; it has {', '.join(self.ids)}")
+        return ids
+
+    def send_buttons(self):
+        """Sends which groups and buttons are hidden or disabled; kept for browsers that connect later."""
+        if not self.app:
+            return  # sent when the plugin is added to an App
+        message = {"dispatch": "plugin_buttons", "plugin": self.name, "hidden": sorted(self._hidden), "disabled": sorted(self._disabled)}
+        self.app.outbox.send_bytes(compas_pb.pb_dump_bts(message), f"plugin/{self.name}/buttons", persist=True)
 
     def send(self, action_name, data=None, *, key=None):
         """Sends `data` to the frontend's `channel.on(action_name, ...)` handlers.

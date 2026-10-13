@@ -155,6 +155,8 @@ class App:
             plugin.app = None
         for plugin in plugins:
             plugin.app = self
+            if plugin.hidden or plugin.disabled:
+                plugin.send_buttons()
         self._plugins = plugins
 
     def get_plugin(self, name: str):

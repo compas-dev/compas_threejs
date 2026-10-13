@@ -110,3 +110,40 @@ def test_unkeyed_messages_are_not_kept(static):
     app.plugins = [views]
     views.send("flash", {"text": "hi"})
     assert app.outbox._queue[-1][1:3] == ("", False)
+
+
+def sent_buttons(app):
+    return [compas_pb.pb_load_bts(entry[0]) | {"key": entry[1], "persist": entry[2]} for entry in app.outbox._queue if entry[1].endswith("/buttons")]
+
+
+def test_hide_and_disable_groups_and_buttons(static):
+    app = App()
+    views = make_plugin(static)
+    app.plugins = [views]
+
+    views.hide("display")
+    views.disable("scale", "move")
+    views.show("display")
+    views.enable("move")
+
+    assert views.hidden == frozenset()
+    assert views.disabled == {"scale"}
+    assert sent_buttons(app)[-1] == {"dispatch": "plugin_buttons", "plugin": "views", "hidden": [], "disabled": ["scale"], "key": "plugin/views/buttons", "persist": True}
+
+
+def test_button_state_set_before_adding_the_plugin_is_sent(static):
+    app = App()
+    views = make_plugin(static)
+    views.hide("display")
+    assert sent_buttons(app) == []
+
+    app.plugins = [views]
+    assert sent_buttons(app)[-1]["hidden"] == ["display"]
+
+
+def test_declared_ids_catch_typos(static):
+    views = make_plugin(static)
+    views.ids = ("display", "scale")
+    views.hide("display")
+    with pytest.raises(ValueError, match="'scael'"):
+        views.disable("scael")
