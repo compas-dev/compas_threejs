@@ -54,7 +54,10 @@ class CompasPbCompatibilityTest(unittest.TestCase):
         binary_data, object_id, persist, workspace_id, remove_key, broadcast = outbox._queue[0]
         self.assertEqual(compas_pb.pb_load_bts(binary_data), command)
         self.assertEqual(object_id, "")
-        self.assertFalse(persist)
+        # "spinner" messages are persisted (see test_spinner_persistence.py) - unlike a
+        # one-off "ui" toast, spinner visibility is a *state*, so a reconnecting client
+        # must see its current value rather than never finding out it was ever hidden.
+        self.assertTrue(persist)
         self.assertEqual(workspace_id, "main")
         self.assertIsNone(remove_key)
         self.assertTrue(broadcast)

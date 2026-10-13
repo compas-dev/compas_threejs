@@ -52,7 +52,15 @@ class Outbox:
         binary_data = compas_pb.pb_dump_bts(message)
         dispatch = message.get("dispatch", "")
         is_remove = dispatch == "handle_geometry" and message.get("type") == "remove"
-        persist = dispatch not in ("ui", "spinner") and not is_remove
+        # "ui" messages are one-off toasts - a client reconnecting later shouldn't see a
+        # stale one replayed. "spinner" is the opposite: it's a *state* (loading or not),
+        # same idea as camera position/background color above - if a client's connection
+        # drops mid-load and reconnects, it needs to see the CURRENT spinner state (still
+        # loading, or long since finished), not silently miss the "stop" it never received
+        # while disconnected and get stuck showing a spinner forever. See Workspace.
+        # start_spinner/stop_spinner, which pass the stable obj_id="spinner" that makes
+        # each call overwrite the previous one instead of piling up as separate entries.
+        persist = dispatch != "ui" and not is_remove
         self.send_bytes(binary_data, obj_id or "", persist=persist, workspace_id=workspace_id, remove_key=remove_key)
 
     def forget(self, key, *, workspace_id: str = "main"):
