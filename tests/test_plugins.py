@@ -147,3 +147,13 @@ def test_declared_ids_catch_typos(static):
     views.hide("display")
     with pytest.raises(ValueError, match="'scael'"):
         views.disable("scael")
+
+
+def test_find_geometry_by_guid():
+    from compas.geometry import Box
+
+    app = App()
+    box = Box(1)
+    app.add_geometry(box)
+    assert app.find_geometry(str(box.guid)) is box
+    assert app.find_geometry("missing") is None

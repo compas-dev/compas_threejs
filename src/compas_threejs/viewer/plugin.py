@@ -129,6 +129,14 @@ class Plugin:
                 raise ValueError(f"Plugin {self.name!r} has no group or button {', '.join(map(repr, unknown))}; it has {', '.join(self.ids)}")
         return ids
 
+    def attached(self):
+        """Called once the plugin is added to an App: sends the state set before that.
+
+        A subclass with state of its own extends it, calling ``super().attached()``.
+        """
+        if self._hidden or self._disabled:
+            self.send_buttons()
+
     def send_buttons(self):
         """Sends which groups and buttons are hidden or disabled; kept for browsers that connect later."""
         if not self.app:

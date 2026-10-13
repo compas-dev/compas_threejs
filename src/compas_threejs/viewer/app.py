@@ -155,13 +155,16 @@ class App:
             plugin.app = None
         for plugin in plugins:
             plugin.app = self
-            if plugin.hidden or plugin.disabled:
-                plugin.send_buttons()
+            plugin.attached()
         self._plugins = plugins
 
     def get_plugin(self, name: str):
         """The plugin named `name`, or None."""
         return next((plugin for plugin in self._plugins if plugin.name == name), None)
+
+    def find_geometry(self, guid: str):
+        """The geometry shown in the viewer with this guid (as plugins get it from the frontend), or None."""
+        return self.inbox.geometry_registry.get(str(guid))
 
     def _plugins_manifest(self):
         return [plugin.manifest() for plugin in self._plugins]

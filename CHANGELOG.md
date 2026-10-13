@@ -11,10 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * `Plugin` and `@action` in `compas_threejs.viewer`: a toolbar plugin's Python half, talking to its frontend buttons with `@action` handlers and `send()`.
 * `App.plugins`: the viewer's plugins, in toolbar order. The App serves each plugin's built frontend and lists them at `/plugins.json`.
+* `Plugin.hide`/`show`/`disable`/`enable`: hide or disable a plugin's button groups, buttons or object actions by id.
+* `Plugin.attached()`, called once a plugin is added to an App, and `App.find_geometry(guid)`.
 
 ### Changed
 
 * The viewer has no toolbar unless plugins add one, e.g. `app.plugins = [Standard(), Camera()]` from `compas_threejs_plugins`.
+* The transform gizmo and object locking are plugin behaviour (`Standard` in `compas_threejs_plugins`); the viewer applies a gizmo edit to the geometry as before.
 
 ### Removed
 
