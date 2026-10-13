@@ -4,6 +4,7 @@ import time
 import webbrowser
 from typing import Optional
 from typing import Union
+from urllib.parse import quote
 
 from compas.geometry import Point
 from rich.console import Console
@@ -81,7 +82,13 @@ class App:
 
     """
 
-    def __init__(self, host: str = "127.0.0.1", websocket_port: int = 9001, frontend_dir=None):
+    def __init__(
+        self,
+        host: str = "127.0.0.1",
+        websocket_port: int = 9001,
+        frontend_dir=None,
+        title: str = "COMPAS ThreeJS",
+    ):
         """
         Parameters
         ----------
@@ -91,11 +98,14 @@ class App:
             frontend to its own copy - e.g. one it rebuilds itself from a branch or fork of the
             frontend source - independent of whatever happens to be bundled in this installed
             package.
+        title : str, optional
+            Browser tab title for the viewer page. Default is "COMPAS ThreeJS".
         """
         # Server
         self.host = host
         self.websocket_port = websocket_port
         self.websocket_server_thread = None
+        self.title = title
 
         self.server = AppServer(frontend_dir=frontend_dir)
         self.outbox = Outbox(self.server)
@@ -253,7 +263,7 @@ class App:
     def url(self) -> str:
         """Get the URL to access the viewer in a web browser."""
         display_host = self.host if self.host != "0.0.0.0" else get_local_ip()
-        return f"http://{display_host}:{self.websocket_port}/?ws_host={display_host}&ws_port={self.websocket_port}"
+        return f"http://{display_host}:{self.websocket_port}/?ws_host={display_host}&ws_port={self.websocket_port}&title={quote(self.title)}"
 
     def set_view(self, view: Union[CameraView, Point, tuple, list], target=None):
         """Set the main workspace's camera view from a preset or explicit point.
@@ -348,7 +358,7 @@ class App:
         else:
             connect_host = self.host
 
-        shareable_url = f"http://{connect_host}:{self.websocket_port}/?ws_host={connect_host}&ws_port={self.websocket_port}"
+        shareable_url = f"http://{connect_host}:{self.websocket_port}/?ws_host={connect_host}&ws_port={self.websocket_port}&title={quote(self.title)}"
         console.log(f"[underline yellow]{shareable_url}[/underline yellow]")
         webbrowser.open(shareable_url)
 
