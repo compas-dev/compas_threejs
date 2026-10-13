@@ -378,6 +378,50 @@ class App:
         """
         self.inbox.register_action(name, callable_function)
 
+    def on_create(self, callback):
+        """
+        Registers `callback` to be called with each object the frontend creates - drawn
+        with a tool such as `compas_threejs_draw`'s, added from the toolbar, or extruded.
+        Usable as a decorator. The object is already in the scene when it is called.
+
+        Parameters
+        ----------
+        callback : callable
+            Called as ``callback(geometry)`` on the server thread.
+
+        Returns
+        -------
+        callable
+            `callback` itself, so it can be used as ``@app.on_create``.
+
+        Examples
+        --------
+        >>> app = App()
+        >>> @app.on_create
+        ... def created(geometry):
+        ...     print("drawn:", geometry)
+        """
+        self.inbox.create_callbacks.append(callback)
+        return callback
+
+    def on_delete(self, callback):
+        """
+        Registers `callback` to be called with each object the frontend deletes, after it
+        has been removed from the scene. Usable as a decorator, like `on_create`.
+
+        Parameters
+        ----------
+        callback : callable
+            Called as ``callback(geometry)`` on the server thread.
+
+        Returns
+        -------
+        callable
+            `callback` itself.
+        """
+        self.inbox.delete_callbacks.append(callback)
+        return callback
+
     # ---- GEOMETRY / LIGHTS / MATERIALS / TEXT / UI (forwarded to the main workspace) -----------
 
     def add_geometry(self, geometry, material=None, metadata=None, actions=None):
