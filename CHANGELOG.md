@@ -9,7 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* `Plugin` and `@action` in `compas_threejs.viewer`: a toolbar plugin's Python half, talking to its frontend buttons with `@action` handlers and `send()`.
+* `App.plugins`: the viewer's plugins, in toolbar order. The App serves each plugin's built frontend and lists them at `/plugins.json`.
+
 ### Changed
+
+* The viewer has no toolbar unless plugins add one, e.g. `app.plugins = [Standard(), Camera()]` from `compas_threejs_plugins`.
 
 ### Removed
 
