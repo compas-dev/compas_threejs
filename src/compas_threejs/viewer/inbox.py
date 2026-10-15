@@ -45,6 +45,7 @@ class Inbox:
             "object_transform": self._handle_object_transform,
             "create_geometry": self._handle_create_geometry,
             "material_edit": self._handle_material_edit,
+            "plugin": self._handle_plugin,
         }
 
     # ---- REGISTRATION (called by Workspace when something is sent out) -------------------------
@@ -282,6 +283,19 @@ class Inbox:
         action_id = message.get("action")
         if action_id and action_id in self.buttons:
             self.buttons[action_id](json_data)
+
+    def _handle_plugin(self, message, outbox, workspace_id):
+        """Hands a plugin's `channel.send(action, data)` to that plugin's Python half."""
+        name = message.get("plugin")
+        plugin = self.app.get_plugin(name) if self.app else None
+        if not plugin:
+            console.log(f"[yellow]Received a message for unknown plugin {name!r}[/yellow]")
+            return
+        workspace = self.app.get_workspace(workspace_id)
+        if plugin not in workspace.plugins:
+            console.log(f"[yellow]Plugin {name!r} is not in workspace {workspace_id!r}[/yellow]")
+            return
+        plugin.handle(message.get("action"), message.get("data"), workspace)
 
     def _handle_other_action(self, message, outbox, workspace_id):
         """Handles messages from frontend elements not tied to a backend-registered guid,

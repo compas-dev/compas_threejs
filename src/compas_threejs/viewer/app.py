@@ -10,6 +10,7 @@ from rich.console import Console
 
 from .inbox import Inbox
 from .outbox import Outbox
+from .plugin import Plugin
 from .server import AppServer
 from .workspace import CameraView
 from .workspace import Workspace
@@ -101,6 +102,10 @@ class App:
         self.outbox = Outbox(self.server)
         self.inbox = Inbox(self)
 
+        # Plugins: none by default, so the viewer starts without a toolbar
+        self._plugins = []
+        self.server.add_route("/plugins.json", self._plugins_manifest)
+
         # Setter Attributes
         self._loop_interval = 0.01
         self._loop = None
@@ -125,6 +130,54 @@ class App:
         return self.workspaces[workspace_id]
 
     # ---- ATTRIBUTES (forwarded to the main workspace) ------------------------------------------
+
+    @property
+    def plugins(self) -> list:
+        """The viewer's plugins, in toolbar order. Set before `start()`.
+
+        A workspace shows all of them, or the subset in its `Workspace.plugins`.
+
+        >>> app.plugins = [Standard(), Camera()]
+        """
+        return list(self._plugins)
+
+    @plugins.setter
+    def plugins(self, plugins):
+        if self.websocket_server_thread:
+            raise RuntimeError("Set App.plugins before App.start()")
+        plugins = list(plugins)
+        names = set()
+        for plugin in plugins:
+            if not isinstance(plugin, Plugin):
+                raise TypeError(f"Not a Plugin: {plugin!r}")
+            if plugin.name in names:
+                raise ValueError(f"Two plugins are named {plugin.name!r}")
+            names.add(plugin.name)
+        for plugin in self._plugins:
+            plugin.app = None
+        for plugin in plugins:
+            plugin.app = self
+            plugin.attached()
+        self._plugins = plugins
+
+    def get_plugin(self, name: str):
+        """The plugin named `name`, or None."""
+        return next((plugin for plugin in self._plugins if plugin.name == name), None)
+
+    def find_geometry(self, guid: str):
+        """The geometry shown in the viewer with this guid (as plugins get it from the frontend), or None."""
+        return self.inbox.geometry_registry.get(str(guid))
+
+    def _plugins_manifest(self, workspace: str = "main"):
+        plugins = self.workspaces[workspace].plugins if workspace in self.workspaces else self._plugins
+        return [plugin.manifest() for plugin in plugins]
+
+    def _mount_plugins(self):
+        for plugin in self._plugins:
+            static_dir = plugin.static_dir
+            if not static_dir or not (static_dir / "plugin.js").exists():
+                raise FileNotFoundError(f"Plugin {plugin.name!r} has no built frontend at {static_dir}/plugin.js - build it with `npm run build` in the plugin's repository.")
+            self.server.add_static_mount(f"/plugins/{plugin.name}", static_dir, name=f"plugin_{plugin.name}")
 
     @property
     def loop(self) -> callable:
@@ -296,6 +349,7 @@ class App:
 
     def start(self, show=False):
         """Initializes the server and keeps the main thread alive."""
+        self._mount_plugins()
         self._initialize_server()
 
         # Re-send current main workspace settings now that the server (and its loop) exists

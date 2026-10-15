@@ -2,6 +2,7 @@ import webbrowser
 from enum import IntEnum
 from typing import Optional
 from typing import Union
+from urllib.parse import quote
 
 import compas_pb
 from compas.colors import Color
@@ -75,6 +76,37 @@ class Workspace:
         self._camera_position = Point(8, -15, 15)
         self._camera_target = Point(0, 0, 0)
         self._show_edges = False
+        self._plugins = None
+
+    @property
+    def plugins(self) -> list:
+        """The plugins this workspace's browser tabs show: a subset of `App.plugins`.
+
+        By default all of them. Plugins are shared between workspaces - the same objects,
+        told which workspace each message comes from. A tab loads the list when it opens.
+
+        >>> beam = app.get_workspace("beam")
+        >>> beam.plugins = [essentials, timber]
+        """
+        if self._plugins is None:
+            return self.app.plugins
+        return [plugin for plugin in self._plugins if plugin.app is self.app]
+
+    @plugins.setter
+    def plugins(self, plugins):
+        if plugins is None:
+            self._plugins = None
+            return
+        plugins = list(plugins)
+        for plugin in plugins:
+            if plugin not in self.app.plugins:
+                raise ValueError(f"Plugin {getattr(plugin, 'name', plugin)!r} is not in App.plugins; add it there first")
+        self._plugins = plugins
+
+    @property
+    def url(self) -> str:
+        """The URL of this workspace's viewer page, as `App.url` gives the main one."""
+        return f"{self.app.url}&workspace={quote(self.workspace_id)}"
 
     def _send_scene_message(self, type_: str, **fields):
         # Each scene setting (camera position, background color, ...) represents a single
