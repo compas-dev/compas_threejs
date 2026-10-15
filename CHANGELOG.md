@@ -13,11 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * `App.plugins`: the viewer's plugins, in toolbar order. The App serves each plugin's built frontend and lists them at `/plugins.json`.
 * `Plugin.hide`/`show`/`disable`/`enable`: hide or disable a plugin's button groups, buttons or object actions by id.
 * `Plugin.attached()`, called once a plugin is added to an App, and `App.find_geometry(guid)`.
+* Workspace-aware plugins: `@action` handlers get `(data, workspace)`, the `Workspace` of the browser tab that sent the message; inside a handler `Plugin.send` answers that tab, `send(..., workspace=)` picks one, and `Plugin.send_all` reaches every tab. Button state reaches every tab.
+* `Workspace.plugins`: the subset of `App.plugins` a workspace's tabs show, served at `/plugins.json?workspace=<id>`. `Workspace.url`.
 
 ### Changed
 
-* The viewer has no toolbar unless plugins add one, e.g. `app.plugins = [Standard(), Camera()]` from `compas_threejs_plugins`.
-* The transform gizmo and object locking are plugin behaviour (`Standard` in `compas_threejs_plugins`); the viewer applies a gizmo edit to the geometry as before.
+* The viewer has no toolbar unless plugins add one, e.g. `app.plugins = [Essentials(), Views()]` from `compas_threejs_essentials` and `compas_threejs_views`.
+* The transform gizmo and object locking are plugin behaviour (`Essentials` in `compas_threejs_essentials`); the viewer applies a gizmo edit to the geometry as before.
 
 ### Removed
 

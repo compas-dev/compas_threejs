@@ -1,3 +1,4 @@
+import asyncio
 import json
 
 import compas_pb
@@ -7,6 +8,7 @@ from fastapi.testclient import TestClient
 from compas_threejs.viewer import App
 from compas_threejs.viewer import Plugin
 from compas_threejs.viewer import action
+from compas_threejs.viewer.server import AppServer
 
 
 @pytest.fixture
@@ -25,15 +27,15 @@ def make_plugin(static_dir):
             self.saved = []
 
         @action("save")
-        def save(self, data):
+        def save(self, data, workspace):
             self.saved.append(data)
             self.send("views", [view["name"] for view in self.saved], key="views")
 
     return Views()
 
 
-def receive(app, message):
-    app.on_message(json.dumps(message).encode("utf-8"))
+def receive(app, message, workspace_id="main"):
+    app.on_message(json.dumps(message).encode("utf-8"), workspace_id)
 
 
 def test_app_has_no_plugins_by_default():
@@ -97,11 +99,11 @@ def test_handlers_can_be_added_from_outside(static):
     seen = []
 
     @views.on("save")
-    def saved(data):
-        seen.append(data)
+    def saved(data, workspace):
+        seen.append((data, workspace.workspace_id))
 
     receive(app, {"dispatch": "plugin", "plugin": "views", "action": "save", "data": {"name": "A"}})
-    assert seen == [{"name": "A"}]
+    assert seen == [({"name": "A"}, "main")]
 
 
 def test_unkeyed_messages_are_not_kept(static):
@@ -129,6 +131,8 @@ def test_hide_and_disable_groups_and_buttons(static):
     assert views.hidden == frozenset()
     assert views.disabled == {"scale"}
     assert sent_buttons(app)[-1] == {"dispatch": "plugin_buttons", "plugin": "views", "hidden": [], "disabled": ["scale"], "key": "plugin/views/buttons", "persist": True}
+    # Button state reaches every workspace
+    assert {entry[3] for entry in app.outbox._queue if entry[1].endswith("/buttons")} == {None}
 
 
 def test_button_state_set_before_adding_the_plugin_is_sent(static):
@@ -157,3 +161,96 @@ def test_find_geometry_by_guid():
     app.add_geometry(box)
     assert app.find_geometry(str(box.guid)) is box
     assert app.find_geometry("missing") is None
+
+
+def sent_to(app):
+    """(message, workspace_id) of every queued plugin message."""
+    return [(compas_pb.pb_load_bts(entry[0]), entry[3]) for entry in app.outbox._queue if entry[0] and compas_pb.pb_load_bts(entry[0]).get("dispatch") == "plugin"]
+
+
+def test_handlers_answer_the_workspace_that_asked(static):
+    app = App()
+    views = make_plugin(static)
+    app.plugins = [views]
+    app.get_workspace("beam")
+
+    receive(app, {"dispatch": "plugin", "plugin": "views", "action": "save", "data": {"name": "A"}}, "beam")
+    assert sent_to(app)[-1][1] == "beam"
+
+    # Outside a handler, send goes to main unless told otherwise
+    views.send("flash")
+    views.send("flash", workspace=app.get_workspace("beam"))
+    views.send("flash", workspace="other")
+    assert [workspace for _, workspace in sent_to(app)[-3:]] == ["main", "beam", "other"]
+
+
+def test_send_all_reaches_every_workspace(static):
+    app = App()
+    views = make_plugin(static)
+    app.plugins = [views]
+    views.send_all("views", ["A"], key="views")
+    assert app.outbox._queue[-1][1:4] == ("plugin/views/views", True, None)
+
+
+def test_shared_state_is_replayed_to_every_workspace():
+    server = AppServer()
+    asyncio.run(server.broadcast(b"shared", "k", workspace_id=None))
+    asyncio.run(server.broadcast(b"own", "k", workspace_id="beam"))
+    with TestClient(server.fastapi_app) as client:
+        with client.websocket_connect("/ws?workspace=beam") as ws:
+            assert ws.receive_bytes() == b"shared"
+            assert ws.receive_bytes() == b"own"
+        with client.websocket_connect("/ws?workspace=other") as ws:
+            assert ws.receive_bytes() == b"shared"
+
+
+def make_named(static_dir, plugin_name):
+    class Named(Plugin):
+        name = plugin_name
+        static = static_dir
+
+        def __init__(self):
+            super().__init__()
+            self.calls = []
+
+        @action("ping")
+        def ping(self, data, workspace):
+            self.calls.append(workspace.workspace_id)
+
+    return Named()
+
+
+def test_workspaces_show_a_subset_of_the_plugins(static):
+    app = App()
+    essentials, draw = make_named(static, "essentials"), make_named(static, "draw")
+    app.plugins = [essentials, draw]
+    beam = app.get_workspace("beam")
+    beam.plugins = [essentials]
+
+    client = TestClient(app.server.fastapi_app)
+    assert [entry["name"] for entry in client.get("/plugins.json").json()] == ["essentials", "draw"]
+    assert [entry["name"] for entry in client.get("/plugins.json?workspace=beam").json()] == ["essentials"]
+    # A workspace without its own list, or not created yet, has all of them
+    assert len(client.get("/plugins.json?workspace=nowhere").json()) == 2
+
+    # Messages for a plugin the workspace doesn't show are dropped
+    receive(app, {"dispatch": "plugin", "plugin": "draw", "action": "ping"}, "beam")
+    receive(app, {"dispatch": "plugin", "plugin": "essentials", "action": "ping"}, "beam")
+    assert draw.calls == [] and essentials.calls == ["beam"]
+
+
+def test_workspace_plugins_come_from_the_app(static):
+    app = App()
+    essentials = make_named(static, "essentials")
+    beam = app.get_workspace("beam")
+    with pytest.raises(ValueError, match="not in App.plugins"):
+        beam.plugins = [essentials]
+    app.plugins = [essentials]
+    beam.plugins = [essentials]
+    app.plugins = []
+    assert beam.plugins == []
+
+
+def test_workspace_url():
+    app = App()
+    assert app.get_workspace("beam 1").url == app.url + "&workspace=beam%201"

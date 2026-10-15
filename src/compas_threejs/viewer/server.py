@@ -16,6 +16,9 @@ class AppServer:
     def __init__(self, frontend_dir=None):
         self.workspaces = defaultdict(set)
         self.workspace_states = defaultdict(dict)
+        # State sent to every workspace (`workspace_id=None` in `broadcast`), e.g. a plugin's
+        # button state, replayed to each tab before that tab's own state.
+        self.shared_state = {}
         self.app_instance = None
 
         self.loop = None
@@ -57,9 +60,9 @@ class AppServer:
         workspace_id = websocket.query_params.get("workspace", "main")
         self.workspaces[workspace_id].add(websocket)
 
-        # Replay only the history belonging to this specific workspace
-        current_state = self.workspace_states[workspace_id].copy()
-        for guid, buffer in current_state.items():
+        # Replay the shared state, then only the history belonging to this specific workspace
+        current_state = [*self.shared_state.values(), *self.workspace_states[workspace_id].values()]
+        for buffer in current_state:
             if isinstance(buffer, dict):
                 await websocket.send_json(buffer)
             else:
@@ -103,17 +106,21 @@ class AppServer:
     ):
         """Broadcast binary data or dictionary configurations cleanly to workspace clients.
 
+        `workspace_id=None` sends to the clients of every workspace, and persists in the
+        shared state that every workspace replays.
+
         `broadcast`, if False, still applies the persist/remove_key bookkeeping above but
         skips sending anything to already-connected clients - used to silently refresh a
         persisted snapshot for future reconnects only (see `Outbox.send_bytes`).
         """
+        state = self.shared_state if workspace_id is None else self.workspace_states[workspace_id]
         if remove_key is not None:
             # Drops the object's earlier persisted "add" broadcast so it isn't replayed to
             # clients that connect (or reconnect) after this removal.
-            self.workspace_states[workspace_id].pop(remove_key, None)
+            state.pop(remove_key, None)
         elif persist:
-            key = obj_id or str(len(self.workspace_states[workspace_id]))
-            self.workspace_states[workspace_id][key] = binary_data
+            key = obj_id or str(len(state))
+            state[key] = binary_data
 
         if binary_data is None:
             # Pure state cleanup (see Outbox.forget) - nothing to broadcast live.
@@ -122,7 +129,10 @@ class AppServer:
         if not broadcast:
             return
 
-        target_clients = self.workspaces[workspace_id]
+        if workspace_id is None:
+            target_clients = set().union(*self.workspaces.values())
+        else:
+            target_clients = self.workspaces[workspace_id]
         if not target_clients:
             return
 

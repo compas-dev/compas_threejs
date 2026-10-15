@@ -135,6 +135,8 @@ class App:
     def plugins(self) -> list:
         """The viewer's plugins, in toolbar order. Set before `start()`.
 
+        A workspace shows all of them, or the subset in its `Workspace.plugins`.
+
         >>> app.plugins = [Standard(), Camera()]
         """
         return list(self._plugins)
@@ -166,8 +168,9 @@ class App:
         """The geometry shown in the viewer with this guid (as plugins get it from the frontend), or None."""
         return self.inbox.geometry_registry.get(str(guid))
 
-    def _plugins_manifest(self):
-        return [plugin.manifest() for plugin in self._plugins]
+    def _plugins_manifest(self, workspace: str = "main"):
+        plugins = self.workspaces[workspace].plugins if workspace in self.workspaces else self._plugins
+        return [plugin.manifest() for plugin in plugins]
 
     def _mount_plugins(self):
         for plugin in self._plugins:

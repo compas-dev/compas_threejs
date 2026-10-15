@@ -291,7 +291,11 @@ class Inbox:
         if not plugin:
             console.log(f"[yellow]Received a message for unknown plugin {name!r}[/yellow]")
             return
-        plugin.handle(message.get("action"), message.get("data"))
+        workspace = self.app.get_workspace(workspace_id)
+        if plugin not in workspace.plugins:
+            console.log(f"[yellow]Plugin {name!r} is not in workspace {workspace_id!r}[/yellow]")
+            return
+        plugin.handle(message.get("action"), message.get("data"), workspace)
 
     def _handle_other_action(self, message, outbox, workspace_id):
         """Handles messages from frontend elements not tied to a backend-registered guid,
