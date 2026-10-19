@@ -481,6 +481,10 @@ class App:
         """Shows a previously hidden geometry object in the main workspace."""
         self.main.show_geometry(geometry)
 
+    def show_geometry_edges(self, geometry, show=True):
+        """Outlines one object's edges in the main workspace. See `Workspace.show_geometry_edges`."""
+        self.main.show_geometry_edges(geometry, show)
+
     def add_text(self, text, material=None):
         """Adds a text object to the main workspace."""
         self.main.add_text(text, material)

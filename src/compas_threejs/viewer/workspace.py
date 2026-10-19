@@ -446,6 +446,7 @@ class Workspace:
         # for whichever it never had.
         self.app.outbox.forget(("material", obj_id), workspace_id=self.workspace_id)
         self.app.outbox.forget(("visibility", obj_id), workspace_id=self.workspace_id)
+        self.app.outbox.forget(("edges", obj_id), workspace_id=self.workspace_id)
         # Drops the inbox-side registrations too (geometry/metadata/action-callbacks) - see
         # Inbox.forget_geometry for why that matters on its own, not just as an outbox mirror.
         self.app.inbox.forget_geometry(str(obj_id))
@@ -472,14 +473,35 @@ class Workspace:
         """
         self._set_geometry_visibility(geometry, visible=True)
 
-    def _set_geometry_visibility(self, geometry, visible):
-        # If the geometry is a Brep, target its displayed viewmesh instead
+    def show_geometry_edges(self, geometry, show=True):
+        """Outlines one object's edges (or stops), whatever `show_edges` - the scene-wide
+        setting - says. The outline is as see-through as the object.
+
+        Parameters
+        ----------
+        geometry : compas.geometry.Geometry | compas.datastructures.Mesh
+            The geometry object.
+        show : bool, optional
+            Whether to outline it. Default is True.
+        """
+        obj_id = self._displayed(geometry).guid
+        # Same reasoning as _set_geometry_visibility below - stable per-object key.
+        self.app.outbox.send_dict(
+            {"dispatch": "handle_geometry", "type": "set_edges", "guid": str(obj_id), "show": bool(show)},
+            workspace_id=self.workspace_id,
+            obj_id=("edges", obj_id),
+        )
+
+    def _displayed(self, geometry):
+        """The object the frontend shows for `geometry`: a Brep's viewmesh, if it has one."""
         if isinstance(geometry, Brep):
             viewmesh = self.app.inbox.brep_viewmesh_registry.get((self.workspace_id, geometry.guid))
             if viewmesh:
-                geometry = viewmesh
+                return viewmesh
+        return geometry
 
-        obj_id = geometry.guid
+    def _set_geometry_visibility(self, geometry, visible):
+        obj_id = self._displayed(geometry).guid
         # A geometry's visibility is a single current value, so it's persisted under a key
         # stable per object - re-toggling it overwrites its own slot instead of piling up a
         # new entry every time (e.g. every hide/show of a processing feature).
