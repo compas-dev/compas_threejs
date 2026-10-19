@@ -369,9 +369,10 @@ class App:
         self._mount_plugins()
         self._initialize_server()
 
-        # Re-send current main workspace settings now that the server (and its loop) exists
-        self.main.background_color = self.main.background_color
+        # Re-send current main workspace settings now that the server (and its loop) exists.
+        # The theme first: it resets the background to its own, and the set one wins.
         self.main.dark_mode = self.main.dark_mode
+        self.main.background_color = self.main.background_color
         self.main.camera_damping = self.main.camera_damping
         self.main.send_default_view()
 
