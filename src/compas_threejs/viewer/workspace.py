@@ -2,6 +2,7 @@ import webbrowser
 from enum import IntEnum
 from typing import Optional
 from typing import Union
+from urllib.parse import quote
 
 import compas_pb
 from compas.colors import Color
@@ -75,6 +76,37 @@ class Workspace:
         self._camera_position = Point(8, -15, 15)
         self._camera_target = Point(0, 0, 0)
         self._show_edges = False
+        self._plugins = None
+
+    @property
+    def plugins(self) -> list:
+        """The plugins this workspace's browser tabs show: a subset of `App.plugins`.
+
+        By default all of them. Plugins are shared between workspaces - the same objects,
+        told which workspace each message comes from. A tab loads the list when it opens.
+
+        >>> beam = app.get_workspace("beam")
+        >>> beam.plugins = [essentials, timber]
+        """
+        if self._plugins is None:
+            return self.app.plugins
+        return [plugin for plugin in self._plugins if plugin.app is self.app]
+
+    @plugins.setter
+    def plugins(self, plugins):
+        if plugins is None:
+            self._plugins = None
+            return
+        plugins = list(plugins)
+        for plugin in plugins:
+            if plugin not in self.app.plugins:
+                raise ValueError(f"Plugin {getattr(plugin, 'name', plugin)!r} is not in App.plugins; add it there first")
+        self._plugins = plugins
+
+    @property
+    def url(self) -> str:
+        """The URL of this workspace's viewer page, as `App.url` gives the main one."""
+        return f"{self.app.url}&workspace={quote(self.workspace_id)}"
 
     def _send_scene_message(self, type_: str, **fields):
         # Each scene setting (camera position, background color, ...) represents a single
@@ -414,6 +446,7 @@ class Workspace:
         # for whichever it never had.
         self.app.outbox.forget(("material", obj_id), workspace_id=self.workspace_id)
         self.app.outbox.forget(("visibility", obj_id), workspace_id=self.workspace_id)
+        self.app.outbox.forget(("edges", obj_id), workspace_id=self.workspace_id)
         # Drops the inbox-side registrations too (geometry/metadata/action-callbacks) - see
         # Inbox.forget_geometry for why that matters on its own, not just as an outbox mirror.
         self.app.inbox.forget_geometry(str(obj_id))
@@ -440,14 +473,35 @@ class Workspace:
         """
         self._set_geometry_visibility(geometry, visible=True)
 
-    def _set_geometry_visibility(self, geometry, visible):
-        # If the geometry is a Brep, target its displayed viewmesh instead
+    def show_geometry_edges(self, geometry, show=True):
+        """Outlines one object's edges (or stops), whatever `show_edges` - the scene-wide
+        setting - says. The outline is as see-through as the object.
+
+        Parameters
+        ----------
+        geometry : compas.geometry.Geometry | compas.datastructures.Mesh
+            The geometry object.
+        show : bool, optional
+            Whether to outline it. Default is True.
+        """
+        obj_id = self._displayed(geometry).guid
+        # Same reasoning as _set_geometry_visibility below - stable per-object key.
+        self.app.outbox.send_dict(
+            {"dispatch": "handle_geometry", "type": "set_edges", "guid": str(obj_id), "show": bool(show)},
+            workspace_id=self.workspace_id,
+            obj_id=("edges", obj_id),
+        )
+
+    def _displayed(self, geometry):
+        """The object the frontend shows for `geometry`: a Brep's viewmesh, if it has one."""
         if isinstance(geometry, Brep):
             viewmesh = self.app.inbox.brep_viewmesh_registry.get((self.workspace_id, geometry.guid))
             if viewmesh:
-                geometry = viewmesh
+                return viewmesh
+        return geometry
 
-        obj_id = geometry.guid
+    def _set_geometry_visibility(self, geometry, visible):
+        obj_id = self._displayed(geometry).guid
         # A geometry's visibility is a single current value, so it's persisted under a key
         # stable per object - re-toggling it overwrites its own slot instead of piling up a
         # new entry every time (e.g. every hide/show of a processing feature).
