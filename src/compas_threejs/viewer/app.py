@@ -104,6 +104,7 @@ class App:
 
         # Plugins: none by default, so the viewer starts without a toolbar
         self._plugins = []
+        self._new_workspace_callbacks = []
         self.server.add_route("/plugins.json", self._plugins_manifest)
 
         # Setter Attributes
@@ -168,9 +169,25 @@ class App:
         """The geometry shown in the viewer with this guid (as plugins get it from the frontend), or None."""
         return self.inbox.geometry_registry.get(str(guid))
 
+    def on_new_workspace(self, callback: callable) -> callable:
+        """Calls ``callback(workspace)`` when a browser tab asks for a workspace that doesn't exist yet.
+
+        It runs before the tab loads its plugins, so the callback can set `Workspace.plugins`
+        and fill the workspace - e.g. for a tab a plugin opened with `viewer.workspaceUrl(id)`.
+        Plugins get the same through `Plugin.new_workspace`. Usable as a decorator.
+        """
+        self._new_workspace_callbacks.append(callback)
+        return callback
+
     def _plugins_manifest(self, workspace: str = "main"):
-        plugins = self.workspaces[workspace].plugins if workspace in self.workspaces else self._plugins
-        return [plugin.manifest() for plugin in plugins]
+        # The page asks for its plugins first of all, so this is where a tab's workspace starts.
+        if workspace not in self.workspaces:
+            created = self.get_workspace(workspace)
+            for plugin in self._plugins:
+                plugin.new_workspace(created)
+            for callback in self._new_workspace_callbacks:
+                callback(created)
+        return [plugin.manifest() for plugin in self.workspaces[workspace].plugins]
 
     def _mount_plugins(self):
         for plugin in self._plugins:

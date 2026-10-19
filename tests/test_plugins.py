@@ -254,3 +254,30 @@ def test_workspace_plugins_come_from_the_app(static):
 def test_workspace_url():
     app = App()
     assert app.get_workspace("beam 1").url == app.url + "&workspace=beam%201"
+
+
+def test_a_tab_asking_for_a_new_workspace_sets_it_up_first(static):
+    app = App()
+    essentials, timber = make_named(static, "essentials"), make_named(static, "timber")
+    seen = []
+
+    class Timber(type(timber)):
+        def new_workspace(self, workspace):
+            seen.append(("plugin", workspace.workspace_id))
+            workspace.plugins = [self]
+
+    timber = Timber()
+    app.plugins = [essentials, timber]
+
+    @app.on_new_workspace
+    def created(workspace):
+        seen.append(("app", workspace.workspace_id))
+
+    client = TestClient(app.server.fastapi_app)
+    assert [entry["name"] for entry in client.get("/plugins.json?workspace=beam").json()] == ["timber"]
+    assert seen == [("plugin", "beam"), ("app", "beam")]
+    # Only once, and not for workspaces Python made
+    client.get("/plugins.json?workspace=beam")
+    app.get_workspace("column")
+    client.get("/plugins.json?workspace=column")
+    assert len(seen) == 2

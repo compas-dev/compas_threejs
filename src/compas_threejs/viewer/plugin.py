@@ -151,6 +151,13 @@ class Plugin:
         if self._hidden or self._disabled:
             self.send_buttons()
 
+    def new_workspace(self, workspace):
+        """Called when a browser tab asks for a workspace that doesn't exist yet, before it loads its plugins.
+
+        A plugin that opens tabs (`viewer.workspaceUrl(id)` in the frontend) overrides it to
+        set up the workspace: its `Workspace.plugins`, and its content. See `App.on_new_workspace`.
+        """
+
     def send_buttons(self):
         """Sends every workspace which groups and buttons are hidden or disabled; kept for browsers that connect later."""
         if not self.app:

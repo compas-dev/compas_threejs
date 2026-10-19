@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * `Plugin.attached()`, called once a plugin is added to an App, and `App.find_geometry(guid)`.
 * Workspace-aware plugins: `@action` handlers get `(data, workspace)`, the `Workspace` of the browser tab that sent the message; inside a handler `Plugin.send` answers that tab, `send(..., workspace=)` picks one, and `Plugin.send_all` reaches every tab. Button state reaches every tab.
 * `Workspace.plugins`: the subset of `App.plugins` a workspace's tabs show, served at `/plugins.json?workspace=<id>`. `Workspace.url`.
+* `App.on_new_workspace(callback)` and `Plugin.new_workspace(workspace)`: set up a workspace a browser tab asks for before it exists (e.g. one a plugin opened with `viewer.workspaceUrl`), before the tab loads its plugins.
 
 ### Changed
 
