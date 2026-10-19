@@ -281,3 +281,17 @@ def test_a_tab_asking_for_a_new_workspace_sets_it_up_first(static):
     app.get_workspace("column")
     client.get("/plugins.json?workspace=column")
     assert len(seen) == 2
+
+
+def test_notify_shows_a_message_in_one_workspace_or_all(static):
+    app = App()
+    views = make_plugin(static)
+    app.plugins = [views]
+    views.notify("Saved", "success")
+    data, key, persist, workspace_id = app.outbox._queue[-1][:4]
+    assert compas_pb.pb_load_bts(data) == {"dispatch": "notice", "message": "Saved", "kind": "success"}
+    assert (key, persist, workspace_id) == ("", False, "main")
+    views.notify("Hello", workspace="all")
+    assert app.outbox._queue[-1][3] is None
+    with pytest.raises(ValueError):
+        views.notify("Hm", "loud")

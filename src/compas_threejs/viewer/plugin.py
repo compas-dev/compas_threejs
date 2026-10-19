@@ -6,6 +6,8 @@ from rich.console import Console
 
 console = Console()
 
+NOTICE_KINDS = ("info", "success", "warning", "error")
+
 # The workspace whose message a plugin is handling: where `Plugin.send` answers.
 _asking_workspace = ContextVar("asking_workspace", default=None)
 
@@ -37,9 +39,9 @@ class Plugin:
     The plugin is one object for all workspaces: a workspace shows the plugins in
     `Workspace.plugins`, by default all of `App.plugins`.
 
-    `hide`, `show`, `disable` and `enable` take the ids of button groups or single
-    buttons, as the frontend names them in `groups`. A subclass may list them in `ids`,
-    so that a misspelled id raises instead of doing nothing.
+    `hide`, `show`, `disable` and `enable` take the ids of button groups, single
+    buttons or panels, as the frontend names them in `groups` and `panels`. A subclass
+    may list them in `ids`, so that a misspelled id raises instead of doing nothing.
 
     Examples
     --------
@@ -185,6 +187,25 @@ class Plugin:
         A keyed message is also replayed to tabs opened later, in any workspace.
         """
         self._send(action_name, data, key, None)
+
+    def notify(self, message, kind="info", *, workspace=None):
+        """Shows `message` to the user for a moment, at the bottom of the view.
+
+        `kind` is "info", "success", "warning" or "error". It goes to one workspace,
+        chosen like `send`'s; `workspace="all"` shows it in every tab.
+        """
+        if kind not in NOTICE_KINDS:
+            raise ValueError(f"Unknown notice kind {kind!r}; use one of {', '.join(NOTICE_KINDS)}")
+        if not self.app:
+            raise RuntimeError(f"Plugin {self.name!r} is not added to an App")
+        if workspace == "all":
+            workspace_id = None
+        else:
+            if workspace is None:
+                workspace = _asking_workspace.get() or "main"
+            workspace_id = workspace if isinstance(workspace, str) else workspace.workspace_id
+        message = {"dispatch": "notice", "message": str(message), "kind": kind}
+        self.app.outbox.send_bytes(compas_pb.pb_dump_bts(message), "", persist=False, workspace_id=workspace_id)
 
     def _send(self, action_name, data, key, workspace_id):
         if not self.app:
