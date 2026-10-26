@@ -37,7 +37,8 @@ class Plugin:
     to every tab.
 
     The plugin is one object for all workspaces: a workspace shows the plugins in
-    `Workspace.plugins`, by default all of `App.plugins`.
+    `Workspace.plugins`, by default all of `App.plugins` - but the main workspace leaves
+    out a plugin whose `in_main` is False, one made for other tabs (an element's editor).
 
     `hide`, `show`, `disable` and `enable` take the ids of button groups, single
     buttons or panels, as the frontend names them in `groups` and `panels`. A subclass
@@ -56,6 +57,8 @@ class Plugin:
     name = None
     static = None
     ids = None
+    #: Whether the main workspace shows it by default (`Workspace.plugins`)
+    in_main = True
 
     def __init__(self):
         if not self.name:

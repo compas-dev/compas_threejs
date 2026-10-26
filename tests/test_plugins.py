@@ -250,6 +250,19 @@ def test_workspaces_show_a_subset_of_the_plugins(static):
     assert draw.calls == [] and essentials.calls == ["beam"]
 
 
+def test_the_main_workspace_leaves_out_plugins_not_in_main(static):
+    app = App()
+    essentials, editor = make_named(static, "essentials"), make_named(static, "editor")
+    editor.in_main = False  # made for other tabs, e.g. an element's editor
+    app.plugins = [essentials, editor]
+    assert app.main.plugins == [essentials]
+    assert app.get_workspace("beam").plugins == [essentials, editor]
+
+    client = TestClient(app.server.fastapi_app)
+    assert [entry["name"] for entry in client.get("/plugins.json").json()] == ["essentials"]
+    assert [entry["name"] for entry in client.get("/plugins.json?workspace=beam").json()] == ["essentials", "editor"]
+
+
 def test_workspace_plugins_come_from_the_app(static):
     app = App()
     essentials = make_named(static, "essentials")

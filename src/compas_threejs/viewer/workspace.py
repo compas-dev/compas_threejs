@@ -82,13 +82,16 @@ class Workspace:
     def plugins(self) -> list:
         """The plugins this workspace's browser tabs show: a subset of `App.plugins`.
 
-        By default all of them. Plugins are shared between workspaces - the same objects,
+        By default all of them - in the main workspace, those whose `Plugin.in_main` is
+        True. Plugins are shared between workspaces - the same objects,
         told which workspace each message comes from. A tab loads the list when it opens.
 
         >>> beam = app.get_workspace("beam")
         >>> beam.plugins = [essentials, timber]
         """
         if self._plugins is None:
+            if self.workspace_id == "main":
+                return [plugin for plugin in self.app.plugins if plugin.in_main]
             return self.app.plugins
         return [plugin for plugin in self._plugins if plugin.app is self.app]
 
