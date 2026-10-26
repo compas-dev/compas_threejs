@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 
 import compas_pb
 import pytest
@@ -58,11 +59,21 @@ def test_plugins_are_listed_in_order(static, tmp_path_factory):
     app._mount_plugins()
     client = TestClient(app.server.fastapi_app)
 
-    assert client.get("/plugins.json").json() == [
-        {"name": "views", "module": "plugins/views/plugin.js"},
-        {"name": "other", "module": "plugins/other/plugin.js", "style": "plugins/other/plugin.css"},
-    ]
-    assert client.get("/plugins/views/plugin.js").text == "export default { name: 'views' };"
+    manifest = client.get("/plugins.json").json()
+    assert [entry["name"] for entry in manifest] == ["views", "other"]
+    assert manifest[0]["module"].startswith("plugins/views/plugin.js?v=") and "style" not in manifest[0]
+    assert manifest[1]["module"].startswith("plugins/other/plugin.js?v=")
+    assert manifest[1]["style"].startswith("plugins/other/plugin.css?v=")
+    assert client.get(manifest[0]["module"]).text == "export default { name: 'views' };"
+
+
+def test_a_rebuilt_plugin_gets_a_new_url(static):
+    plugin = make_plugin(static)
+    before = plugin.manifest()["module"]
+    path = static / "plugin.js"
+    stat = path.stat()
+    os.utime(path, ns=(stat.st_atime_ns, stat.st_mtime_ns + 1_000_000_000))
+    assert plugin.manifest()["module"] != before
 
 
 def test_plugin_names_must_be_unique(static):

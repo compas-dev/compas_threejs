@@ -75,11 +75,20 @@ class Plugin:
         return Path(self.static) if self.static else None
 
     def manifest(self):
-        """The entry `plugins.json` lists for this plugin; paths are relative to the page."""
-        entry = {"name": self.name, "module": f"plugins/{self.name}/plugin.js"}
+        """The entry `plugins.json` lists for this plugin; paths are relative to the page.
+
+        Each path carries the file's modification time (``?v=...``), so a browser loads a
+        rebuilt plugin instead of the copy it cached.
+        """
+        entry = {"name": self.name, "module": self._versioned("plugin.js")}
         if (self.static_dir / "plugin.css").exists():
-            entry["style"] = f"plugins/{self.name}/plugin.css"
+            entry["style"] = self._versioned("plugin.css")
         return entry
+
+    def _versioned(self, filename):
+        path = self.static_dir / filename
+        version = f"?v={path.stat().st_mtime_ns}" if path.exists() else ""
+        return f"plugins/{self.name}/{filename}{version}"
 
     def on(self, action_name):
         """Adds a handler for `action_name` from outside the plugin, as a decorator.
