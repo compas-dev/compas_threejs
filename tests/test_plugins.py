@@ -319,3 +319,16 @@ def test_notify_shows_a_message_in_one_workspace_or_all(static):
     assert app.outbox._queue[-1][3] is None
     with pytest.raises(ValueError):
         views.notify("Hm", "loud")
+
+
+def test_a_gizmo_move_is_told_to_on_object_transform():
+    from compas.geometry import Point
+
+    app = App()
+    point = Point(0, 0, 0)
+    app.add_geometry(point)
+    moves = []
+    app.on_object_transform(lambda geometry, transformation, workspace: moves.append((geometry, workspace.workspace_id)))
+    matrix = [[1, 0, 0, 2], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
+    receive(app, {"dispatch": "object_transform", "guid": str(point.guid), "matrix": matrix})
+    assert moves == [(point, "main")] and point.x == 2

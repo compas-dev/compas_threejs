@@ -105,6 +105,7 @@ class App:
         # Plugins: none by default, so the viewer starts without a toolbar
         self._plugins = []
         self._new_workspace_callbacks = []
+        self._transform_callbacks = []
         self.server.add_route("/plugins.json", self._plugins_manifest)
 
         # Setter Attributes
@@ -177,6 +178,14 @@ class App:
         Plugins get the same through `Plugin.new_workspace`. Usable as a decorator.
         """
         self._new_workspace_callbacks.append(callback)
+        return callback
+
+    def on_object_transform(self, callback: callable) -> callable:
+        """Calls ``callback(geometry, transformation, workspace)`` when the user moves an object
+        in a browser tab (the gizmo), once ``geometry`` is transformed. ``transformation`` is
+        the move, in world coordinates. Usable as a decorator.
+        """
+        self._transform_callbacks.append(callback)
         return callback
 
     def _plugins_manifest(self, workspace: str = "main"):

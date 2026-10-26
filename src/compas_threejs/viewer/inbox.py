@@ -200,7 +200,13 @@ class Inbox:
             geometry.transform(transformation)
 
         if self.app is not None:
-            self.app.get_workspace(workspace_id).update_geometry(geometry)
+            workspace = self.app.get_workspace(workspace_id)
+            workspace.update_geometry(geometry)
+            for callback in list(self.app._transform_callbacks):
+                try:
+                    callback(geometry, transformation, workspace)
+                except Exception as error:  # a script's callback must not break the server
+                    console.log(f"[red]Error in {getattr(callback, '__name__', callback)}: {error}[/red]")
 
     def _handle_create_geometry(self, message, outbox, workspace_id):
         """Creates a new backend geometry object from a frontend "Add Box/Sphere/Point" action.
