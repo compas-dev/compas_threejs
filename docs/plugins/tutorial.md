@@ -381,7 +381,8 @@ export default definePlugin({
   one shaded segment.
 - `objectActions` appear in the *Actions* panel while an object is picked.
 - `panels` with a `title` get a frame whose title bar folds them; `side` is `"right"`
-  by default, or `"left"` under the toolbar.
+  by default, `"left"` under the toolbar, or `"top"` / `"bottom"` for a row along that
+  edge of the view.
 - `setup` runs once, before the viewer mounts. `channel.on` returns an unsubscribe
   function, which doubles as `setup`'s cleanup.
 
