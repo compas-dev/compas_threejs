@@ -627,7 +627,10 @@ def test_ids_are_checked():
 | `FileNotFoundError: Plugin 'notes' has no built frontend` | Run `npm run build`; check `static` points at the build's `outDir`. |
 | The section doesn't appear; the browser console says *Unable to load the "notes" plugin* | `plugin.js` failed to import - look at the error below it. Often a missing default export. |
 | *useViewer() must be called inside a viewer component* | Vue was bundled into `plugin.js`; keep `vue`, `three` and the viewer package `external`. |
-| The viewer doesn't mount at all | Two plugins with the same name, or a duplicate id within one plugin. |
+| *The "notes" plugin uses the id "…" twice: it was not loaded* (error notice) | A duplicate id within one plugin, or two plugins with the same name. |
+| *The "notes" plugin was not loaded: its setup failed* | `setup` threw - the browser console has the stack. |
+| A *!* mark instead of a button or panel | That component threw while it set up or drew. |
+| *Plugin 'notes' failed on 'write': …* (error notice) | A Python handler raised - the traceback is in the Python log. |
 | *Plugin 'notes' has no handler for 'write'* (Python log) | The action names on both sides differ. |
 | `TypeError` in a handler with one argument | Handlers take `(data, workspace)`. |
 | A plugin class looks wrong (no colours) | `theme.css` is missing, or a class is built from strings Tailwind can't see. |

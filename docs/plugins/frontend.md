@@ -55,7 +55,7 @@ flowchart TB
     end
     D --> F
     subgraph create["createViewer(container, { plugins })"]
-        F["check names and ids<br/>(a duplicate throws: no viewer at all)"] --> G["setup(viewer) of each plugin,<br/>in order; keep the cleanups"]
+        F["check names and ids<br/>(a duplicate: that plugin is left out)"] --> G["setup(viewer) of each plugin,<br/>in order; keep the cleanups<br/>(setup throws: that plugin is left out)"]
         G --> H["mount the Vue app:<br/>toolbar, object actions, panels"]
     end
     H --> I["WebSocket connects:<br/>scene + kept messages arrive"]
@@ -65,9 +65,14 @@ Points to take from it:
 
 - **A plugin that fails to import is skipped**, with an error in the browser console.
   The viewer still opens with the other plugins.
-- **A duplicate is fatal**: two plugins with the same `name`, or one plugin using an id
-  twice across `groups`, buttons, `objectActions` and `panels`, throw before anything is
-  mounted.
+- **A broken plugin is left out, not the viewer.** A second plugin with a taken `name`,
+  a plugin using an id twice across `groups`, buttons, `objectActions` and `panels`, or
+  one whose `setup` throws, is not loaded; the others are. Each failure shows an error
+  notice and goes to `onError` (code `plugin_error`), or the browser console.
+- **A failing component or handler stays contained.** A button, object action or panel
+  that throws while it sets up or draws becomes a small *!* mark; one that throws later
+  (in a click) stays. A `channel.on` handler that throws doesn't keep the message from
+  the others. Both show an error notice.
 - **`setup` runs before any component exists**, once per page, in `app.plugins` order.
   What it returns is called when the viewer is disposed, in reverse order.
 - **Messages come after `setup`.** A handler registered in `setup` is in place before
