@@ -8,6 +8,9 @@ from fastapi import FastAPI
 from fastapi import WebSocket
 from fastapi import WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
+from rich.console import Console
+
+console = Console()
 
 
 class AppServer:
@@ -85,7 +88,11 @@ class AppServer:
                         # thread so a long-running handler (e.g. loading a large model) doesn't
                         # block the loop from delivering messages the handler sends in the
                         # meantime (e.g. a start_spinner() call made at the top of the handler).
-                        await asyncio.to_thread(self.app_instance.on_message, data, workspace_id)
+                        try:
+                            await asyncio.to_thread(self.app_instance.on_message, data, workspace_id)
+                        except Exception:
+                            # A failing message must not end the tab's connection.
+                            console.print_exception()
                 elif "bytes" in message:
                     data = message["bytes"]
                     await self.broadcast(data, workspace_id=workspace_id)

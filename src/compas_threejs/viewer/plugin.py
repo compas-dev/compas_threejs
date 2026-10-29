@@ -108,7 +108,11 @@ class Plugin:
         return decorate
 
     def handle(self, action_name, data, workspace):
-        """Calls the handlers of `action_name` with `data` and the `Workspace` it came from."""
+        """Calls the handlers of `action_name` with `data` and the `Workspace` it came from.
+
+        A handler that raises is logged and shown to the asking tab as an error notice;
+        the other handlers still run, and the tab stays connected.
+        """
         handlers = self._handlers.get(action_name)
         if not handlers:
             console.log(f"[yellow]Plugin {self.name!r} has no handler for {action_name!r}[/yellow]")
@@ -116,9 +120,19 @@ class Plugin:
         token = _asking_workspace.set(workspace)
         try:
             for handler in handlers:
-                handler(data, workspace)
+                try:
+                    handler(data, workspace)
+                except Exception as error:
+                    console.print_exception()
+                    self._notify_failure(action_name, error)
         finally:
             _asking_workspace.reset(token)
+
+    def _notify_failure(self, action_name, error):
+        try:
+            self.notify(f"Plugin {self.name!r} failed on {action_name!r}: {error}", "error")
+        except Exception:
+            console.print_exception()
 
     @property
     def hidden(self):

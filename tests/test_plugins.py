@@ -332,3 +332,47 @@ def test_a_gizmo_move_is_told_to_on_object_transform():
     matrix = [[1, 0, 0, 2], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]]
     receive(app, {"dispatch": "object_transform", "guid": str(point.guid), "matrix": matrix})
     assert moves == [(point, "main")] and point.x == 2
+
+
+def test_a_failing_handler_is_shown_to_the_tab_and_the_others_still_run(static):
+    app = App()
+    views = make_plugin(static)
+    app.plugins = [views]
+    seen = []
+
+    @views.on("save")
+    def broken(data, workspace):
+        raise ValueError("no name")
+
+    @views.on("save")
+    def after(data, workspace):
+        seen.append(data)
+
+    receive(app, {"dispatch": "plugin", "plugin": "views", "action": "save", "data": {"name": "A"}}, "tab")
+    assert views.saved == [{"name": "A"}] and seen == [{"name": "A"}]
+    notices = [(compas_pb.pb_load_bts(entry[0]), entry[3]) for entry in app.outbox._queue if compas_pb.pb_load_bts(entry[0]).get("dispatch") == "notice"]
+    assert notices == [({"dispatch": "notice", "message": "Plugin 'views' failed on 'save': no name", "kind": "error"}, "tab")]
+
+
+def test_a_failing_message_keeps_the_tab_connected():
+    import threading
+
+    handled = []
+    both = threading.Event()
+
+    class Broken:
+        def on_message(self, data, workspace_id):
+            handled.append(data)
+            if len(handled) == 2:
+                both.set()
+            if len(handled) == 1:
+                raise RuntimeError("broken")
+
+    server = AppServer()
+    server.app_instance = Broken()
+    with TestClient(server.fastapi_app) as client:
+        with client.websocket_connect("/ws") as websocket:
+            websocket.send_text("first")
+            websocket.send_text("second")
+            assert both.wait(5)
+    assert handled == [b"first", b"second"]

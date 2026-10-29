@@ -198,10 +198,11 @@ Step by step:
 numbers, booleans, `None`. Geometry travels as guids; turn one back into the COMPAS
 object with `self.app.find_geometry(guid)`.
 
-!!! warning "An exception in a handler disconnects the tab"
-    An uncaught exception in a handler ends that tab's WebSocket: the page stays up, but
-    no longer talks to Python until it is reloaded. Validate what the browser sends,
-    and catch what you can handle:
+!!! note "An exception in a handler"
+    A handler that raises is logged with its traceback, and the asking tab shows an
+    error notice: *"Plugin 'notes' failed on 'write': ..."*. The action's other handlers
+    still run, and the tab stays connected. Still, validate what the browser sends, and
+    catch what you can handle, to tell the user something better:
 
     ```python
     @action("write")
