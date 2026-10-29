@@ -9,7 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* `Plugin` and `@action` in `compas_threejs.viewer`: a toolbar plugin's Python half, talking to its frontend buttons with `@action` handlers and `send()`.
+* `App.plugins`: the viewer's plugins, in toolbar order. The App serves each plugin's built frontend and lists them at `/plugins.json`.
+* `Plugin.hide`/`show`/`disable`/`enable`: hide or disable a plugin's button groups, buttons or object actions by id.
+* `Plugin.attached()`, called once a plugin is added to an App, and `App.find_geometry(guid)`.
+* Workspace-aware plugins: `@action` handlers get `(data, workspace)`, the `Workspace` of the browser tab that sent the message; inside a handler `Plugin.send` answers that tab, `send(..., workspace=)` picks one, and `Plugin.send_all` reaches every tab. Button state reaches every tab.
+* `Workspace.plugins`: the subset of `App.plugins` a workspace's tabs show, served at `/plugins.json?workspace=<id>`. `Workspace.url`.
+* `App.on_new_workspace(callback)` and `Plugin.new_workspace(workspace)`: set up a workspace a browser tab asks for before it exists (e.g. one a plugin opened with `viewer.workspaceUrl`), before the tab loads its plugins.
+* Plugin panels: `hide`/`show`/`disable`/`enable` also take the ids of a plugin's docked panels.
+* `Plugin.notify(message, kind)`: a short message for the user, at the bottom of the view.
+* `App.show_geometry_edges(geometry, show=True)` / `Workspace.show_geometry_edges`: outline one object's edges, whatever the scene-wide `show_edges`.
+
+### Fixed
+
+* A picked object's metadata shows its fields in order (sent along as `"__order__"`); sending it no longer writes into the registered `Metadata`.
+* `App.start` sends the theme before the background color, so a background set with dark mode on is kept.
+
 ### Changed
+
+* The viewer has no toolbar unless plugins add one, e.g. `app.plugins = [Essentials(), Views()]` from `compas_threejs_essentials` and `compas_threejs_views`.
+* The transform gizmo and object locking are plugin behaviour (`Essentials` in `compas_threejs_essentials`); the viewer applies a gizmo edit to the geometry as before.
 
 ### Removed
 

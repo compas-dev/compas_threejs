@@ -10,6 +10,7 @@ from rich.console import Console
 
 from .inbox import Inbox
 from .outbox import Outbox
+from .plugin import Plugin
 from .server import AppServer
 from .workspace import CameraView
 from .workspace import Workspace
@@ -101,6 +102,12 @@ class App:
         self.outbox = Outbox(self.server)
         self.inbox = Inbox(self)
 
+        # Plugins: none by default, so the viewer starts without a toolbar
+        self._plugins = []
+        self._new_workspace_callbacks = []
+        self._transform_callbacks = []
+        self.server.add_route("/plugins.json", self._plugins_manifest)
+
         # Setter Attributes
         self._loop_interval = 0.01
         self._loop = None
@@ -125,6 +132,78 @@ class App:
         return self.workspaces[workspace_id]
 
     # ---- ATTRIBUTES (forwarded to the main workspace) ------------------------------------------
+
+    @property
+    def plugins(self) -> list:
+        """The viewer's plugins, in toolbar order. Set before `start()`.
+
+        A workspace shows all of them, or the subset in its `Workspace.plugins`.
+
+        >>> app.plugins = [Standard(), Camera()]
+        """
+        return list(self._plugins)
+
+    @plugins.setter
+    def plugins(self, plugins):
+        if self.websocket_server_thread:
+            raise RuntimeError("Set App.plugins before App.start()")
+        plugins = list(plugins)
+        names = set()
+        for plugin in plugins:
+            if not isinstance(plugin, Plugin):
+                raise TypeError(f"Not a Plugin: {plugin!r}")
+            if plugin.name in names:
+                raise ValueError(f"Two plugins are named {plugin.name!r}")
+            names.add(plugin.name)
+        for plugin in self._plugins:
+            plugin.app = None
+        for plugin in plugins:
+            plugin.app = self
+            plugin.attached()
+        self._plugins = plugins
+
+    def get_plugin(self, name: str):
+        """The plugin named `name`, or None."""
+        return next((plugin for plugin in self._plugins if plugin.name == name), None)
+
+    def find_geometry(self, guid: str):
+        """The geometry shown in the viewer with this guid (as plugins get it from the frontend), or None."""
+        return self.inbox.geometry_registry.get(str(guid))
+
+    def on_new_workspace(self, callback: callable) -> callable:
+        """Calls ``callback(workspace)`` when a browser tab asks for a workspace that doesn't exist yet.
+
+        It runs before the tab loads its plugins, so the callback can set `Workspace.plugins`
+        and fill the workspace - e.g. for a tab a plugin opened with `viewer.workspaceUrl(id)`.
+        Plugins get the same through `Plugin.new_workspace`. Usable as a decorator.
+        """
+        self._new_workspace_callbacks.append(callback)
+        return callback
+
+    def on_object_transform(self, callback: callable) -> callable:
+        """Calls ``callback(geometry, transformation, workspace)`` when the user moves an object
+        in a browser tab (the gizmo), once ``geometry`` is transformed. ``transformation`` is
+        the move, in world coordinates. Usable as a decorator.
+        """
+        self._transform_callbacks.append(callback)
+        return callback
+
+    def _plugins_manifest(self, workspace: str = "main"):
+        # The page asks for its plugins first of all, so this is where a tab's workspace starts.
+        if workspace not in self.workspaces:
+            created = self.get_workspace(workspace)
+            for plugin in self._plugins:
+                plugin.new_workspace(created)
+            for callback in self._new_workspace_callbacks:
+                callback(created)
+        return [plugin.manifest() for plugin in self.workspaces[workspace].plugins]
+
+    def _mount_plugins(self):
+        for plugin in self._plugins:
+            static_dir = plugin.static_dir
+            if not static_dir or not (static_dir / "plugin.js").exists():
+                raise FileNotFoundError(f"Plugin {plugin.name!r} has no built frontend at {static_dir}/plugin.js - build it with `npm run build` in the plugin's repository.")
+            self.server.add_static_mount(f"/plugins/{plugin.name}", static_dir, name=f"plugin_{plugin.name}")
 
     @property
     def loop(self) -> callable:
@@ -296,11 +375,13 @@ class App:
 
     def start(self, show=False):
         """Initializes the server and keeps the main thread alive."""
+        self._mount_plugins()
         self._initialize_server()
 
-        # Re-send current main workspace settings now that the server (and its loop) exists
-        self.main.background_color = self.main.background_color
+        # Re-send current main workspace settings now that the server (and its loop) exists.
+        # The theme first: it resets the background to its own, and the set one wins.
         self.main.dark_mode = self.main.dark_mode
+        self.main.background_color = self.main.background_color
         self.main.camera_damping = self.main.camera_damping
         self.main.send_default_view()
 
@@ -408,6 +489,10 @@ class App:
     def show_geometry(self, geometry):
         """Shows a previously hidden geometry object in the main workspace."""
         self.main.show_geometry(geometry)
+
+    def show_geometry_edges(self, geometry, show=True):
+        """Outlines one object's edges in the main workspace. See `Workspace.show_geometry_edges`."""
+        self.main.show_geometry_edges(geometry, show)
 
     def add_text(self, text, material=None):
         """Adds a text object to the main workspace."""

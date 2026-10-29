@@ -26,6 +26,8 @@ class Outbox:
         state - used so a removed object's earlier "add" broadcast isn't replayed to clients
         that connect (or reconnect) after the removal.
 
+        `workspace_id=None` sends to every workspace (see `AppServer.broadcast`).
+
         `broadcast`, if False, still persists `binary_data` under `obj_id` for future
         reconnects but skips sending it to clients already connected - used to silently
         refresh the reconnect-replay snapshot after already notifying live clients through
