@@ -66,7 +66,12 @@ markdown_extensions:
     - pymdownx.inlinehilite
     - pymdownx.snippets:
           check_paths: true
-    - pymdownx.superfences
+    - pymdownx.superfences:
+          custom_fences:
+              - name: mermaid
+                class: mermaid
+                format: !!python/name:pymdownx.superfences.fence_code_format
+    - def_list
     - toc:
           permalink: "¤"
 
@@ -130,9 +135,15 @@ nav:
           - Shortcuts: shortcuts.md
     - Tutorials:
           - Basic Geometry: tutorials/basic_geometry.md
+    - Plugins:
+          - How Plugins Work: plugins/index.md
+          - The Python Half, Explained: plugins/python.md
+          - The Frontend Half, Explained: plugins/frontend.md
+          - "Tutorial: Build a Plugin": plugins/tutorial.md
     - API Reference:
           - Viewer:
                 - App: reference/viewer/viewer.md
+                - Plugin: reference/viewer/plugin.md
           - Materials:
                 - Generic: reference/materials/generic_material.md
                 - Material: reference/materials/material.md
