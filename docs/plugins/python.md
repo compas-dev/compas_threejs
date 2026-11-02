@@ -253,6 +253,18 @@ handler runs.
 | `notify(message, kind)` | one workspace, as above; `workspace="all"` for every tab | never |
 | `hide` / `show` / `disable` / `enable` | every workspace | always |
 
+Whatever a handler sends reaches the viewer together, when the handler is done. For
+long work, show how far along it is: a notice with `progress=` (0 to 1) is sent at
+once, and keeps its place with a progress bar until a notice with the same `key`
+replaces it:
+
+```python
+for i, wall in enumerate(walls):
+    self.notify(f"Computing ({i + 1} of {len(walls)})", key="walls", progress=i / len(walls))
+    compute(wall)
+self.notify(f"Computed {len(walls)} walls", "success", key="walls")
+```
+
 ### `key`: state versus events
 
 Without `key`, a message reaches the tabs connected right now, and is gone. With

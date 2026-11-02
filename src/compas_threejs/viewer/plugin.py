@@ -215,11 +215,24 @@ class Plugin:
         """
         self._send(action_name, data, key, None)
 
-    def notify(self, message, kind="info", *, workspace=None):
+    def notify(self, message, kind="info", *, workspace=None, key=None, progress=None):
         """Shows `message` to the user for a moment, at the bottom of the view.
 
         `kind` is "info", "success", "warning" or "error". It goes to one workspace,
         chosen like `send`'s; `workspace="all"` shows it in every tab.
+
+        With a `key`, it takes the place of the notice with the same key still shown.
+        With a `progress` (0 to 1) it shows a progress bar, and stays until a notice with
+        its key takes its place - so a long handler can show how far along it is, then
+        how it ended, in one notice::
+
+            for i, wall in enumerate(walls):
+                self.notify(f"Computing ({i + 1} of {len(walls)})", key="walls", progress=i / len(walls))
+                ...
+            self.notify(f"Computed {len(walls)} walls", "success", key="walls")
+
+        A notice with a progress is sent at once, not when the handler is done (see
+        `Outbox.batch`).
         """
         if kind not in NOTICE_KINDS:
             raise ValueError(f"Unknown notice kind {kind!r}; use one of {', '.join(NOTICE_KINDS)}")
@@ -232,7 +245,13 @@ class Plugin:
                 workspace = _asking_workspace.get() or "main"
             workspace_id = workspace if isinstance(workspace, str) else workspace.workspace_id
         message = {"dispatch": "notice", "message": str(message), "kind": kind}
+        if key is not None:
+            message["key"] = str(key)
+        if progress is not None:
+            message["progress"] = float(progress)
         self.app.outbox.send_bytes(compas_pb.pb_dump_bts(message), "", persist=False, workspace_id=workspace_id)
+        if progress is not None:
+            self.app.outbox.send_batch()
 
     def _send(self, action_name, data, key, workspace_id):
         if not self.app:

@@ -224,7 +224,7 @@ The frontend API is deliberately small. `useViewer()` (inside a component) and
 | `objects` | `hide`, `showAll`, `setPickable`, `commitTransform`, `getMaterial`, `setMaterial` |
 | `camera` | `get`, `set`, `setView(preset)` |
 | `channel(name)` | `send`, `on` - prefer `useChannel(name)` in components |
-| `notify(message, { kind })` | a short message at the bottom of the view |
+| `notify(message, { kind, key, progress })` | a short message at the bottom of the view; with `progress` (0-1) a progress bar, kept until a notice with its `key` replaces it |
 | `plugin(name)`, `workspace`, `workspaceUrl(id)` | other plugins, workspaces |
 | `three` | closer to the scene for interactive tools: `camera`, `canvas`, `object(guid)`, `addOverlay`, `pointerRay`, `beginInteraction`, `pauseNavigation`, `addPickGuard`, ... |
 

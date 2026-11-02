@@ -207,6 +207,20 @@ def test_handlers_answer_the_workspace_that_asked(static):
     assert [workspace for _, workspace in sent_to(app)[-3:]] == ["main", "beam", "other"]
 
 
+def test_a_notice_with_progress_is_sent_at_once_and_keyed(static):
+    app = App()
+    views = make_plugin(static)
+    app.plugins = [views]
+    with app.outbox.batch():
+        views.notify("Computing (1 of 2)", key="work", progress=0.0)
+        assert len(app.outbox._queue) == 1  # seen while the handler runs
+        views.notify("Done", "success", key="work")
+        assert len(app.outbox._queue) == 1
+    messages = [compas_pb.pb_load_bts(entry[0]) for entry in app.outbox._queue]
+    assert messages[0] == {"dispatch": "notice", "message": "Computing (1 of 2)", "kind": "info", "key": "work", "progress": 0.0}
+    assert messages[1] == {"dispatch": "notice", "message": "Done", "kind": "success", "key": "work"}
+
+
 def test_send_all_reaches_every_workspace(static):
     app = App()
     views = make_plugin(static)
