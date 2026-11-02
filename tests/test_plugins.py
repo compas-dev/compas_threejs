@@ -89,6 +89,17 @@ def test_a_plugin_needs_its_built_frontend(tmp_path):
         app._mount_plugins()
 
 
+def test_a_plugin_without_static_is_python_only(static):
+    class Table(Plugin):
+        name = "table"
+
+    app = App()
+    app.plugins = [make_plugin(static), Table()]
+    app._mount_plugins()
+    manifest = TestClient(app.server.fastapi_app).get("/plugins.json").json()
+    assert [entry["name"] for entry in manifest] == ["views"]
+
+
 def test_actions_reach_the_plugin_and_replies_are_kept_by_key(static):
     app = App()
     views = make_plugin(static)

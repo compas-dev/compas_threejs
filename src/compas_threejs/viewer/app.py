@@ -196,12 +196,15 @@ class App:
                 plugin.new_workspace(created)
             for callback in self._new_workspace_callbacks:
                 callback(created)
-        return [plugin.manifest() for plugin in self.workspaces[workspace].plugins]
+        # A Python-only plugin (no `static`) has nothing for the page to load.
+        return [plugin.manifest() for plugin in self.workspaces[workspace].plugins if plugin.static_dir]
 
     def _mount_plugins(self):
         for plugin in self._plugins:
             static_dir = plugin.static_dir
-            if not static_dir or not (static_dir / "plugin.js").exists():
+            if static_dir is None:
+                continue  # Python only
+            if not (static_dir / "plugin.js").exists():
                 raise FileNotFoundError(f"Plugin {plugin.name!r} has no built frontend at {static_dir}/plugin.js - build it with `npm run build` in the plugin's repository.")
             self.server.add_static_mount(f"/plugins/{plugin.name}", static_dir, name=f"plugin_{plugin.name}")
 

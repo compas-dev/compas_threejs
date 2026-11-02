@@ -32,7 +32,8 @@ class Plugin:
     A subclass sets `name` and `static`, the folder holding the plugin's built frontend,
     `plugin.js` (and `plugin.css`, if it has one). `plugin.js` default-exports
     `definePlugin({ name, groups })` from `@compas-dev/compas-threejs-ts`, with the same
-    `name`. Methods marked with `@action("...")` handle what the frontend sends, and are
+    `name`. A plugin without `static` is Python only: the page loads nothing for
+    it. Methods marked with `@action("...")` handle what the frontend sends, and are
     told which workspace (browser tab) sent it; `send` answers that tab, `send_all` talks
     to every tab.
 
