@@ -661,6 +661,8 @@ class Workspace:
             workspace_id=self.workspace_id,
             obj_id="spinner",
         )
+        # Now, not when the handler calling this is done (see Outbox.batch).
+        self.app.outbox.send_batch()
 
     def stop_spinner(self):
         """Hides the loading spinner overlay in this workspace's frontend."""

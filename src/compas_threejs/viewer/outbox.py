@@ -1,4 +1,6 @@
 import asyncio
+import threading
+from contextlib import contextmanager
 
 import compas_pb
 
@@ -9,6 +11,38 @@ class Outbox:
     def __init__(self, server):
         self.server = server
         self._queue = []
+        # Per thread: the messages gathered by an open `batch()`, or None.
+        self._batches = threading.local()
+
+    @contextmanager
+    def batch(self):
+        """Gathers what this thread sends until the block ends, then sends it all at once -
+        one WebSocket frame per client rather than one per message (see
+        `AppServer.broadcast_many`). Fewer, larger frames cost less on both ends: one hop
+        to the event loop here, one frame for the frontend to take in.
+
+        Each message from the frontend is handled in one (see `App.on_message`), so
+        whatever a handler changes reaches the viewer together. A block inside another
+        joins it; other threads' messages are not held back. See `send_batch` for messages
+        that must go before the block ends.
+        """
+        if getattr(self._batches, "entries", None) is not None:
+            yield
+            return
+        self._batches.entries = []
+        try:
+            yield
+        finally:
+            entries, self._batches.entries = self._batches.entries, None
+            self._send(entries)
+
+    def send_batch(self):
+        """Sends what this thread's open `batch()` gathered so far, and goes on gathering -
+        for what the user must see while a long handler runs (a loading spinner)."""
+        entries = getattr(self._batches, "entries", None)
+        if entries:
+            self._send(list(entries))
+            entries.clear()
 
     def send_bytes(
         self,
@@ -20,7 +54,8 @@ class Outbox:
         remove_key=None,
         broadcast: bool = True,
     ):
-        """Sends raw binary data now if the server is running, otherwise queues it.
+        """Sends raw binary data now if the server is running, otherwise queues it - or,
+        inside a `batch()`, when the batch ends.
 
         `remove_key`, if given, tells the server to drop that key from its persisted scene
         state - used so a removed object's earlier "add" broadcast isn't replayed to clients
@@ -33,14 +68,7 @@ class Outbox:
         refresh the reconnect-replay snapshot after already notifying live clients through
         a smaller message (see `Workspace.transform_geometry`).
         """
-        loop = self.server.get_loop()
-        if loop:
-            asyncio.run_coroutine_threadsafe(
-                self.server.broadcast(binary_data, obj_id, persist=persist, workspace_id=workspace_id, remove_key=remove_key, broadcast=broadcast),
-                loop,
-            )
-        else:
-            self._queue.append((binary_data, obj_id, persist, workspace_id, remove_key, broadcast))
+        self._add((binary_data, obj_id, persist, workspace_id, remove_key, broadcast))
 
     def send_dict(self, message: dict, *, workspace_id: str = "main", remove_key=None, obj_id=None):
         """Serializes a dictionary message and sends it.
@@ -73,23 +101,37 @@ class Outbox:
         geometry's own removal broadcast is what visually clears the scene; the material slot
         just needs to stop being replayed on future reconnects).
         """
-        loop = self.server.get_loop()
-        if loop:
-            asyncio.run_coroutine_threadsafe(
-                self.server.broadcast(None, persist=False, workspace_id=workspace_id, remove_key=key),
-                loop,
-            )
-        else:
-            self._queue.append((None, "", False, workspace_id, key, True))
+        self._add((None, "", False, workspace_id, key, True))
 
     def flush(self):
         """Sends any messages that were queued before the server was ready."""
+        if not self.server.get_loop():
+            return
+        queue, self._queue = self._queue, []
+        self._send(queue)
+
+    def _add(self, entry):
+        """Gathers `entry` - (binary_data, obj_id, persist, workspace_id, remove_key,
+        broadcast) - into this thread's open batch, or sends it."""
+        entries = getattr(self._batches, "entries", None)
+        if entries is not None:
+            entries.append(entry)
+        else:
+            self._send([entry])
+
+    def _send(self, entries):
+        """Hands `entries` to the server's event loop, in order - or queues them until
+        the server is ready."""
+        if not entries:
+            return
         loop = self.server.get_loop()
         if not loop:
-            return
-        for binary_data, obj_id, persist, workspace_id, remove_key, broadcast in self._queue:
+            self._queue.extend(entries)
+        elif len(entries) == 1:
+            binary_data, obj_id, persist, workspace_id, remove_key, broadcast = entries[0]
             asyncio.run_coroutine_threadsafe(
                 self.server.broadcast(binary_data, obj_id, persist=persist, workspace_id=workspace_id, remove_key=remove_key, broadcast=broadcast),
                 loop,
             )
-        self._queue.clear()
+        else:
+            asyncio.run_coroutine_threadsafe(self.server.broadcast_many(entries), loop)

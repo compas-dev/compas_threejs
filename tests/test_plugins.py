@@ -10,6 +10,7 @@ from compas_threejs.viewer import App
 from compas_threejs.viewer import Plugin
 from compas_threejs.viewer import action
 from compas_threejs.viewer.server import AppServer
+from compas_threejs.viewer.server import pack_batch
 
 
 @pytest.fixture
@@ -220,8 +221,7 @@ def test_shared_state_is_replayed_to_every_workspace():
     asyncio.run(server.broadcast(b"own", "k", workspace_id="beam"))
     with TestClient(server.fastapi_app) as client:
         with client.websocket_connect("/ws?workspace=beam") as ws:
-            assert ws.receive_bytes() == b"shared"
-            assert ws.receive_bytes() == b"own"
+            assert ws.receive_bytes() == pack_batch([b"shared", b"own"])  # replayed as one frame
         with client.websocket_connect("/ws?workspace=other") as ws:
             assert ws.receive_bytes() == b"shared"
 

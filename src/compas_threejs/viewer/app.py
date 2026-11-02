@@ -433,8 +433,10 @@ class App:
     # ---- INCOMING MESSAGES ------------------------------------------------------------------------
 
     def on_message(self, message, workspace_id: str = "main"):
-        """Default handler for messages received from the frontend."""
-        self.inbox.handle(message, self.outbox, workspace_id=workspace_id)
+        """Default handler for messages received from the frontend. What handling it sends
+        reaches the viewer together, when it's done (see `Outbox.batch`)."""
+        with self.outbox.batch():
+            self.inbox.handle(message, self.outbox, workspace_id=workspace_id)
 
     def update_metadata(self, metadata):
         """
