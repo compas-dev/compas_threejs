@@ -221,3 +221,28 @@ def test_hiding_a_button_inside_a_session_hides_it_there_only():
     assert views.hidden == {"export"}
     message, obj_id, persist = sent(app, a)[-1]
     assert message["hidden"] == ["export", "import"] and obj_id == "plugin/views/buttons" and persist
+
+
+class Locks(Plugin):
+    name = "locks"
+
+    def session_state(self):
+        return set()
+
+    def inherit_state(self, everyone):
+        return set(everyone)
+
+
+def test_a_session_can_start_from_everyones_plugin_data():
+    locks = Locks()
+    locks.state.add("ground")  # before it is added to an App: becomes everyone's
+    app = App()
+    app.plugins = [locks]
+    assert locks.state == {"ground"} and locks.everyone == {"ground"}
+    a = app.sessions.create()
+    with a.active():
+        assert locks.state == {"ground"}
+        locks.state.add("wall")
+        assert locks.everyone == {"ground"}
+    assert locks.state == {"ground"}
+    assert a.state.plugins["locks"] == {"ground", "wall"}

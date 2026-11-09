@@ -4,6 +4,7 @@ import compas_pb
 from rich.console import Console
 
 from .session import DEFAULT_SESSION_ID
+from .session import State
 from .session import bind_workspace
 from .session import bound_workspace
 
@@ -150,15 +151,19 @@ class Plugin:
         """
         return None
 
+    def inherit_state(self, everyone):
+        """This plugin's data for a new session, from `everyone`'s - the default session's,
+        what app.py set up at startup. By default a fresh `session_state()`, not depending on
+        it; a plugin whose clients start from what everyone has (objects locked at startup)
+        returns a copy of it instead."""
+        return self.session_state()
+
     @property
     def state(self):
         """This plugin's data for the current session (see `session_state`): the client whose
-        message is being handled; outside of one, the default session's. Can be replaced."""
-        state = self._session_state()
-        with state.lock:
-            if self.name not in state.plugins:
-                state.plugins[self.name] = self.session_state()
-            return state.plugins[self.name]
+        message is being handled; outside of one, the default session's - everyone's. Before
+        the plugin is added to an App, its own, which becomes everyone's then. Can be replaced."""
+        return self._part(self._session_state())
 
     @state.setter
     def state(self, value):
@@ -166,10 +171,38 @@ class Plugin:
         with state.lock:
             state.plugins[self.name] = value
 
+    @property
+    def everyone(self):
+        """This plugin's data for everyone: the default session's (see `inherit_state`)."""
+        self._session_state()  # takes in what was set before the plugin was added to an App
+        if not self.app:
+            return self._part(self._unattached_state())
+        return self._part(self.app.sessions.default.state)
+
+    def _part(self, state):
+        """This plugin's part of `state`, made the first time."""
+        if state.shared is not None:
+            everyone = self._part(state.shared)
+        with state.lock:
+            if self.name not in state.plugins:
+                state.plugins[self.name] = self.session_state() if state.shared is None else self.inherit_state(everyone)
+            return state.plugins[self.name]
+
     def _session_state(self):
         if not self.app:
-            raise RuntimeError(f"Plugin {self.name!r} is not added to an App")
+            return self._unattached_state()
+        default = self.app.sessions.default.state
+        unattached = getattr(self, "_unattached", None)
+        if unattached is not None and self.name in unattached.plugins:
+            # Set before the plugin was added to an App: it is everyone's now.
+            with default.lock:
+                default.plugins.setdefault(self.name, unattached.plugins.pop(self.name))
         return self.app.sessions.current().state
+
+    def _unattached_state(self):
+        if getattr(self, "_unattached", None) is None:
+            self._unattached = State()
+        return self._unattached
 
     def new_session(self, session):
         """Called when a session starts - a new client - with it bound. See `session_state`."""
