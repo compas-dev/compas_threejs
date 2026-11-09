@@ -1,5 +1,5 @@
 from .app import App
-from .plugin import Plugin, action
+from .plugin import Plugin, action, per_session
 from .remote import Remote
 from .session import NoSession, Session, SessionManager, State, current_session, current_state, current_workspace
 from .stores import MemorySessionStore, RedisSessionStore, SessionStore
@@ -22,4 +22,5 @@ __all__ = [
     "current_session",
     "current_state",
     "current_workspace",
+    "per_session",
 ]

@@ -16,6 +16,7 @@ from compas_threejs.viewer import App
 from compas_threejs.viewer import Plugin
 from compas_threejs.viewer import action
 from compas_threejs.viewer import current_session
+from compas_threejs.viewer import per_session
 
 
 def send(app, message, session, workspace_id="main"):
@@ -255,3 +256,31 @@ def test_changing_a_material_copies_the_material_only():
     assert material.guid == app.sessions.default.state.materials[str(box.guid)].guid
     assert str(box.guid) not in a.state.geometry  # the geometry is still everyone's
     assert a.state.own_material(box.guid) is material
+
+
+class Snap(Plugin):
+    name = "snap"
+    history = per_session(None)
+    deleted = per_session(dict)
+    unsnappable = per_session(set, inherit=set)
+    lengths = per_session(True, inherit=True)
+
+
+def test_per_session_attributes():
+    snap = Snap()
+    snap.unsnappable.add("ground")  # before the App: everyone's
+    app = App()
+    app.plugins = [snap]
+    a, b = app.sessions.create(), app.sessions.create()
+    with a.active():
+        assert snap.history is None and snap.deleted == {}
+        assert snap.unsnappable == {"ground"} and snap.lengths is True
+        snap.history = (True, False)
+        snap.deleted["x"] = 1
+        snap.unsnappable.add("wall")
+        snap.lengths = False
+    with b.active():
+        assert snap.history is None and snap.deleted == {}
+        assert snap.unsnappable == {"ground"} and snap.lengths is True
+    assert snap.unsnappable == {"ground"} and snap.history is None
+    assert Snap.history.name == "history"  # the class gets the descriptor

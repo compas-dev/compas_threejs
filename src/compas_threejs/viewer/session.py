@@ -63,6 +63,7 @@ class State:
         self.brep_viewmeshes = {}  # (workspace id, brep guid) -> the mesh shown for it
         self.plugins = {}  # plugin name -> that plugin's data for this client (`Plugin.state`)
         self.plugin_buttons = {}  # plugin name -> (hidden, disabled) ids, this client's own
+        self.plugin_fields = {}  # plugin name -> {attribute: value}, see `per_session`
         self.lock = threading.Lock()  # guards geometry mutation against concurrent App.loop callbacks
 
     # ---- REGISTRATION (by Workspace, when something is sent out) ------------------------------

@@ -13,6 +13,68 @@ console = Console()
 NOTICE_KINDS = ("info", "success", "warning", "error")
 
 
+class per_session:
+    """A plugin attribute kept per session - each client its own value - declared on the class::
+
+        class Draw(Plugin):
+            _history = per_session(None)  # each session starts with None
+            _deleted = per_session(dict)  # ... with a new dict
+            _unsnappable = per_session(set, inherit=set)  # ... with a copy of everyone's
+
+    Read and set like any attribute; the value is the current session's (see `Plugin.state`):
+    outside of a session, everyone's, and before the plugin is added to an App, its own,
+    which becomes everyone's then.
+
+    Parameters
+    ----------
+    default : callable or value
+        What a session starts with: called if callable (a class: a new one), else the value
+        itself - use a callable for anything mutable.
+    inherit : callable or bool, optional
+        How a session starts from everyone's value instead: ``inherit(everyone's)`` - e.g.
+        ``set`` or ``list`` for a copy - or True for everyone's value itself (for values that
+        are replaced, not changed: a bool, a tuple, None).
+    """
+
+    def __init__(self, default=None, *, inherit=None):
+        self.default = default
+        self.inherit = inherit
+        self.name = None
+
+    def __set_name__(self, owner, name):
+        self.name = name
+
+    def __get__(self, plugin, owner=None):
+        if plugin is None:
+            return self
+        state = plugin._session_state()
+        with state.lock:
+            fields = state.plugin_fields.setdefault(plugin.name, {})
+            if self.name in fields:
+                return fields[self.name]
+        value = self._start(plugin, state)
+        with state.lock:
+            return fields.setdefault(self.name, value)
+
+    def __set__(self, plugin, value):
+        state = plugin._session_state()
+        with state.lock:
+            state.plugin_fields.setdefault(plugin.name, {})[self.name] = value
+
+    def _start(self, plugin, state):
+        if self.inherit and state.shared is not None:
+            everyone = self._everyone(plugin, state.shared)
+            return everyone if self.inherit is True else self.inherit(everyone)
+        return self.default() if callable(self.default) else self.default
+
+    def _everyone(self, plugin, shared):
+        with shared.lock:
+            fields = shared.plugin_fields.setdefault(plugin.name, {})
+            if self.name not in fields:
+                fields[self.name] = self.default() if callable(self.default) else self.default
+            return fields[self.name]
+
+
 def action(name):
     """Marks a `Plugin` method as the handler of the frontend's `channel.send(name, data)`.
 
@@ -193,10 +255,15 @@ class Plugin:
             return self._unattached_state()
         default = self.app.sessions.default.state
         unattached = getattr(self, "_unattached", None)
-        if unattached is not None and self.name in unattached.plugins:
+        if unattached is not None and (self.name in unattached.plugins or self.name in unattached.plugin_fields):
             # Set before the plugin was added to an App: it is everyone's now.
             with default.lock:
-                default.plugins.setdefault(self.name, unattached.plugins.pop(self.name))
+                if self.name in unattached.plugins:
+                    default.plugins.setdefault(self.name, unattached.plugins.pop(self.name))
+                if self.name in unattached.plugin_fields:
+                    fields = default.plugin_fields.setdefault(self.name, {})
+                    for key, value in unattached.plugin_fields.pop(self.name).items():
+                        fields.setdefault(key, value)
         return self.app.sessions.current().state
 
     def _unattached_state(self):
