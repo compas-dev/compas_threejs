@@ -246,3 +246,12 @@ def test_a_session_can_start_from_everyones_plugin_data():
         assert locks.everyone == {"ground"}
     assert locks.state == {"ground"}
     assert a.state.plugins["locks"] == {"ground", "wall"}
+
+
+def test_changing_a_material_copies_the_material_only():
+    app, box, a, b = startup()
+    material = a.state.own_material(box.guid)
+    assert material is not app.sessions.default.state.materials[str(box.guid)]
+    assert material.guid == app.sessions.default.state.materials[str(box.guid)].guid
+    assert str(box.guid) not in a.state.geometry  # the geometry is still everyone's
+    assert a.state.own_material(box.guid) is material

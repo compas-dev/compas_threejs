@@ -144,11 +144,14 @@ class State:
         return copy
 
     def own_material(self, guid):
-        """This client's own material of the geometry `guid`, to change (see `own`). None if
-        it has none."""
+        """This client's own material of the geometry `guid`, to change (see `own`): if it is
+        everyone's, a copy - the material only, the geometry stays everyone's. None if it has
+        none."""
         guid = str(guid)
-        if self.is_shared(guid):
-            self.own(guid)
+        if guid not in self.materials and self.shared is not None:
+            shared = self.shared.materials.get(guid)
+            if shared is not None:
+                self.materials[guid] = deepcopy(shared)
         return self.materials.get(guid)
 
     def viewmesh(self, workspace_id, brep_id):
