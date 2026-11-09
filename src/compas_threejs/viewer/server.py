@@ -36,6 +36,7 @@ class AppServer:
         # `Session`, or None for the default one (until sessions are switched on).
         self.resolve_session = None
         self.app_instance = None
+        self._periodic = []  # (seconds, function), run while serving - see `every`
 
         self.loop = None
         self.shutdown_event = threading.Event()
@@ -211,10 +212,26 @@ class AppServer:
             self.loop.run_until_complete(self._cleanup())
             self.loop.close()
 
+    def every(self, seconds: float, function):
+        """Calls `function()` every `seconds` while the server runs, off the event loop - e.g.
+        `SessionManager.sweep`. Must be called before the server starts."""
+        self._periodic.append((seconds, function))
+
+    async def _repeat(self, seconds, function):
+        while True:
+            await asyncio.sleep(seconds)
+            try:
+                await asyncio.to_thread(function)
+            except Exception:
+                console.print_exception()
+
     async def _serve_until_shutdown(self, server):
         server_task = asyncio.create_task(server.serve())
+        repeating = [asyncio.create_task(self._repeat(seconds, function)) for seconds, function in self._periodic]
         await asyncio.to_thread(self.shutdown_event.wait)
         server.should_exit = True
+        for task in repeating:
+            task.cancel()
         await server_task
 
     async def _cleanup(self):

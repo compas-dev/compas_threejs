@@ -255,10 +255,17 @@ class SessionManager:
         return session
 
     def touch(self, session: Session) -> bool:
-        """Marks `session` as seen now. False if it has expired."""
+        """Marks `session` as seen now. False if it has expired.
+
+        The store is told at most every `timeout / 10` seconds (a minute at most), not for
+        each message - its record lasts the whole timeout anyway.
+        """
         if session is self.default:
             return True
-        session.last_seen = time.time()
+        now = time.time()
+        if now - session.last_seen < min(60, self.timeout / 10):
+            return True
+        session.last_seen = now
         return self.store.touch(session.id, self.timeout)
 
     def end(self, session: Session) -> None:

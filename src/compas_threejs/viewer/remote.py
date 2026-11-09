@@ -1,11 +1,13 @@
 import asyncio
 import threading
 import time
+from typing import Optional
 
 import compas_pb
 import websockets
 from rich.console import Console
 
+from .endpoint import COOKIE
 from .inbox import Inbox
 from .workspace import Workspace
 
@@ -59,13 +61,18 @@ class Remote:
         The websocket port of the App server. Default is 9001.
     workspace_id : str, optional
         The workspace on the App to connect to. Default is "main".
+    session : str, optional
+        The id of the session to join, on an App with sessions on (`App(sessions=True)`):
+        sent as the session cookie. Without it, such an App starts a new, empty session
+        for this connection. See `Session.id`.
     """
 
-    def __init__(self, host: str = "localhost", port: int = 9001, workspace_id: str = "main"):
+    def __init__(self, host: str = "localhost", port: int = 9001, workspace_id: str = "main", session: Optional[str] = None):
         # Connection settings
         self.host = host
         self.websocket_port = port
         self.ws_url = f"ws://{host}:{port}/ws?workspace={workspace_id}"
+        self.session = session
         self.websocket = None
         self.connected = False
         self.connection_thread = None
@@ -81,7 +88,8 @@ class Remote:
         """Establishes and maintains websocket connection."""
         try:
             console.log(f"[green]Connecting to App at {self.ws_url}...[/green]")
-            async with websockets.connect(self.ws_url) as websocket:
+            headers = {"Cookie": f"{COOKIE}={self.session}"} if self.session else None
+            async with websockets.connect(self.ws_url, additional_headers=headers) as websocket:
                 self.websocket = websocket
                 self.connected = True
                 console.log("[green]Connected to App![/green]")

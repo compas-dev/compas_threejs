@@ -1,6 +1,6 @@
 # Sessions: implementation plan
 
-Status: phases 1 and 2 done (see Phases). Branch `feature/sessions`, from `feature/plugins`
+Status: phases 1 to 3 done (see Phases). Branch `feature/sessions`, from `feature/plugins`
 (PR #63).
 
 ## Goal
@@ -237,8 +237,19 @@ Each is its own commit, with tests; the existing tests pass after each.
    phase 3. Kept working for older code: `on_message(data, workspace_id)`, a replaced
    `Plugin._send`, outboxes without `session_id` (the default session isn't named).
    Tests: `tests/test_connections.py`, over real WebSockets.
-3. **Endpoint:** cookie and `Remote` token, HTTP middleware, `authorize_session`,
-   `App(sessions=True)`.
+3. **Done.** `App(sessions=True)`. `SessionMiddleware` (`endpoint.py`), one ASGI middleware
+   for HTTP and the WebSocket: finds the session from the cookie `compas_threejs_session`,
+   starts one if there's none or it expired (and sets the cookie - also in a WebSocket's
+   handshake), asks `App.authorize_session` callbacks (403 if refused), binds it. Plugin
+   routes, sync or async, see `current_session()`. `Remote(session=...)` sends the cookie.
+   The store is told a session is still used at most every `timeout / 10` (a minute at
+   most); `AppServer.every` sweeps expired sessions while the server runs.
+   **The page and its WebSocket must use the same host name** (`127.0.0.1` or
+   `localhost`, not one each): the cookie belongs to one.
+   Tests: `tests/test_endpoint.py`. In Docker: `docker compose up --build` runs
+   `examples/sessions.py` with Redis; checked with two real browsers (Chromium): two
+   sessions in Redis, the startup box in both, spheres added in one only in that one and
+   in its second tab, a reload keeps the session.
 4. **Per-session core:** each session its own `State`; `App` shorthands act on it.
 5. **Plugin API and lifecycle:** `session_state`/`state`, `new_session`/`end_session`, the reach
    rule, `send_everyone`, `bind`, expiry.

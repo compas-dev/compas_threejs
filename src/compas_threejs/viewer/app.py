@@ -2,12 +2,15 @@ import socket
 import threading
 import time
 import webbrowser
+from typing import Callable
 from typing import Optional
 from typing import Union
 
 from compas.geometry import Point
 from rich.console import Console
 
+from .endpoint import SessionMiddleware
+from .endpoint import session_of
 from .inbox import Inbox
 from .outbox import Outbox
 from .plugin import Plugin
@@ -92,12 +95,18 @@ class App:
         host: str = "127.0.0.1",
         websocket_port: int = 9001,
         frontend_dir=None,
+        sessions: bool = False,
         session_store: Optional[SessionStore] = None,
         session_timeout: float = DEFAULT_TIMEOUT,
     ):
         """
         Parameters
         ----------
+        sessions : bool, optional
+            Whether each client - a browser, with all its tabs - gets its own session: its own
+            workspaces, geometry and plugin data, found from a cookie. Default False: every
+            client shares one, as before. What is added outside of a session (at startup,
+            here) is everyone's either way. See SESSIONS.md.
         session_store : SessionStore, optional
             Where the records of sessions are kept: `MemorySessionStore` (the default) or
             `RedisSessionStore`. See `App.sessions`.
@@ -123,6 +132,13 @@ class App:
         self.outbox = Outbox(self.server)
         # What was kept to replay to an ended session's tabs goes with it.
         self.sessions.on_ended(lambda session: self.server.connections.forget_session(session.id))
+        self._authorize_callbacks = []
+        if sessions:
+            self.server.fastapi_app.add_middleware(SessionMiddleware, manager=self.sessions, authorize=self._authorized)
+            self.server.resolve_session = lambda websocket: session_of(websocket.scope)
+            # Ends the sessions that expired, keeps the ones with open tabs.
+            self.server.every(min(60, session_timeout / 4), self.sessions.sweep)
+        self.sessions_enabled = sessions
         self.inbox = Inbox(self)
 
         # Plugins: none by default, so the viewer starts without a toolbar
@@ -471,6 +487,17 @@ class App:
 
     # ---- INCOMING MESSAGES ------------------------------------------------------------------------
 
+    def authorize_session(self, callback: Callable) -> Callable:
+        """Calls ``callback(connection, session)`` for each request and WebSocket, with sessions
+        on; a falsy answer refuses it (403). `connection` is a starlette ``HTTPConnection``
+        (headers, cookies, client address). Logging in is the host app's job; this is where it
+        says who may use a session. Usable as a decorator."""
+        self._authorize_callbacks.append(callback)
+        return callback
+
+    def _authorized(self, connection, session) -> bool:
+        return all(callback(connection, session) for callback in list(self._authorize_callbacks))
+
     def on_message(self, message, workspace_id: str = "main", session: Optional[Session] = None):
         """Default handler for messages received from the frontend. What handling it sends
         reaches the viewer together, when it's done (see `Outbox.batch`).
@@ -479,6 +506,7 @@ class App:
         workspace bound, so the code handling it finds them (see `current_session`).
         """
         session = session or self.sessions.default
+        self.sessions.touch(session)
         with session.active():
             workspace = self._tab_workspace(workspace_id)
             with bind_workspace(workspace), self.outbox.batch():
