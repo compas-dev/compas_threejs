@@ -51,7 +51,7 @@ class CompasPbCompatibilityTest(unittest.TestCase):
         outbox.send_dict(command)
 
         self.assertEqual(len(outbox._queue), 1)
-        binary_data, object_id, persist, workspace_id, remove_key, broadcast = outbox._queue[0]
+        binary_data, object_id, persist, workspace_id, remove_key, broadcast, session_id = outbox._queue[0]
         self.assertEqual(compas_pb.pb_load_bts(binary_data), command)
         self.assertEqual(object_id, "")
         # "spinner" messages are persisted (see test_spinner_persistence.py) - unlike a
@@ -81,7 +81,7 @@ class CompasPbCompatibilityTest(unittest.TestCase):
 
         self.assertEqual(len(fake_app.outbox._queue), 2)
 
-        delta_binary, delta_obj_id, delta_persist, _, _, delta_broadcast = fake_app.outbox._queue[0]
+        delta_binary, delta_obj_id, delta_persist, _, _, delta_broadcast, _ = fake_app.outbox._queue[0]
         delta_message = compas_pb.pb_load_bts(delta_binary)
         self.assertEqual(delta_message["dispatch"], "handle_geometry")
         self.assertEqual(delta_message["type"], "apply_transform")
@@ -90,7 +90,7 @@ class CompasPbCompatibilityTest(unittest.TestCase):
         self.assertTrue(delta_persist)
         self.assertTrue(delta_broadcast)
 
-        snapshot_binary, snapshot_obj_id, snapshot_persist, _, _, snapshot_broadcast = fake_app.outbox._queue[1]
+        snapshot_binary, snapshot_obj_id, snapshot_persist, _, _, snapshot_broadcast, _ = fake_app.outbox._queue[1]
         self.assertEqual(snapshot_obj_id, point.guid)
         self.assertTrue(snapshot_persist)
         self.assertFalse(snapshot_broadcast)

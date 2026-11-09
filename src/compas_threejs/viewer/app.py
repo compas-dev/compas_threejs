@@ -121,6 +121,8 @@ class App:
 
         self.server = AppServer(frontend_dir=frontend_dir)
         self.outbox = Outbox(self.server)
+        # What was kept to replay to an ended session's tabs goes with it.
+        self.sessions.on_ended(lambda session: self.server.connections.forget_session(session.id))
         self.inbox = Inbox(self)
 
         # Plugins: none by default, so the viewer starts without a toolbar

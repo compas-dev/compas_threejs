@@ -47,7 +47,8 @@ class State:
     The registries map what the browser refers to (a guid) to the live Python objects.
     """
 
-    def __init__(self):
+    def __init__(self, session_id: str = DEFAULT_SESSION_ID):
+        self.session_id = session_id  # the session it belongs to
         self.workspaces = {}  # id -> Workspace
         self.geometry = {}  # guid -> the geometry as added (a Brep, not its view mesh)
         self.materials = {}  # guid -> Material
@@ -103,7 +104,7 @@ class Session:
 
     def __init__(self, session_id: str, created: Optional[float] = None):
         self.id = session_id
-        self.state = State()
+        self.state = State(session_id)
         self.created = created if created is not None else time.time()
         self.last_seen = self.created
         self.connections = 0

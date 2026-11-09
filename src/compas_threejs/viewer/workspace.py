@@ -14,6 +14,7 @@ from rich.console import Console
 from compas_threejs.lights.ambientlight import AmbientLight
 from compas_threejs.lights.sunlight import Sunlight
 
+from .session import DEFAULT_SESSION_ID
 from .session import State
 
 console = Console()
@@ -87,6 +88,14 @@ class Workspace:
         self._plugins = None
 
     @property
+    def _address(self) -> dict:
+        """Where this workspace's messages go (see `Outbox.send_bytes`): its id, in its own session.
+        The default session's isn't named, for outboxes that know no sessions."""
+        if self.state.session_id == DEFAULT_SESSION_ID:
+            return {"workspace_id": self.workspace_id}
+        return {"workspace_id": self.workspace_id, "session_id": self.state.session_id}
+
+    @property
     def plugins(self) -> list:
         """The plugins this workspace's browser tabs show: a subset of `App.plugins`.
 
@@ -126,7 +135,7 @@ class Workspace:
         # (e.g. every camera move).
         self.app.outbox.send_dict(
             {"dispatch": "scene", "type": type_, **fields},
-            workspace_id=self.workspace_id,
+            **self._address,
             obj_id=("scene", self.workspace_id, type_),
         )
 
@@ -198,7 +207,7 @@ class Workspace:
                 "type": "background_mode",
                 "mode": "dark" if self._dark_mode else "light",
             },
-            workspace_id=self.workspace_id,
+            **self._address,
             obj_id=("theme", self.workspace_id),
         )
 
@@ -301,7 +310,7 @@ class Workspace:
         """
         obj_id = light.guid
         binary_data = compas_pb.pb_dump_bts(light.as_dict())
-        self.app.outbox.send_bytes(binary_data, obj_id, workspace_id=self.workspace_id)
+        self.app.outbox.send_bytes(binary_data, obj_id, **self._address)
 
     def update_light(self, light):
         """Updates an existing light object in this workspace.
@@ -357,7 +366,7 @@ class Workspace:
 
         obj_id = geometry.guid
         binary_data = compas_pb.pb_dump_bts(geometry)
-        self.app.outbox.send_bytes(binary_data, obj_id, workspace_id=self.workspace_id)
+        self.app.outbox.send_bytes(binary_data, obj_id, **self._address)
 
         if material:
             material._geometry_guid = str(obj_id)
@@ -368,7 +377,7 @@ class Workspace:
             # Keyed off the geometry's own id (not a fresh uuid4 each call) so re-adding the
             # same geometry's material overwrites this slot instead of leaving the previous
             # one behind as a permanent orphan - and so remove_object can clean it up below.
-            self.app.outbox.send_bytes(material_data, ("material", obj_id), workspace_id=self.workspace_id)
+            self.app.outbox.send_bytes(material_data, ("material", obj_id), **self._address)
 
         self.state.register_geometry(obj_id, original_geometry, metadata, actions)
         return str(original_geometry.guid)
@@ -397,7 +406,7 @@ class Workspace:
             geometry = geometry.to_viewmesh()
 
         binary_data = compas_pb.pb_dump_bts(geometry)
-        self.app.outbox.send_bytes(binary_data, obj_id, workspace_id=self.workspace_id)
+        self.app.outbox.send_bytes(binary_data, obj_id, **self._address)
 
     def transform_geometry(self, geometry, transformation: Transformation):
         """
@@ -428,14 +437,14 @@ class Workspace:
 
         self.app.outbox.send_dict(
             {"dispatch": "handle_geometry", "type": "apply_transform", "guid": str(obj_id), "matrix": transformation.matrix},
-            workspace_id=self.workspace_id,
+            **self._address,
         )
         # Refresh the reconnect-replay snapshot to the new position too, so a client
         # that connects after this call sees the object where it actually is -
         # without re-broadcasting the full geometry to clients that already applied
         # the small delta above live.
         binary_data = compas_pb.pb_dump_bts(geometry)
-        self.app.outbox.send_bytes(binary_data, obj_id, workspace_id=self.workspace_id, broadcast=False)
+        self.app.outbox.send_bytes(binary_data, obj_id, **self._address, broadcast=False)
 
     def remove_object(self, geometry):
         """Removes a geometry object from this workspace."""
@@ -450,14 +459,14 @@ class Workspace:
         obj_id = geometry.guid
         self.app.outbox.send_dict(
             {"dispatch": "handle_geometry", "type": "remove", "guid": str(obj_id)},
-            workspace_id=self.workspace_id,
+            **self._address,
             remove_key=obj_id,
         )
         # Drops the geometry's associated material/visibility slots too, if any - a no-op
         # for whichever it never had.
-        self.app.outbox.forget(("material", obj_id), workspace_id=self.workspace_id)
-        self.app.outbox.forget(("visibility", obj_id), workspace_id=self.workspace_id)
-        self.app.outbox.forget(("edges", obj_id), workspace_id=self.workspace_id)
+        self.app.outbox.forget(("material", obj_id), **self._address)
+        self.app.outbox.forget(("visibility", obj_id), **self._address)
+        self.app.outbox.forget(("edges", obj_id), **self._address)
         # Drops the inbox-side registrations too (geometry/metadata/action-callbacks) - see
         # Inbox.forget_geometry for why that matters on its own, not just as an outbox mirror.
         self.state.forget_geometry(str(obj_id))
@@ -499,7 +508,7 @@ class Workspace:
         # Same reasoning as _set_geometry_visibility below - stable per-object key.
         self.app.outbox.send_dict(
             {"dispatch": "handle_geometry", "type": "set_edges", "guid": str(obj_id), "show": bool(show)},
-            workspace_id=self.workspace_id,
+            **self._address,
             obj_id=("edges", obj_id),
         )
 
@@ -523,7 +532,7 @@ class Workspace:
                 "guid": str(obj_id),
                 "visible": visible,
             },
-            workspace_id=self.workspace_id,
+            **self._address,
             obj_id=("visibility", obj_id),
         )
 
@@ -542,11 +551,11 @@ class Workspace:
         """
         obj_id = text.guid
         binary_data = compas_pb.pb_dump_bts(text.as_dict())
-        self.app.outbox.send_bytes(binary_data, obj_id, workspace_id=self.workspace_id)
+        self.app.outbox.send_bytes(binary_data, obj_id, **self._address)
         if material:
             material._geometry_guid = obj_id
             material_data = compas_pb.pb_dump_bts(material.as_dict())
-            self.app.outbox.send_bytes(material_data, ("material", obj_id), workspace_id=self.workspace_id)
+            self.app.outbox.send_bytes(material_data, ("material", obj_id), **self._address)
 
     # ---- TAGS -----------------------------------------------------------------------------------
 
@@ -561,7 +570,7 @@ class Workspace:
         """
         obj_id = tag.guid
         binary_data = compas_pb.pb_dump_bts(tag.as_dict())
-        self.app.outbox.send_bytes(binary_data, obj_id, workspace_id=self.workspace_id)
+        self.app.outbox.send_bytes(binary_data, obj_id, **self._address)
 
     def update_tag(self, tag):
         """
@@ -604,7 +613,7 @@ class Workspace:
                 "guid": str(obj_id),
                 "visible": visible,
             },
-            workspace_id=self.workspace_id,
+            **self._address,
             obj_id=("visibility", obj_id),
         )
 
@@ -621,7 +630,7 @@ class Workspace:
         """
         mat_id = material.guid
         binary_data = compas_pb.pb_dump_bts(material.as_dict())
-        self.app.outbox.send_bytes(binary_data, mat_id, workspace_id=self.workspace_id)
+        self.app.outbox.send_bytes(binary_data, mat_id, **self._address)
 
     # ---- UI -----------------------------------------------------------------------------------------
 
@@ -642,7 +651,7 @@ class Workspace:
         msg = element.as_dict()
         msg["workspace_id"] = self.workspace_id
         binary_data = compas_pb.pb_dump_bts(msg)
-        self.app.outbox.send_bytes(binary_data, element.guid, persist=True, workspace_id=self.workspace_id)
+        self.app.outbox.send_bytes(binary_data, element.guid, persist=True, **self._address)
 
     # ---- SPINNER ----------------------------------------------------------------------------------
 
@@ -666,7 +675,7 @@ class Workspace:
         # actually is, instead of only ever seeing whichever call happened to reach it live.
         self.app.outbox.send_dict(
             {"dispatch": "spinner", "visible": True, "message": message},
-            workspace_id=self.workspace_id,
+            **self._address,
             obj_id="spinner",
         )
         # Now, not when the handler calling this is done (see Outbox.batch).
@@ -676,7 +685,7 @@ class Workspace:
         """Hides the loading spinner overlay in this workspace's frontend."""
         self.app.outbox.send_dict(
             {"dispatch": "spinner", "visible": False},
-            workspace_id=self.workspace_id,
+            **self._address,
             obj_id="spinner",
         )
 

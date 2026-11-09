@@ -24,13 +24,13 @@ class RemoteOutbox:
         self.remote = remote
         self._queue = []
 
-    def send_bytes(self, binary_data: bytes, obj_id: str = "", *, persist: bool = True, workspace_id: str = "main"):
+    def send_bytes(self, binary_data: bytes, obj_id: str = "", *, persist: bool = True, workspace_id: str = "main", session_id=None):
         if self.remote.connected and self.remote.loop and self.remote.websocket:
             asyncio.run_coroutine_threadsafe(self.remote.websocket.send(binary_data), self.remote.loop)
         else:
             self._queue.append(binary_data)
 
-    def send_dict(self, message: dict, *, workspace_id: str = "main"):
+    def send_dict(self, message: dict, *, workspace_id: str = "main", session_id=None):
         self.send_bytes(compas_pb.pb_dump_bts(message), "")
 
     def send_batch(self):

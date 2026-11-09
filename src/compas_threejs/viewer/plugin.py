@@ -3,6 +3,7 @@ from pathlib import Path
 import compas_pb
 from rich.console import Console
 
+from .session import DEFAULT_SESSION_ID
 from .session import bind_workspace
 from .session import bound_workspace
 
@@ -199,23 +200,29 @@ class Plugin:
         With a `key`, the message is also kept (replacing the last one with that key) and
         replayed to browsers that connect later - for state, like a list of saved views.
         """
-        if workspace is None:
-            workspace = bound_workspace() or "main"
-        workspace_id = workspace if isinstance(workspace, str) else workspace.workspace_id
-        self._send(action_name, data, key, workspace_id)
+        workspace_id, session_id = _address(workspace)
+        self._send(action_name, data, key, workspace_id, **_session(session_id))
 
     def send_all(self, action_name, data=None, *, key=None):
         """Like `send`, to every workspace - for state the plugin shares between browser tabs.
 
-        A keyed message is also replayed to tabs opened later, in any workspace.
+        Inside a session (handling a client's message) that is every workspace of that
+        session; outside of one (at startup, in `attached`), every workspace of every session.
+        A keyed message is also replayed to tabs opened later.
         """
         self._send(action_name, data, key, None)
+
+    def send_everyone(self, action_name, data=None, *, key=None):
+        """Like `send_all`, to every workspace of every session, even from inside a session -
+        for what is the same for everyone (the weather)."""
+        self._send(action_name, data, key, None, session_id=DEFAULT_SESSION_ID)
 
     def notify(self, message, kind="info", *, workspace=None, key=None, progress=None):
         """Shows `message` to the user for a moment, at the bottom of the view.
 
         `kind` is "info", "success", "warning" or "error". It goes to one workspace,
-        chosen like `send`'s; `workspace="all"` shows it in every tab.
+        chosen like `send`'s; `workspace="all"` shows it in every tab, of the session as
+        `send_all` chooses it.
 
         With a `key`, it takes the place of the notice with the same key still shown.
         With a `progress` (0 to 1) it shows a progress bar, and stays until a notice with
@@ -234,22 +241,17 @@ class Plugin:
             raise ValueError(f"Unknown notice kind {kind!r}; use one of {', '.join(NOTICE_KINDS)}")
         if not self.app:
             raise RuntimeError(f"Plugin {self.name!r} is not added to an App")
-        if workspace == "all":
-            workspace_id = None
-        else:
-            if workspace is None:
-                workspace = bound_workspace() or "main"
-            workspace_id = workspace if isinstance(workspace, str) else workspace.workspace_id
+        workspace_id, session_id = (None, None) if workspace == "all" else _address(workspace)
         message = {"dispatch": "notice", "message": str(message), "kind": kind}
         if key is not None:
             message["key"] = str(key)
         if progress is not None:
             message["progress"] = float(progress)
-        self.app.outbox.send_bytes(compas_pb.pb_dump_bts(message), "", persist=False, workspace_id=workspace_id)
+        self.app.outbox.send_bytes(compas_pb.pb_dump_bts(message), "", persist=False, workspace_id=workspace_id, session_id=session_id)
         if progress is not None:
             self.app.outbox.send_batch()
 
-    def _send(self, action_name, data, key, workspace_id):
+    def _send(self, action_name, data, key, workspace_id, session_id=None):
         if not self.app:
             raise RuntimeError(f"Plugin {self.name!r} is not added to an App")
         message = {"dispatch": "plugin", "plugin": self.name, "action": action_name, "data": data}
@@ -259,4 +261,21 @@ class Plugin:
             f"plugin/{self.name}/{key}" if persisted else "",
             persist=persisted,
             workspace_id=workspace_id,
+            session_id=session_id,
         )
+
+
+def _session(session_id):
+    """`session_id` as a keyword, if there is one: so a `_send` replaced by older code, without
+    sessions, is still called the way it expects."""
+    return {} if session_id is None else {"session_id": session_id}
+
+
+def _address(workspace):
+    """(workspace id, session id) to send to: `workspace` - a `Workspace`, which is in its own
+    session, or an id, in the bound session - or else the bound workspace, or "main"."""
+    if workspace is None:
+        workspace = bound_workspace() or "main"
+    if isinstance(workspace, str):
+        return workspace, None
+    return workspace.workspace_id, workspace.state.session_id

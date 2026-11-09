@@ -1,6 +1,6 @@
 # Sessions: implementation plan
 
-Status: phase 1 done (see Phases). Branch `feature/sessions`, from `feature/plugins`
+Status: phases 1 and 2 done (see Phases). Branch `feature/sessions`, from `feature/plugins`
 (PR #63).
 
 ## Goal
@@ -227,8 +227,16 @@ Each is its own commit, with tests; the existing tests pass after each.
    `Workspace` registers into its own session's `State`, `App.on_message` binds the session
    and workspace for every message. No change in behaviour: every client is still in the
    default session. Tests: `tests/test_sessions.py`.
-2. **`ConnectionManager`** out of `AppServer`, keyed by session and workspace, the three reach
-   levels.
+2. **Done.** `ConnectionManager` (`connections.py`) out of `AppServer`: sockets and persisted
+   messages by session and workspace, the three reaches. The default session's messages are
+   everyone's, so what `app.py` adds at startup reaches and is replayed to every session.
+   Every send carries its session: a `Workspace` its own, other code the bound one, else the
+   default. `Plugin.send_all` follows the reach rule; `Plugin.send_everyone` is new. Each
+   `Session` counts its open tabs; an ended session's persisted messages are dropped.
+   `AppServer.resolve_session` picks a connection's session (None: the default) - set in
+   phase 3. Kept working for older code: `on_message(data, workspace_id)`, a replaced
+   `Plugin._send`, outboxes without `session_id` (the default session isn't named).
+   Tests: `tests/test_connections.py`, over real WebSockets.
 3. **Endpoint:** cookie and `Remote` token, HTTP middleware, `authorize_session`,
    `App(sessions=True)`.
 4. **Per-session core:** each session its own `State`; `App` shorthands act on it.
@@ -265,7 +273,12 @@ a forged or unknown cookie gets a new session.
    callback runs with the session that clicked bound. Done, with tests.
    For phase 2: the UI elements must also *show* in every session's tabs - what is sent
    outside of a session reaches everyone and is replayed to new sessions (the reach rule).
-   Still open: the geometry `app.py` adds at startup.
+   **Decided for geometry: every session sees what `app.py` adds at startup** (done in
+   phase 2: the default session's content is everyone's).
+   Still open - **editing it**: a session moving a startup object with the gizmo, or changing
+   its color. Proposal: that session gets its own copy at its first edit (same guid, so
+   only its tabs swap it); the alternative is one shared world everyone edits. Today the
+   shared object would be changed for everyone. Phase 4.
 2. **`App` shorthands outside a session** with `sessions=True` (for example in `app.loop`):
    act on everyone, or raise? Proposal: everyone, by the reach rule.
 3. **Session timeout default:** 30 minutes?
