@@ -284,3 +284,5 @@ def test_per_session_attributes():
         assert snap.unsnappable == {"ground"} and snap.lengths is True
     assert snap.unsnappable == {"ground"} and snap.history is None
     assert Snap.history.name == "history"  # the class gets the descriptor
+    with a.active():
+        assert Snap.unsnappable.everyone(snap) == {"ground"}

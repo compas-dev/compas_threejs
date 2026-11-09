@@ -67,6 +67,13 @@ class per_session:
             return everyone if self.inherit is True else self.inherit(everyone)
         return self.default() if callable(self.default) else self.default
 
+    def everyone(self, plugin):
+        """`plugin`'s value for everyone: the default session's - what app.py set up - however
+        the current session's is."""
+        plugin._session_state()  # takes in what was set before the plugin was added to an App
+        shared = plugin.app.sessions.default.state if plugin.app else plugin._unattached_state()
+        return self._everyone(plugin, shared)
+
     def _everyone(self, plugin, shared):
         with shared.lock:
             fields = shared.plugin_fields.setdefault(plugin.name, {})
