@@ -272,6 +272,24 @@ Each is its own commit, with tests; the existing tests pass after each.
    for the clicking browser only, also after a reload.
 6. **Plugins, one at a time, in their own repositories:** the small ones, then Layers and Draw,
    then Timber, then Steko.
+   **Under way.** Added to the core for it: `Plugin.inherit_state(everyone)` and
+   `Plugin.everyone` (a session starting from what app.py set up), `Plugin.state` before the
+   plugin is added to an App, and `per_session(default, inherit=...)` - a plugin attribute
+   kept per session, declared on the class. `State.own_material` copies the material only.
+   Done, each with a two-session test (branch `feature/sessions` of each repository):
+
+   | Plugin | Per session | Starts from everyone's |
+   |---|---|---|
+   | Views | saved views | yes |
+   | Essentials | locked objects | yes |
+   | IO | last imported meshes | no |
+   | Layers | layers (shown, ghosted, colors, locked, isolated), objects; restyling copies the material | yes |
+   | Draw | drawn, deleted, claimed objects, edits, history, snap and lengths settings | settings |
+   | Weather | nothing: the weather is everyone's, sent with `send_everyone` | - |
+   | Pixels, Wizard | nothing: app settings | - |
+
+   Layers' `state()` is now `panel_state()`. Still to do: Timber (its model, edited by
+   drawing, would need copying per session too), Steko.
 
 Tests to add: two sessions side by side see nothing of each other (scene, registries,
 plugin state, HTTP routes); two tabs of one session share it; reconnecting keeps it; a
