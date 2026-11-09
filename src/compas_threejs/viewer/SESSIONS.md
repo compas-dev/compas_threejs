@@ -1,6 +1,6 @@
 # Sessions: implementation plan
 
-Status: phases 1 to 5 done (see Phases); phase 6, the plugins, is next. Branch `feature/sessions`, from `feature/plugins`
+Status: done (see Phases). Steko keeps one process per visitor, by decision. Branch `feature/sessions`, from `feature/plugins`
 (PR #63).
 
 ## Goal
@@ -272,7 +272,7 @@ Each is its own commit, with tests; the existing tests pass after each.
    for the clicking browser only, also after a reload.
 6. **Plugins, one at a time, in their own repositories:** the small ones, then Layers and Draw,
    then Timber, then Steko.
-   **Under way.** Added to the core for it: `Plugin.inherit_state(everyone)` and
+   **Done.** Added to the core for it: `Plugin.inherit_state(everyone)` and
    `Plugin.everyone` (a session starting from what app.py set up), `Plugin.state` before the
    plugin is added to an App, and `per_session(default, inherit=...)` - a plugin attribute
    kept per session, declared on the class. `State.own_material` copies the material only.
@@ -287,9 +287,20 @@ Each is its own commit, with tests; the existing tests pass after each.
    | Draw | drawn, deleted, claimed objects, edits, history, snap and lengths settings | settings |
    | Weather | nothing: the weather is everyone's, sent with `send_everyone` | - |
    | Pixels, Wizard | nothing: app settings | - |
+   | Timber, its editors | the model and everything shown of it, element apps, drafts, settings | **own copy**: see below |
 
-   Layers' `state()` is now `panel_state()`. Still to do: Timber (its model, edited by
-   drawing, would need copying per session too), Steko.
+   Layers' `state()` is now `panel_state()`.
+
+   **Timber: each session its own copy of the model** (decided). A model loaded at startup
+   is everyone's until a session first does something in Timber - an action, drawing,
+   deleting, an editor, a view mode, opening an element's app (`Timber._own_model`, called
+   from `handle` and the methods other code calls). Then the session gets a copy, loaded
+   into it, which removes everyone's objects for that session only and shows the copy's,
+   with joint markers of its own. The copy goes through JSON: `Data.copy` would also copy
+   cached OCC shapes, which can't be. It costs one model load per session that edits.
+
+   **Steko keeps one process per visitor** (decided): a heavy computation or a crash stays
+   with one visitor. Its features need no change for that; sessions stay off there.
 
 Tests to add: two sessions side by side see nothing of each other (scene, registries,
 plugin state, HTTP routes); two tabs of one session share it; reconnecting keeps it; a
