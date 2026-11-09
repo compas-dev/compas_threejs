@@ -1,0 +1,25 @@
+# Redis for sessions (see src/compas_threejs/viewer/SESSIONS.md), for development and tests.
+#
+#   docker compose up -d redis
+#   COMPAS_THREEJS_REDIS_URL=redis://localhost:6379/0 pytest tests/test_sessions.py
+#
+# Reachable from this machine only. An App uses it with
+# App(session_store=RedisSessionStore("redis://localhost:6379/0")).
+
+services:
+  redis:
+    image: redis:8-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+    # Session records are short-lived; keeping them across a restart of Redis is enough.
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  redis:

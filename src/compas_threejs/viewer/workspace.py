@@ -14,6 +14,8 @@ from rich.console import Console
 from compas_threejs.lights.ambientlight import AmbientLight
 from compas_threejs.lights.sunlight import Sunlight
 
+from .session import State
+
 console = Console()
 
 
@@ -62,9 +64,15 @@ class Workspace:
         Whether to show edges of the mesh. Default is False.
     """
 
-    def __init__(self, app, workspace_id: str = "main"):
+    def __init__(self, app, workspace_id: str = "main", state=None):
         self.app = app
         self.workspace_id = workspace_id
+        # The `State` of the session this workspace belongs to, where what it shows is
+        # registered - by default the one its app's inbox resolves with.
+        if state is None:
+            inbox = getattr(app, "inbox", None)
+            state = inbox.state if inbox is not None else State()
+        self.state = state
 
         self._background_color = Color(0.9, 0.9, 0.9)
         self._dark_mode = False
@@ -343,7 +351,7 @@ class Workspace:
             # more than one workspace (e.g. the main scene and a per-element viewer) - each
             # needs its own mapping to its own viewmesh, or a later add in one workspace
             # would silently overwrite the lookup the other workspace's remove/update relies on.
-            self.app.inbox.brep_viewmesh_registry[(self.workspace_id, brep_id)] = brep_viewmesh
+            self.state.brep_viewmeshes[(self.workspace_id, brep_id)] = brep_viewmesh
             # the geometry variable now gets the viewmesh
             geometry = brep_viewmesh
 
@@ -353,7 +361,7 @@ class Workspace:
 
         if material:
             material._geometry_guid = str(obj_id)
-            self.app.inbox.register_material(obj_id, material)
+            self.state.register_material(obj_id, material)
             material_dict = material.as_dict()
             material_dict["geometryBackendGuid"] = str(obj_id)
             material_data = compas_pb.pb_dump_bts(material_dict)
@@ -362,7 +370,7 @@ class Workspace:
             # one behind as a permanent orphan - and so remove_object can clean it up below.
             self.app.outbox.send_bytes(material_data, ("material", obj_id), workspace_id=self.workspace_id)
 
-        self.app.inbox.register_geometry(obj_id, original_geometry, metadata, actions)
+        self.state.register_geometry(obj_id, original_geometry, metadata, actions)
         return str(original_geometry.guid)
 
     def add_geometries(self, geometries: list, material=None):
@@ -383,7 +391,7 @@ class Workspace:
 
         # If the geometry is a Brep get its respective viewmesh
         if isinstance(geometry, Brep):
-            viewmesh = self.app.inbox.brep_viewmesh_registry.get((self.workspace_id, geometry.guid))
+            viewmesh = self.state.brep_viewmeshes.get((self.workspace_id, geometry.guid))
             if viewmesh:
                 obj_id = viewmesh.guid
             geometry = geometry.to_viewmesh()
@@ -435,7 +443,7 @@ class Workspace:
         brep_id = None
         if isinstance(geometry, Brep):
             brep_id = geometry.guid
-            viewmesh = self.app.inbox.brep_viewmesh_registry.get((self.workspace_id, brep_id))
+            viewmesh = self.state.brep_viewmeshes.get((self.workspace_id, brep_id))
             if viewmesh:
                 geometry = viewmesh
 
@@ -452,9 +460,9 @@ class Workspace:
         self.app.outbox.forget(("edges", obj_id), workspace_id=self.workspace_id)
         # Drops the inbox-side registrations too (geometry/metadata/action-callbacks) - see
         # Inbox.forget_geometry for why that matters on its own, not just as an outbox mirror.
-        self.app.inbox.forget_geometry(str(obj_id))
+        self.state.forget_geometry(str(obj_id))
         if brep_id is not None:
-            self.app.inbox.brep_viewmesh_registry.pop((self.workspace_id, brep_id), None)
+            self.state.brep_viewmeshes.pop((self.workspace_id, brep_id), None)
 
     def hide_geometry(self, geometry):
         """Hides a geometry object in this workspace without removing it.
@@ -498,7 +506,7 @@ class Workspace:
     def _displayed(self, geometry):
         """The object the frontend shows for `geometry`: a Brep's viewmesh, if it has one."""
         if isinstance(geometry, Brep):
-            viewmesh = self.app.inbox.brep_viewmesh_registry.get((self.workspace_id, geometry.guid))
+            viewmesh = self.state.brep_viewmeshes.get((self.workspace_id, geometry.guid))
             if viewmesh:
                 return viewmesh
         return geometry
@@ -629,7 +637,7 @@ class Workspace:
         if element.action is None:
             console.log(f"[yellow]Warning: UI element with GUID {element.guid} has no associated action.[/yellow]")
 
-        self.app.inbox.register_button(element.guid, element.action)
+        self.state.register_button(element.guid, element.action)
 
         msg = element.as_dict()
         msg["workspace_id"] = self.workspace_id

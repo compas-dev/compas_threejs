@@ -1,15 +1,14 @@
-from contextvars import ContextVar
 from pathlib import Path
 
 import compas_pb
 from rich.console import Console
 
+from .session import bind_workspace
+from .session import bound_workspace
+
 console = Console()
 
 NOTICE_KINDS = ("info", "success", "warning", "error")
-
-# The workspace whose message a plugin is handling: where `Plugin.send` answers.
-_asking_workspace = ContextVar("asking_workspace", default=None)
 
 
 def action(name):
@@ -118,16 +117,13 @@ class Plugin:
         if not handlers:
             console.log(f"[yellow]Plugin {self.name!r} has no handler for {action_name!r}[/yellow]")
             return
-        token = _asking_workspace.set(workspace)
-        try:
+        with bind_workspace(workspace):
             for handler in handlers:
                 try:
                     handler(data, workspace)
                 except Exception as error:
                     console.print_exception()
                     self._notify_failure(action_name, error)
-        finally:
-            _asking_workspace.reset(token)
 
     def _notify_failure(self, action_name, error):
         try:
@@ -204,7 +200,7 @@ class Plugin:
         replayed to browsers that connect later - for state, like a list of saved views.
         """
         if workspace is None:
-            workspace = _asking_workspace.get() or "main"
+            workspace = bound_workspace() or "main"
         workspace_id = workspace if isinstance(workspace, str) else workspace.workspace_id
         self._send(action_name, data, key, workspace_id)
 
@@ -242,7 +238,7 @@ class Plugin:
             workspace_id = None
         else:
             if workspace is None:
-                workspace = _asking_workspace.get() or "main"
+                workspace = bound_workspace() or "main"
             workspace_id = workspace if isinstance(workspace, str) else workspace.workspace_id
         message = {"dispatch": "notice", "message": str(message), "kind": kind}
         if key is not None:

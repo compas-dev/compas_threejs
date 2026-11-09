@@ -1,7 +1,7 @@
 # Sessions: implementation plan
 
-Status: proposal for review, nothing implemented yet. Branch `feature/sessions`, from
-`feature/plugins` (PR #63).
+Status: phase 1 done (see Phases). Branch `feature/sessions`, from `feature/plugins`
+(PR #63).
 
 ## Goal
 
@@ -63,22 +63,33 @@ their client.
 
 ### 3a. SessionStore
 
+Decided: **Redis**, run in Docker (`docker-compose.yml` at the repository root).
+
+A session holds live Python objects (geometry, a Steko `Configurator`), which can't be
+stored in Redis. So the work is split in two (`stores.py`, `session.py`):
+
+- **`SessionStore`: the records**, in Redis. A record is small: the session's id, when it
+  started, when it was last seen. Redis expires it by itself. It says which sessions exist.
+- **`SessionManager`: the live sessions**, in the server's memory, each with its `State`.
+  A session whose record expired is ended at the next `sweep`. One whose record exists but
+  isn't live here (the server restarted) starts again with an empty `State`.
+
 ```python
 class SessionStore(Protocol):
-    def get(self, session_id: str) -> Session | None: ...
-    def create(self) -> Session: ...
+    def create(self, session_id: str, timeout: float) -> dict: ...
+    def get(self, session_id: str) -> dict | None: ...
+    def touch(self, session_id: str, timeout: float) -> bool: ...
     def remove(self, session_id: str) -> None: ...
-    def __iter__(self) -> Iterator[Session]: ...
+    def ids(self) -> Iterator[str]: ...
 ```
 
-`MemorySessionStore` is the only implementation for now.
+`RedisSessionStore` (`pip install compas_threejs[sessions]`) and `MemorySessionStore`, the
+default, which needs nothing.
 
-Redis or a database can't simply replace it: a session holds live Python objects
-(geometry, a Steko `Configurator`), which can't be stored there. What could go there
-later is a **snapshot** a plugin writes and reads back (`Plugin.save_session` /
-`restore_session`), for sessions that survive a restart. Several server processes also
-need each client sent to the same process every time ("sticky" routing), as the Steko
-gateway does now. Both are out of scope here; the interface leaves room for them.
+Later, a **snapshot** of a `State` a plugin writes and reads back (`Plugin.save_session` /
+`restore_session`) can go in Redis too, so a session survives a restart with its data.
+Several server processes also need each client sent to the same process every time
+("sticky" routing), as the Steko gateway does now. Both are out of scope here.
 
 ### 3b. ConnectionManager
 
@@ -210,9 +221,12 @@ plugin written for sessions also runs unchanged in a local script.
 
 Each is its own commit, with tests; the existing tests pass after each.
 
-1. **`Session`, `State`, `MemorySessionStore`, `current_session`/`current_state`/
-   `current_workspace`**, the default session. The `Inbox` registries move into `State`. No
-   change in behaviour.
+1. **Done.** `Session`, `State`, `SessionManager`, `MemorySessionStore`, `RedisSessionStore`,
+   `current_session`/`current_state`/`current_workspace`, the default session. The `Inbox`
+   registries moved into `State` (`Inbox` keeps them under their old names, as views), each
+   `Workspace` registers into its own session's `State`, `App.on_message` binds the session
+   and workspace for every message. No change in behaviour: every client is still in the
+   default session. Tests: `tests/test_sessions.py`.
 2. **`ConnectionManager`** out of `AppServer`, keyed by session and workspace, the three reach
    levels.
 3. **Endpoint:** cookie and `Remote` token, HTTP middleware, `authorize_session`,
@@ -244,6 +258,9 @@ a forged or unknown cookie gets a new session.
    shared starting scene, and editable content is added per session in
    `App.on_new_session(callback)`. Each session must get its own copies of anything it can
    change, or one client moving a beam moves it for everyone.
+   This includes what `app.py` registers at startup: UI buttons, `app.register_action`.
+   They are in the default session's `State` (phase 1), so another session wouldn't find
+   them. They have to be shared, or added again for each session.
 2. **`App` shorthands outside a session** with `sessions=True` (for example in `app.loop`):
    act on everyone, or raise? Proposal: everyone, by the reach rule.
 3. **Session timeout default:** 30 minutes?
