@@ -363,3 +363,35 @@ def test_a_remote_keeps_its_own_registries():
     remote.add_geometry(box)
     assert remote.inbox.geometry_registry[str(box.guid)] is box
     assert remote.main.state is remote.inbox.state
+
+
+def test_every_session_gets_the_buttons_and_actions_of_app_py(app):
+    clicks, pings = [], []
+    # Registered at startup, outside of any session: everyone's.
+    app.inbox.register_button("start", lambda: clicks.append(current_session()))
+    app.register_action("ping", lambda data: pings.append((current_session(), data)))
+    a, b = app.sessions.create(), app.sessions.create()
+    send(app, {"dispatch": "ui_callback", "action": "start"}, session=a)
+    send(app, {"dispatch": "ui_callback", "action": "start"}, session=b)
+    send(app, {"dispatch": "other_action", "action": "ping", "json_data": 2}, session=b)
+    # Each runs for the session that clicked.
+    assert clicks == [a, b]
+    assert pings == [(b, 2)]
+    # Kept once, in the default session, not copied into each session.
+    assert "start" in app.sessions.default.state.buttons
+    assert a.state.buttons == {} and b.state.actions == {}
+
+
+def test_what_a_session_registers_stays_its_own(app):
+    seen = []
+    app.register_action("ping", lambda data: seen.append("everyone's"))
+    a, b = app.sessions.create(), app.sessions.create()
+    with a.active():
+        app.register_action("ping", lambda data: seen.append("a's own"))
+        app.inbox.register_button("mine", lambda: seen.append("a's button"))
+    for session in (a, b):
+        send(app, {"dispatch": "other_action", "action": "ping"}, session=session)
+    send(app, {"dispatch": "ui_callback", "action": "mine"}, session=a)
+    assert seen == ["a's own", "everyone's", "a's button"]
+    assert "mine" not in app.sessions.default.state.buttons
+    assert "mine" not in b.state.buttons

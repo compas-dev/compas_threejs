@@ -258,9 +258,14 @@ a forged or unknown cookie gets a new session.
    shared starting scene, and editable content is added per session in
    `App.on_new_session(callback)`. Each session must get its own copies of anything it can
    change, or one client moving a beam moves it for everyone.
-   This includes what `app.py` registers at startup: UI buttons, `app.register_action`.
-   They are in the default session's `State` (phase 1), so another session wouldn't find
-   them. They have to be shared, or added again for each session.
+   **Decided for buttons and actions: every session gets them.** What is registered outside
+   of any session (at startup, in `app.py`) is everyone's; what a session registers is its
+   own, and comes first. They are kept once, in the default session's `State`; `Inbox.buttons`
+   and `Inbox.action_registry` look in the session's, then in those (a `ChainMap`). A shared
+   callback runs with the session that clicked bound. Done, with tests.
+   For phase 2: the UI elements must also *show* in every session's tabs - what is sent
+   outside of a session reaches everyone and is replayed to new sessions (the reach rule).
+   Still open: the geometry `app.py` adds at startup.
 2. **`App` shorthands outside a session** with `sessions=True` (for example in `app.loop`):
    act on everyone, or raise? Proposal: everyone, by the reach rule.
 3. **Session timeout default:** 30 minutes?

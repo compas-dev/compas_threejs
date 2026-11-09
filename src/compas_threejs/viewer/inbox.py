@@ -1,4 +1,5 @@
 import json
+from collections import ChainMap
 
 from compas.colors import Color
 from compas.geometry import Box
@@ -54,9 +55,20 @@ class Inbox:
         """The `State` whose registries this resolves with: the current session's."""
         return self._state if self._state is not None else self.app.sessions.current().state
 
+    def _shared(self, name):
+        """The current session's registry `name`, falling back to the default session's: what
+        was registered outside of any session (at startup, in app.py) is everyone's. Writes
+        go to the current session's."""
+        state = self.state
+        default = self.app.sessions.default.state if self._state is None else state
+        if state is default:
+            return getattr(state, name)
+        return ChainMap(getattr(state, name), getattr(default, name))
+
     @property
     def buttons(self):
-        return self.state.buttons
+        """Callbacks by guid: UI elements and object actions - the session's, then everyone's."""
+        return self._shared("buttons")
 
     @property
     def geometry_registry(self):
@@ -80,7 +92,8 @@ class Inbox:
 
     @property
     def action_registry(self):
-        return self.state.actions
+        """Callables by action name (see `register_action`) - the session's, then everyone's."""
+        return self._shared("actions")
 
     @property
     def lock(self):
