@@ -60,10 +60,9 @@ class Inbox:
         was registered outside of any session (at startup, in app.py) is everyone's. Writes
         go to the current session's."""
         state = self.state
-        default = self.app.sessions.default.state if self._state is None else state
-        if state is default:
+        if state.shared is None:
             return getattr(state, name)
-        return ChainMap(getattr(state, name), getattr(default, name))
+        return ChainMap(getattr(state, name), getattr(state.shared, name))
 
     @property
     def buttons(self):
@@ -72,19 +71,21 @@ class Inbox:
 
     @property
     def geometry_registry(self):
-        return self.state.geometry
+        """Geometry by guid - the session's, then everyone's. To change one, take it from
+        `State.own`: everyone's must not be changed in place."""
+        return self._shared("geometry")
 
     @property
     def material_registry(self):
-        return self.state.materials
+        return self._shared("materials")
 
     @property
     def metadata_registry(self):
-        return self.state.metadata
+        return self._shared("metadata")
 
     @property
     def object_actions_registry(self):
-        return self.state.object_actions
+        return self._shared("object_actions")
 
     @property
     def brep_viewmesh_registry(self):
@@ -194,7 +195,7 @@ class Inbox:
         action_id = message.get("action_guid")
         object_id = message.get("object_guid")
         console.log(f"[blue]Received object action callback from frontend. Action ID: {action_id}, Object ID: {object_id}[/blue]")
-        obj = self.geometry_registry.get(object_id)
+        obj = self.state.own(object_id) if object_id else None  # the session's own: the callback may change it
         if action_id and action_id in self.buttons:
             value = message.get("value")
             console.log(f"[blue]Value associated with the action: {value}[/blue]")
@@ -215,7 +216,7 @@ class Inbox:
         guid = message.get("guid")
         matrix = message.get("matrix")
         console.log(f"[blue]Received object transform from frontend. Object ID: {guid}[/blue]")
-        geometry = self.geometry_registry.get(guid)
+        geometry = self.state.own(guid) if guid else None  # everyone's is copied first, not moved for all
         if geometry is None or matrix is None:
             console.log(f"[yellow]Unrecognized object_transform target: {guid}[/yellow]")
             return
@@ -278,11 +279,11 @@ class Inbox:
             console.log(f"[yellow]Unrecognized material_edit target: {guid}[/yellow]")
             return
 
-        material = self.material_registry.get(guid)
+        material = self.state.own_material(guid)  # everyone's is copied first
         if material is None:
             material = Material()
             material._geometry_guid = str(guid)
-            self.material_registry[guid] = material
+            self.state.materials[guid] = material
 
         updates = {}
         if "color" in message:

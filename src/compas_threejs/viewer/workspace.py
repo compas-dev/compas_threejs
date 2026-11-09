@@ -400,7 +400,7 @@ class Workspace:
 
         # If the geometry is a Brep get its respective viewmesh
         if isinstance(geometry, Brep):
-            viewmesh = self.state.brep_viewmeshes.get((self.workspace_id, geometry.guid))
+            viewmesh = self.state.viewmesh(self.workspace_id, geometry.guid)
             if viewmesh:
                 obj_id = viewmesh.guid
             geometry = geometry.to_viewmesh()
@@ -422,6 +422,10 @@ class Workspace:
             The transformation to apply. `Translation` and `Rotation` are also
             accepted, since both are subclasses of `Transformation`.
         """
+        # Everyone's object (added at startup), moved from a session: that session's own copy.
+        key = self._displayed(geometry).guid  # what it is registered under: a Brep's viewmesh's
+        if self.state.is_shared(key):
+            geometry = self.state.own(key)
         obj_id = geometry.guid
 
         if isinstance(geometry, Brep):
@@ -449,19 +453,22 @@ class Workspace:
     def remove_object(self, geometry):
         """Removes a geometry object from this workspace."""
         # If the geometry is a Brep, remove its viewmesh from the registry
+        shared = self.state.is_shared(self._displayed(geometry).guid)
         brep_id = None
         if isinstance(geometry, Brep):
             brep_id = geometry.guid
-            viewmesh = self.state.brep_viewmeshes.get((self.workspace_id, brep_id))
+            viewmesh = self.state.viewmesh(self.workspace_id, brep_id)
             if viewmesh:
                 geometry = viewmesh
 
         obj_id = geometry.guid
-        self.app.outbox.send_dict(
-            {"dispatch": "handle_geometry", "type": "remove", "guid": str(obj_id)},
-            **self._address,
-            remove_key=obj_id,
-        )
+        message = {"dispatch": "handle_geometry", "type": "remove", "guid": str(obj_id)}
+        if shared:
+            # Everyone's object, removed for this session only: its "add" stays, replayed to
+            # this session's tabs too, so the removal is kept after it, under its key.
+            self.app.outbox.send_bytes(compas_pb.pb_dump_bts(message), obj_id, **self._address)
+        else:
+            self.app.outbox.send_dict(message, **self._address, remove_key=obj_id)
         # Drops the geometry's associated material/visibility slots too, if any - a no-op
         # for whichever it never had.
         self.app.outbox.forget(("material", obj_id), **self._address)
@@ -472,6 +479,9 @@ class Workspace:
         self.state.forget_geometry(str(obj_id))
         if brep_id is not None:
             self.state.brep_viewmeshes.pop((self.workspace_id, brep_id), None)
+        if shared:
+            # Gone for this session, still there for everyone else: its own registry says so.
+            self.state.geometry[str(obj_id)] = None
 
     def hide_geometry(self, geometry):
         """Hides a geometry object in this workspace without removing it.
@@ -515,7 +525,7 @@ class Workspace:
     def _displayed(self, geometry):
         """The object the frontend shows for `geometry`: a Brep's viewmesh, if it has one."""
         if isinstance(geometry, Brep):
-            viewmesh = self.state.brep_viewmeshes.get((self.workspace_id, geometry.guid))
+            viewmesh = self.state.viewmesh(self.workspace_id, geometry.guid)
             if viewmesh:
                 return viewmesh
         return geometry

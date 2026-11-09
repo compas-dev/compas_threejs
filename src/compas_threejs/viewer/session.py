@@ -24,6 +24,7 @@ import threading
 import time
 from contextlib import contextmanager
 from contextvars import ContextVar
+from copy import deepcopy
 from typing import Callable
 from typing import Optional
 
@@ -47,17 +48,21 @@ class State:
     The registries map what the browser refers to (a guid) to the live Python objects.
     """
 
-    def __init__(self, session_id: str = DEFAULT_SESSION_ID):
+    def __init__(self, session_id: str = DEFAULT_SESSION_ID, shared: Optional["State"] = None):
         self.session_id = session_id  # the session it belongs to
+        # What everyone has - the default session's State, holding what app.py added at
+        # startup - for the other sessions: read through, copied when changed (see `own`).
+        self.shared = shared
         self.workspaces = {}  # id -> Workspace
-        self.geometry = {}  # guid -> the geometry as added (a Brep, not its view mesh)
+        self.geometry = {}  # guid -> the geometry as added (a Brep, not its view mesh); None: everyone's, removed here
         self.materials = {}  # guid -> Material
         self.metadata = {}  # guid -> Metadata
         self.object_actions = {}  # guid -> its ObjectActions
         self.buttons = {}  # action guid -> callable, for UI elements and object actions
         self.actions = {}  # action name -> callable, see `App.register_action`
         self.brep_viewmeshes = {}  # (workspace id, brep guid) -> the mesh shown for it
-        self.plugins = {}  # plugin name -> that plugin's data for this client
+        self.plugins = {}  # plugin name -> that plugin's data for this client (`Plugin.state`)
+        self.plugin_buttons = {}  # plugin name -> (hidden, disabled) ids, this client's own
         self.lock = threading.Lock()  # guards geometry mutation against concurrent App.loop callbacks
 
     # ---- REGISTRATION (by Workspace, when something is sent out) ------------------------------
@@ -98,13 +103,68 @@ class State:
                 self.metadata[key] = metadata
                 break
 
+    # ---- WHAT EVERYONE HAS, AND THIS CLIENT'S OWN COPIES -------------------------------------
+
+    def is_shared(self, guid) -> bool:
+        """Whether `guid` is everyone's object (added at startup) that this client hasn't got
+        its own copy of yet."""
+        guid = str(guid)
+        return self.shared is not None and guid not in self.geometry and guid in self.shared.geometry
+
+    def find(self, guid):
+        """The geometry with `guid` this client sees: its own, or everyone's. None if neither."""
+        guid = str(guid)
+        if guid in self.geometry:
+            return self.geometry[guid]
+        return self.shared.find(guid) if self.shared is not None else None
+
+    def own(self, guid):
+        """This client's own geometry with `guid`, to change: if it is everyone's, a copy -
+        made the first time, with the same guid, so the browser swaps it in this client's
+        tabs only; everyone else keeps the original. None if there's no such geometry.
+
+        Changing everyone's object in place would change it for every client: code that
+        changes an object from inside a session takes it from here.
+        """
+        guid = str(guid)
+        if not self.is_shared(guid):
+            return self.geometry.get(guid)
+        shared = self.shared
+        copy = shared.geometry[guid].copy(copy_guid=True)
+        self.geometry[guid] = copy
+        if guid in shared.metadata:
+            self.metadata[guid] = shared.metadata[guid]
+        if guid in shared.object_actions:
+            self.object_actions[guid] = shared.object_actions[guid]
+        if guid in shared.materials:
+            self.materials[guid] = deepcopy(shared.materials[guid])
+        for (workspace_id, brep_id), viewmesh in shared.brep_viewmeshes.items():
+            if str(brep_id) == guid:
+                self.brep_viewmeshes[(workspace_id, brep_id)] = viewmesh
+        return copy
+
+    def own_material(self, guid):
+        """This client's own material of the geometry `guid`, to change (see `own`). None if
+        it has none."""
+        guid = str(guid)
+        if self.is_shared(guid):
+            self.own(guid)
+        return self.materials.get(guid)
+
+    def viewmesh(self, workspace_id, brep_id):
+        """The mesh shown for a Brep in a workspace: this client's, or everyone's."""
+        viewmesh = self.brep_viewmeshes.get((workspace_id, brep_id))
+        if viewmesh is None and self.shared is not None:
+            return self.shared.viewmesh(workspace_id, brep_id)
+        return viewmesh
+
 
 class Session:
     """One client of the App - a browser, with all its tabs, or a `Remote` - and its `State`."""
 
-    def __init__(self, session_id: str, created: Optional[float] = None):
+    def __init__(self, session_id: str, created: Optional[float] = None, shared: Optional[State] = None):
         self.id = session_id
-        self.state = State(session_id)
+        self.state = State(session_id, shared)
         self.created = created if created is not None else time.time()
         self.last_seen = self.created
         self.connections = 0
@@ -222,7 +282,7 @@ class SessionManager:
         """A new session, with a fresh, unguessable id."""
         session_id = secrets.token_urlsafe(32)
         record = self.store.create(session_id, self.timeout)
-        session = Session(session_id, record["created"])
+        session = Session(session_id, record["created"], self.default.state)
         with self._lock:
             self._live[session_id] = session
         self._started(session)
@@ -249,7 +309,7 @@ class SessionManager:
             session = self._live.get(session_id)
             started = session is None
             if started:
-                session = self._live[session_id] = Session(session_id, record["created"])
+                session = self._live[session_id] = Session(session_id, record["created"], self.default.state)
         if started:
             self._started(session)
         return session

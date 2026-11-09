@@ -69,10 +69,10 @@ class Plugin:
         self._hidden = set()
         self._disabled = set()
         for attribute in dir(type(self)):
-            method = getattr(self, attribute, None)
-            name = getattr(method, "_plugin_action", None)
+            # Looked up on the class: an instance lookup would run properties (`state`).
+            name = getattr(getattr(type(self), attribute, None), "_plugin_action", None)
             if name:
-                self._handlers.setdefault(name, []).append(method)
+                self._handlers.setdefault(name, []).append(getattr(self, attribute))
 
     @property
     def static_dir(self):
@@ -132,34 +132,96 @@ class Plugin:
         except Exception:
             console.print_exception()
 
+    # ---- PER SESSION -------------------------------------------------------------------------
+
+    def session_state(self):
+        """This plugin's data for a new session - what `state` starts as. None by default.
+
+        The plugin is one object for every client: what belongs to one client goes here,
+        not on ``self``::
+
+            def session_state(self):
+                return {"views": []}
+
+
+            @action("save")
+            def save(self, data, workspace):
+                self.state["views"].append(data)
+        """
+        return None
+
+    @property
+    def state(self):
+        """This plugin's data for the current session (see `session_state`): the client whose
+        message is being handled; outside of one, the default session's. Can be replaced."""
+        state = self._session_state()
+        with state.lock:
+            if self.name not in state.plugins:
+                state.plugins[self.name] = self.session_state()
+            return state.plugins[self.name]
+
+    @state.setter
+    def state(self, value):
+        state = self._session_state()
+        with state.lock:
+            state.plugins[self.name] = value
+
+    def _session_state(self):
+        if not self.app:
+            raise RuntimeError(f"Plugin {self.name!r} is not added to an App")
+        return self.app.sessions.current().state
+
+    def new_session(self, session):
+        """Called when a session starts - a new client - with it bound. See `session_state`."""
+
+    def end_session(self, session):
+        """Called when a session ends (it expired), with it bound: its `state` is dropped next."""
+
+    # ---- BUTTONS --------------------------------------------------------------------------------
+
+    def _buttons(self):
+        """(hidden, disabled) where they're changed now: the current session's own - starting
+        as everyone's - or, outside of one, everyone's."""
+        if not self.app:
+            return self._hidden, self._disabled
+        state = self.app.sessions.current().state
+        if state.shared is None:
+            return self._hidden, self._disabled
+        with state.lock:
+            if self.name not in state.plugin_buttons:
+                state.plugin_buttons[self.name] = (set(self._hidden), set(self._disabled))
+            return state.plugin_buttons[self.name]
+
     @property
     def hidden(self):
-        """The ids of the hidden groups and buttons."""
-        return frozenset(self._hidden)
+        """The ids of the hidden groups and buttons - for the current session (see `hide`)."""
+        return frozenset(self._buttons()[0])
 
     @property
     def disabled(self):
-        """The ids of the disabled groups and buttons."""
-        return frozenset(self._disabled)
+        """The ids of the disabled groups and buttons - for the current session (see `hide`)."""
+        return frozenset(self._buttons()[1])
 
     def hide(self, *ids):
-        """Hides these groups or buttons."""
-        self._hidden.update(self._known(ids))
+        """Hides these groups or buttons: for the session whose message is being handled, or,
+        outside of one (at startup), for everyone."""
+        self._buttons()[0].update(self._known(ids))
         self.send_buttons()
 
     def show(self, *ids):
-        """Shows these groups or buttons again."""
-        self._hidden.difference_update(self._known(ids))
+        """Shows these groups or buttons again (for whom: see `hide`)."""
+        self._buttons()[0].difference_update(self._known(ids))
         self.send_buttons()
 
     def disable(self, *ids):
-        """Greys out these groups or buttons; their clicks and shortcuts do nothing."""
-        self._disabled.update(self._known(ids))
+        """Greys out these groups or buttons; their clicks and shortcuts do nothing (for whom:
+        see `hide`)."""
+        self._buttons()[1].update(self._known(ids))
         self.send_buttons()
 
     def enable(self, *ids):
-        """Enables these groups or buttons again."""
-        self._disabled.difference_update(self._known(ids))
+        """Enables these groups or buttons again (for whom: see `hide`)."""
+        self._buttons()[1].difference_update(self._known(ids))
         self.send_buttons()
 
     def _known(self, ids):
@@ -188,7 +250,9 @@ class Plugin:
         """Sends every workspace which groups and buttons are hidden or disabled; kept for browsers that connect later."""
         if not self.app:
             return  # sent when the plugin is added to an App
-        message = {"dispatch": "plugin_buttons", "plugin": self.name, "hidden": sorted(self._hidden), "disabled": sorted(self._disabled)}
+        hidden, disabled = self._buttons()
+        message = {"dispatch": "plugin_buttons", "plugin": self.name, "hidden": sorted(hidden), "disabled": sorted(disabled)}
+        # To every workspace of the current session (or everyone's), replayed after everyone's.
         self.app.outbox.send_bytes(compas_pb.pb_dump_bts(message), f"plugin/{self.name}/buttons", persist=True, workspace_id=None)
 
     def send(self, action_name, data=None, *, workspace=None, key=None):

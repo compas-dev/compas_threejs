@@ -2,7 +2,8 @@
 
 Open the viewer in two browsers (or a normal and a private window): the box is in both,
 since it is added here, at startup. "Add a sphere" adds one to the scene of the browser
-that clicked only. Both tabs of one browser share its session.
+that clicked only; "Move the box" moves the box for that browser only (it gets its own
+copy). Both tabs of one browser share its session.
 
     python examples/sessions.py
 
@@ -20,6 +21,7 @@ import random
 from compas.colors import Color
 from compas.geometry import Box
 from compas.geometry import Sphere
+from compas.geometry import Translation
 
 from compas_threejs.materials import Material
 from compas_threejs.ui import Button
@@ -35,7 +37,8 @@ app = App(
 )
 
 # At startup, outside of any session: everyone's.
-app.add_geometry(Box(1))
+box = Box(1)
+app.add_geometry(box)
 
 
 def add_sphere():
@@ -45,5 +48,11 @@ def add_sphere():
     print(f"A sphere for session {current_session().id[:8]}")
 
 
+def move_box():
+    # Everyone's box, moved from a session: that session's own copy moves, the others' don't.
+    app.main.transform_geometry(box, Translation.from_vector([1, 0, 0]))
+
+
 app.add_ui_element(Button("Add a sphere", action=add_sphere))
+app.add_ui_element(Button("Move the box", action=move_box))
 app.start()

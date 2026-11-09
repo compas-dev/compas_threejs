@@ -130,8 +130,10 @@ class App:
 
         self.server = AppServer(frontend_dir=frontend_dir)
         self.outbox = Outbox(self.server)
-        # What was kept to replay to an ended session's tabs goes with it.
-        self.sessions.on_ended(lambda session: self.server.connections.forget_session(session.id))
+        # The plugins hear of sessions starting and ending; what was kept to replay to an
+        # ended session's tabs goes with it.
+        self.sessions.on_started(self._session_started)
+        self.sessions.on_ended(self._session_ended)
         self._authorize_callbacks = []
         if sessions:
             self.server.fastapi_app.add_middleware(SessionMiddleware, manager=self.sessions, authorize=self._authorized)
@@ -486,6 +488,21 @@ class App:
         webbrowser.open(shareable_url)
 
     # ---- INCOMING MESSAGES ------------------------------------------------------------------------
+
+    def _session_started(self, session):
+        for plugin in list(self._plugins):
+            try:
+                plugin.new_session(session)
+            except Exception:
+                console.print_exception()
+
+    def _session_ended(self, session):
+        for plugin in list(self._plugins):
+            try:
+                plugin.end_session(session)
+            except Exception:
+                console.print_exception()
+        self.server.connections.forget_session(session.id)
 
     def authorize_session(self, callback: Callable) -> Callable:
         """Calls ``callback(connection, session)`` for each request and WebSocket, with sessions

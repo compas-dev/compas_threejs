@@ -1,6 +1,6 @@
 # Sessions: implementation plan
 
-Status: phases 1 to 3 done (see Phases). Branch `feature/sessions`, from `feature/plugins`
+Status: phases 1 to 5 done (see Phases); phase 6, the plugins, is next. Branch `feature/sessions`, from `feature/plugins`
 (PR #63).
 
 ## Goal
@@ -250,9 +250,26 @@ Each is its own commit, with tests; the existing tests pass after each.
    `examples/sessions.py` with Redis; checked with two real browsers (Chromium): two
    sessions in Redis, the startup box in both, spheres added in one only in that one and
    in its second tab, a reload keeps the session.
-4. **Per-session core:** each session its own `State`; `App` shorthands act on it.
-5. **Plugin API and lifecycle:** `session_state`/`state`, `new_session`/`end_session`, the reach
-   rule, `send_everyone`, `bind`, expiry.
+4. **Done.** Each session its own `State`, linked to everyone's (`State.shared`, the default
+   session's): read through - finding, picking, metadata of what `app.py` added - and
+   **copied when changed** (`State.own(guid)`): a gizmo move, a color edit, an object
+   action, `Workspace.transform_geometry` from a session change that session's own copy,
+   with the same guid, so only its tabs swap it. Removing everyone's object from a session
+   keeps the removal for that session's tabs, after everyone's "add". Without sessions,
+   objects are changed in place, as before. The `App` shorthands act on the current
+   session's `main`.
+   Limits: code that changes everyone's object **in place** from a session (instead of
+   through `State.own` or the methods above) changes it for everyone. And a later change
+   to everyone's object (from `app.loop`, say) reaches every session, also those with
+   their own copy.
+5. **Done.** `Plugin.session_state()` / `Plugin.state` (per session, replaceable),
+   `Plugin.new_session` / `end_session` (with the session bound; a failing one is logged).
+   `hide`/`show`/`disable`/`enable` follow the reach rule: inside a session, for that
+   session only (starting from everyone's); outside, for everyone. `send_everyone`, `bind`
+   and expiry came with phases 1-3.
+   Note for phase 6: Layers has its own `state()` method, which hides `Plugin.state`.
+   Tests: `tests/test_shared.py`. In Docker, the example's "Move the box" moves the box
+   for the clicking browser only, also after a reload.
 6. **Plugins, one at a time, in their own repositories:** the small ones, then Layers and Draw,
    then Timber, then Steko.
 
@@ -286,10 +303,7 @@ a forged or unknown cookie gets a new session.
    outside of a session reaches everyone and is replayed to new sessions (the reach rule).
    **Decided for geometry: every session sees what `app.py` adds at startup** (done in
    phase 2: the default session's content is everyone's).
-   Still open - **editing it**: a session moving a startup object with the gizmo, or changing
-   its color. Proposal: that session gets its own copy at its first edit (same guid, so
-   only its tabs swap it); the alternative is one shared world everyone edits. Today the
-   shared object would be changed for everyone. Phase 4.
+   **Editing it: that session gets its own copy** (done in phase 4).
 2. **`App` shorthands outside a session** with `sessions=True` (for example in `app.loop`):
    act on everyone, or raise? Proposal: everyone, by the reach rule.
 3. **Session timeout default:** 30 minutes?
