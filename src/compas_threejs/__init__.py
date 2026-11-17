@@ -1,6 +1,6 @@
 """COMPAS ThreeJS - A lightweight Three.js viewer for COMPAS using Protobuf."""
 
-__version__ = "1.1.2"
+__version__ = "2.0.0"
 __author__ = "Eric Gozzi, Nicolas Benjamin Boscoboinik"
 __email__ = "eric.gozzi@arch.ethz.ch"
 __license__ = "MIT"
