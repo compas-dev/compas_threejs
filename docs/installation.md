@@ -29,7 +29,7 @@ The built frontend isn't committed to this repo, so the viewer won't render yet.
 Run `invoke pre-build` to npm-install the pinned `compas_threejs_ts` release and
 vendor its build (no extra clone needed), or see below to build against a local
 frontend checkout instead.
-See [FRONTEND_WORKFLOW.md](../FRONTEND_WORKFLOW.md) for details.
+See [FRONTEND_WORKFLOW.md](https://github.com/compas-dev/compas_threejs/blob/main/FRONTEND_WORKFLOW.md) for details.
 
 ### Typescript Frontend
 

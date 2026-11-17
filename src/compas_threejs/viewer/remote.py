@@ -33,6 +33,9 @@ class RemoteOutbox:
     def send_dict(self, message: dict, *, workspace_id: str = "main"):
         self.send_bytes(compas_pb.pb_dump_bts(message), "")
 
+    def send_batch(self):
+        """Nothing is held back here to send (see `Outbox.send_batch`)."""
+
     async def _drain(self, websocket):
         """Sends queued messages directly; must be awaited from the connection's own event loop."""
         for binary_data in self._queue:

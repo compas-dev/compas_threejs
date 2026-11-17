@@ -45,6 +45,7 @@ class Inbox:
             "object_transform": self._handle_object_transform,
             "create_geometry": self._handle_create_geometry,
             "material_edit": self._handle_material_edit,
+            "plugin": self._handle_plugin,
         }
 
     # ---- REGISTRATION (called by Workspace when something is sent out) -------------------------
@@ -141,9 +142,12 @@ class Inbox:
         console.log(f"[blue]Received object picked message from frontend. Object ID: {object_id}[/blue]")
         metadata = self.metadata_registry.get(object_id)
         if metadata:
-            metadata["dispatch"] = "object_infos"
-            console.log(f"[blue]Metadata associated with the object: {metadata}[/blue]")
-            outbox.send_dict(metadata.metadata, workspace_id=workspace_id)
+            fields = dict(metadata.metadata)
+            console.log(f"[blue]Metadata associated with the object: {fields}[/blue]")
+            # The message is a protobuf map, which loses the fields' order: "__order__"
+            # carries it for the viewer to show them in.
+            message = {**fields, "dispatch": "object_infos", "__order__": list(fields)}
+            outbox.send_dict(message, workspace_id=workspace_id)
         else:
             outbox.send_dict(
                 {
@@ -196,7 +200,13 @@ class Inbox:
             geometry.transform(transformation)
 
         if self.app is not None:
-            self.app.get_workspace(workspace_id).update_geometry(geometry)
+            workspace = self.app.get_workspace(workspace_id)
+            workspace.update_geometry(geometry)
+            for callback in list(self.app._transform_callbacks):
+                try:
+                    callback(geometry, transformation, workspace)
+                except Exception as error:  # a script's callback must not break the server
+                    console.log(f"[red]Error in {getattr(callback, '__name__', callback)}: {error}[/red]")
 
     def _handle_create_geometry(self, message, outbox, workspace_id):
         """Creates a new backend geometry object from a frontend "Add Box/Sphere/Point" action.
@@ -282,6 +292,19 @@ class Inbox:
         action_id = message.get("action")
         if action_id and action_id in self.buttons:
             self.buttons[action_id](json_data)
+
+    def _handle_plugin(self, message, outbox, workspace_id):
+        """Hands a plugin's `channel.send(action, data)` to that plugin's Python half."""
+        name = message.get("plugin")
+        plugin = self.app.get_plugin(name) if self.app else None
+        if not plugin:
+            console.log(f"[yellow]Received a message for unknown plugin {name!r}[/yellow]")
+            return
+        workspace = self.app.get_workspace(workspace_id)
+        if plugin not in workspace.plugins:
+            console.log(f"[yellow]Plugin {name!r} is not in workspace {workspace_id!r}[/yellow]")
+            return
+        plugin.handle(message.get("action"), message.get("data"), workspace)
 
     def _handle_other_action(self, message, outbox, workspace_id):
         """Handles messages from frontend elements not tied to a backend-registered guid,
