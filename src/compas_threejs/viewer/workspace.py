@@ -14,6 +14,9 @@ from rich.console import Console
 from compas_threejs.lights.ambientlight import AmbientLight
 from compas_threejs.lights.sunlight import Sunlight
 
+from .session import DEFAULT_SESSION_ID
+from .session import State
+
 console = Console()
 
 
@@ -62,9 +65,15 @@ class Workspace:
         Whether to show edges of the mesh. Default is False.
     """
 
-    def __init__(self, app, workspace_id: str = "main"):
+    def __init__(self, app, workspace_id: str = "main", state=None):
         self.app = app
         self.workspace_id = workspace_id
+        # The `State` of the session this workspace belongs to, where what it shows is
+        # registered - by default the one its app's inbox resolves with.
+        if state is None:
+            inbox = getattr(app, "inbox", None)
+            state = inbox.state if inbox is not None else State()
+        self.state = state
 
         self._background_color = Color(0.9, 0.9, 0.9)
         self._dark_mode = False
@@ -77,6 +86,14 @@ class Workspace:
         self._camera_target = Point(0, 0, 0)
         self._show_edges = False
         self._plugins = None
+
+    @property
+    def _address(self) -> dict:
+        """Where this workspace's messages go (see `Outbox.send_bytes`): its id, in its own session.
+        The default session's isn't named, for outboxes that know no sessions."""
+        if self.state.session_id == DEFAULT_SESSION_ID:
+            return {"workspace_id": self.workspace_id}
+        return {"workspace_id": self.workspace_id, "session_id": self.state.session_id}
 
     @property
     def plugins(self) -> list:
@@ -118,7 +135,7 @@ class Workspace:
         # (e.g. every camera move).
         self.app.outbox.send_dict(
             {"dispatch": "scene", "type": type_, **fields},
-            workspace_id=self.workspace_id,
+            **self._address,
             obj_id=("scene", self.workspace_id, type_),
         )
 
@@ -190,7 +207,7 @@ class Workspace:
                 "type": "background_mode",
                 "mode": "dark" if self._dark_mode else "light",
             },
-            workspace_id=self.workspace_id,
+            **self._address,
             obj_id=("theme", self.workspace_id),
         )
 
@@ -293,7 +310,7 @@ class Workspace:
         """
         obj_id = light.guid
         binary_data = compas_pb.pb_dump_bts(light.as_dict())
-        self.app.outbox.send_bytes(binary_data, obj_id, workspace_id=self.workspace_id)
+        self.app.outbox.send_bytes(binary_data, obj_id, **self._address)
 
     def update_light(self, light):
         """Updates an existing light object in this workspace.
@@ -343,26 +360,26 @@ class Workspace:
             # more than one workspace (e.g. the main scene and a per-element viewer) - each
             # needs its own mapping to its own viewmesh, or a later add in one workspace
             # would silently overwrite the lookup the other workspace's remove/update relies on.
-            self.app.inbox.brep_viewmesh_registry[(self.workspace_id, brep_id)] = brep_viewmesh
+            self.state.brep_viewmeshes[(self.workspace_id, brep_id)] = brep_viewmesh
             # the geometry variable now gets the viewmesh
             geometry = brep_viewmesh
 
         obj_id = geometry.guid
         binary_data = compas_pb.pb_dump_bts(geometry)
-        self.app.outbox.send_bytes(binary_data, obj_id, workspace_id=self.workspace_id)
+        self.app.outbox.send_bytes(binary_data, obj_id, **self._address)
 
         if material:
             material._geometry_guid = str(obj_id)
-            self.app.inbox.register_material(obj_id, material)
+            self.state.register_material(obj_id, material)
             material_dict = material.as_dict()
             material_dict["geometryBackendGuid"] = str(obj_id)
             material_data = compas_pb.pb_dump_bts(material_dict)
             # Keyed off the geometry's own id (not a fresh uuid4 each call) so re-adding the
             # same geometry's material overwrites this slot instead of leaving the previous
             # one behind as a permanent orphan - and so remove_object can clean it up below.
-            self.app.outbox.send_bytes(material_data, ("material", obj_id), workspace_id=self.workspace_id)
+            self.app.outbox.send_bytes(material_data, ("material", obj_id), **self._address)
 
-        self.app.inbox.register_geometry(obj_id, original_geometry, metadata, actions)
+        self.state.register_geometry(obj_id, original_geometry, metadata, actions)
         return str(original_geometry.guid)
 
     def add_geometries(self, geometries: list, material=None):
@@ -383,13 +400,13 @@ class Workspace:
 
         # If the geometry is a Brep get its respective viewmesh
         if isinstance(geometry, Brep):
-            viewmesh = self.app.inbox.brep_viewmesh_registry.get((self.workspace_id, geometry.guid))
+            viewmesh = self.state.viewmesh(self.workspace_id, geometry.guid)
             if viewmesh:
                 obj_id = viewmesh.guid
             geometry = geometry.to_viewmesh()
 
         binary_data = compas_pb.pb_dump_bts(geometry)
-        self.app.outbox.send_bytes(binary_data, obj_id, workspace_id=self.workspace_id)
+        self.app.outbox.send_bytes(binary_data, obj_id, **self._address)
 
     def transform_geometry(self, geometry, transformation: Transformation):
         """
@@ -405,6 +422,10 @@ class Workspace:
             The transformation to apply. `Translation` and `Rotation` are also
             accepted, since both are subclasses of `Transformation`.
         """
+        # Everyone's object (added at startup), moved from a session: that session's own copy.
+        key = self._displayed(geometry).guid  # what it is registered under: a Brep's viewmesh's
+        if self.state.is_shared(key):
+            geometry = self.state.own(key)
         obj_id = geometry.guid
 
         if isinstance(geometry, Brep):
@@ -420,41 +441,47 @@ class Workspace:
 
         self.app.outbox.send_dict(
             {"dispatch": "handle_geometry", "type": "apply_transform", "guid": str(obj_id), "matrix": transformation.matrix},
-            workspace_id=self.workspace_id,
+            **self._address,
         )
         # Refresh the reconnect-replay snapshot to the new position too, so a client
         # that connects after this call sees the object where it actually is -
         # without re-broadcasting the full geometry to clients that already applied
         # the small delta above live.
         binary_data = compas_pb.pb_dump_bts(geometry)
-        self.app.outbox.send_bytes(binary_data, obj_id, workspace_id=self.workspace_id, broadcast=False)
+        self.app.outbox.send_bytes(binary_data, obj_id, **self._address, broadcast=False)
 
     def remove_object(self, geometry):
         """Removes a geometry object from this workspace."""
         # If the geometry is a Brep, remove its viewmesh from the registry
+        shared = self.state.is_shared(self._displayed(geometry).guid)
         brep_id = None
         if isinstance(geometry, Brep):
             brep_id = geometry.guid
-            viewmesh = self.app.inbox.brep_viewmesh_registry.get((self.workspace_id, brep_id))
+            viewmesh = self.state.viewmesh(self.workspace_id, brep_id)
             if viewmesh:
                 geometry = viewmesh
 
         obj_id = geometry.guid
-        self.app.outbox.send_dict(
-            {"dispatch": "handle_geometry", "type": "remove", "guid": str(obj_id)},
-            workspace_id=self.workspace_id,
-            remove_key=obj_id,
-        )
+        message = {"dispatch": "handle_geometry", "type": "remove", "guid": str(obj_id)}
+        if shared:
+            # Everyone's object, removed for this session only: its "add" stays, replayed to
+            # this session's tabs too, so the removal is kept after it, under its key.
+            self.app.outbox.send_bytes(compas_pb.pb_dump_bts(message), obj_id, **self._address)
+        else:
+            self.app.outbox.send_dict(message, **self._address, remove_key=obj_id)
         # Drops the geometry's associated material/visibility slots too, if any - a no-op
         # for whichever it never had.
-        self.app.outbox.forget(("material", obj_id), workspace_id=self.workspace_id)
-        self.app.outbox.forget(("visibility", obj_id), workspace_id=self.workspace_id)
-        self.app.outbox.forget(("edges", obj_id), workspace_id=self.workspace_id)
+        self.app.outbox.forget(("material", obj_id), **self._address)
+        self.app.outbox.forget(("visibility", obj_id), **self._address)
+        self.app.outbox.forget(("edges", obj_id), **self._address)
         # Drops the inbox-side registrations too (geometry/metadata/action-callbacks) - see
         # Inbox.forget_geometry for why that matters on its own, not just as an outbox mirror.
-        self.app.inbox.forget_geometry(str(obj_id))
+        self.state.forget_geometry(str(obj_id))
         if brep_id is not None:
-            self.app.inbox.brep_viewmesh_registry.pop((self.workspace_id, brep_id), None)
+            self.state.brep_viewmeshes.pop((self.workspace_id, brep_id), None)
+        if shared:
+            # Gone for this session, still there for everyone else: its own registry says so.
+            self.state.geometry[str(obj_id)] = None
 
     def hide_geometry(self, geometry):
         """Hides a geometry object in this workspace without removing it.
@@ -491,14 +518,14 @@ class Workspace:
         # Same reasoning as _set_geometry_visibility below - stable per-object key.
         self.app.outbox.send_dict(
             {"dispatch": "handle_geometry", "type": "set_edges", "guid": str(obj_id), "show": bool(show)},
-            workspace_id=self.workspace_id,
+            **self._address,
             obj_id=("edges", obj_id),
         )
 
     def _displayed(self, geometry):
         """The object the frontend shows for `geometry`: a Brep's viewmesh, if it has one."""
         if isinstance(geometry, Brep):
-            viewmesh = self.app.inbox.brep_viewmesh_registry.get((self.workspace_id, geometry.guid))
+            viewmesh = self.state.viewmesh(self.workspace_id, geometry.guid)
             if viewmesh:
                 return viewmesh
         return geometry
@@ -515,7 +542,7 @@ class Workspace:
                 "guid": str(obj_id),
                 "visible": visible,
             },
-            workspace_id=self.workspace_id,
+            **self._address,
             obj_id=("visibility", obj_id),
         )
 
@@ -534,11 +561,11 @@ class Workspace:
         """
         obj_id = text.guid
         binary_data = compas_pb.pb_dump_bts(text.as_dict())
-        self.app.outbox.send_bytes(binary_data, obj_id, workspace_id=self.workspace_id)
+        self.app.outbox.send_bytes(binary_data, obj_id, **self._address)
         if material:
             material._geometry_guid = obj_id
             material_data = compas_pb.pb_dump_bts(material.as_dict())
-            self.app.outbox.send_bytes(material_data, ("material", obj_id), workspace_id=self.workspace_id)
+            self.app.outbox.send_bytes(material_data, ("material", obj_id), **self._address)
 
     # ---- TAGS -----------------------------------------------------------------------------------
 
@@ -553,7 +580,7 @@ class Workspace:
         """
         obj_id = tag.guid
         binary_data = compas_pb.pb_dump_bts(tag.as_dict())
-        self.app.outbox.send_bytes(binary_data, obj_id, workspace_id=self.workspace_id)
+        self.app.outbox.send_bytes(binary_data, obj_id, **self._address)
 
     def update_tag(self, tag):
         """
@@ -596,7 +623,7 @@ class Workspace:
                 "guid": str(obj_id),
                 "visible": visible,
             },
-            workspace_id=self.workspace_id,
+            **self._address,
             obj_id=("visibility", obj_id),
         )
 
@@ -613,7 +640,7 @@ class Workspace:
         """
         mat_id = material.guid
         binary_data = compas_pb.pb_dump_bts(material.as_dict())
-        self.app.outbox.send_bytes(binary_data, mat_id, workspace_id=self.workspace_id)
+        self.app.outbox.send_bytes(binary_data, mat_id, **self._address)
 
     # ---- UI -----------------------------------------------------------------------------------------
 
@@ -629,12 +656,12 @@ class Workspace:
         if element.action is None:
             console.log(f"[yellow]Warning: UI element with GUID {element.guid} has no associated action.[/yellow]")
 
-        self.app.inbox.register_button(element.guid, element.action)
+        self.state.register_button(element.guid, element.action)
 
         msg = element.as_dict()
         msg["workspace_id"] = self.workspace_id
         binary_data = compas_pb.pb_dump_bts(msg)
-        self.app.outbox.send_bytes(binary_data, element.guid, persist=True, workspace_id=self.workspace_id)
+        self.app.outbox.send_bytes(binary_data, element.guid, persist=True, **self._address)
 
     # ---- SPINNER ----------------------------------------------------------------------------------
 
@@ -658,7 +685,7 @@ class Workspace:
         # actually is, instead of only ever seeing whichever call happened to reach it live.
         self.app.outbox.send_dict(
             {"dispatch": "spinner", "visible": True, "message": message},
-            workspace_id=self.workspace_id,
+            **self._address,
             obj_id="spinner",
         )
         # Now, not when the handler calling this is done (see Outbox.batch).
@@ -668,7 +695,7 @@ class Workspace:
         """Hides the loading spinner overlay in this workspace's frontend."""
         self.app.outbox.send_dict(
             {"dispatch": "spinner", "visible": False},
-            workspace_id=self.workspace_id,
+            **self._address,
             obj_id="spinner",
         )
 

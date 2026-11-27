@@ -49,6 +49,11 @@ dev = [
     "ruff",
     "wheel",
     "pytest>=8.4.2",
+    "fakeredis>=2",
+    "redis>=5",
+]
+sessions = [
+    "redis>=5",
 ]
 
 [project.urls]

@@ -1,8 +1,12 @@
 import asyncio
 import threading
 from contextlib import contextmanager
+from typing import Optional
 
 import compas_pb
+
+from .session import DEFAULT_SESSION_ID
+from .session import _session
 
 
 class Outbox:
@@ -53,6 +57,7 @@ class Outbox:
         workspace_id: str = "main",
         remove_key=None,
         broadcast: bool = True,
+        session_id: Optional[str] = None,
     ):
         """Sends raw binary data now if the server is running, otherwise queues it - or,
         inside a `batch()`, when the batch ends.
@@ -61,16 +66,18 @@ class Outbox:
         state - used so a removed object's earlier "add" broadcast isn't replayed to clients
         that connect (or reconnect) after the removal.
 
-        `workspace_id=None` sends to every workspace (see `AppServer.broadcast`).
+        It goes to `workspace_id` of `session_id`: by default the bound session (see
+        `current_session`), or the default one, whose messages reach everyone.
+        `workspace_id=None` sends to every workspace of the session (see `AppServer.broadcast`).
 
         `broadcast`, if False, still persists `binary_data` under `obj_id` for future
         reconnects but skips sending it to clients already connected - used to silently
         refresh the reconnect-replay snapshot after already notifying live clients through
         a smaller message (see `Workspace.transform_geometry`).
         """
-        self._add((binary_data, obj_id, persist, workspace_id, remove_key, broadcast))
+        self._add((binary_data, obj_id, persist, workspace_id, remove_key, broadcast, session_id))
 
-    def send_dict(self, message: dict, *, workspace_id: str = "main", remove_key=None, obj_id=None):
+    def send_dict(self, message: dict, *, workspace_id: str = "main", remove_key=None, obj_id=None, session_id: Optional[str] = None):
         """Serializes a dictionary message and sends it.
 
         `obj_id`, if given, is the persisted state key this message should occupy - pass a
@@ -91,9 +98,9 @@ class Outbox:
         # start_spinner/stop_spinner, which pass the stable obj_id="spinner" that makes
         # each call overwrite the previous one instead of piling up as separate entries.
         persist = dispatch != "ui" and not is_remove
-        self.send_bytes(binary_data, obj_id or "", persist=persist, workspace_id=workspace_id, remove_key=remove_key)
+        self.send_bytes(binary_data, obj_id or "", persist=persist, workspace_id=workspace_id, remove_key=remove_key, session_id=session_id)
 
-    def forget(self, key, *, workspace_id: str = "main"):
+    def forget(self, key, *, workspace_id: str = "main", session_id: Optional[str] = None):
         """Drops a previously persisted entry without broadcasting anything live.
 
         Use for cleanup that doesn't need its own visual effect on connected clients - e.g. an
@@ -101,7 +108,7 @@ class Outbox:
         geometry's own removal broadcast is what visually clears the scene; the material slot
         just needs to stop being replayed on future reconnects).
         """
-        self._add((None, "", False, workspace_id, key, True))
+        self._add((None, "", False, workspace_id, key, True, session_id))
 
     def flush(self):
         """Sends any messages that were queued before the server was ready."""
@@ -112,7 +119,11 @@ class Outbox:
 
     def _add(self, entry):
         """Gathers `entry` - (binary_data, obj_id, persist, workspace_id, remove_key,
-        broadcast) - into this thread's open batch, or sends it."""
+        broadcast, session_id) - into this thread's open batch, or sends it. A session_id of
+        None is the session bound here, now."""
+        if entry[6] is None:
+            session = _session.get()
+            entry = (*entry[:6], session.id if session is not None else DEFAULT_SESSION_ID)
         entries = getattr(self._batches, "entries", None)
         if entries is not None:
             entries.append(entry)
@@ -128,9 +139,9 @@ class Outbox:
         if not loop:
             self._queue.extend(entries)
         elif len(entries) == 1:
-            binary_data, obj_id, persist, workspace_id, remove_key, broadcast = entries[0]
+            binary_data, obj_id, persist, workspace_id, remove_key, broadcast, session_id = entries[0]
             asyncio.run_coroutine_threadsafe(
-                self.server.broadcast(binary_data, obj_id, persist=persist, workspace_id=workspace_id, remove_key=remove_key, broadcast=broadcast),
+                self.server.broadcast(binary_data, obj_id, persist=persist, workspace_id=workspace_id, remove_key=remove_key, broadcast=broadcast, session_id=session_id),
                 loop,
             )
         else:

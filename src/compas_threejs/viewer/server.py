@@ -10,6 +10,9 @@ from fastapi import WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from rich.console import Console
 
+from .connections import ConnectionManager
+from .session import DEFAULT_SESSION_ID
+
 console = Console()
 
 # The first byte of a frame holding several messages (see `pack_batch`). No protobuf
@@ -25,15 +28,15 @@ def pack_batch(messages):
 
 
 class AppServer:
-    """Owns the FastAPI app, websocket connections, and per-workspace scene state for one App."""
+    """Owns the FastAPI app for one App, and sends to its connections (see `ConnectionManager`)."""
 
     def __init__(self, frontend_dir=None):
-        self.workspaces = defaultdict(set)
-        self.workspace_states = defaultdict(dict)
-        # State sent to every workspace (`workspace_id=None` in `broadcast`), e.g. a plugin's
-        # button state, replayed to each tab before that tab's own state.
-        self.shared_state = {}
+        self.connections = ConnectionManager()
+        # Which session a connection belongs to: ``resolve_session(websocket)`` returns a
+        # `Session`, or None for the default one (until sessions are switched on).
+        self.resolve_session = None
         self.app_instance = None
+        self._periodic = []  # (seconds, function), run while serving - see `every`
 
         self.loop = None
         self.shutdown_event = threading.Event()
@@ -72,11 +75,13 @@ class AppServer:
 
         # Grab workspace ID from the query parameter (e.g. /ws?workspace=beam_123)
         workspace_id = websocket.query_params.get("workspace", "main")
-        self.workspaces[workspace_id].add(websocket)
+        session = self.resolve_session(websocket) if self.resolve_session else None
+        session_id = session.id if session is not None else DEFAULT_SESSION_ID
+        if session is not None:
+            session.connections += 1
 
-        # Replay the shared state, then only the history belonging to this specific workspace
-        current_state = [*self.shared_state.values(), *self.workspace_states[workspace_id].values()]
-        await self._send_in_order(websocket, current_state)
+        # Replay everyone's state, then this session's; every workspace's, then this one's.
+        await self._send_in_order(websocket, self.connections.connect(websocket, session_id, workspace_id))
 
         try:
             while True:
@@ -96,18 +101,20 @@ class AppServer:
                         # block the loop from delivering messages the handler sends in the
                         # meantime (e.g. a start_spinner() call made at the top of the handler).
                         try:
-                            await asyncio.to_thread(self.app_instance.on_message, data, workspace_id)
+                            await asyncio.to_thread(self.app_instance.on_message, data, workspace_id, *([session] if session else []))
                         except Exception:
                             # A failing message must not end the tab's connection.
                             console.print_exception()
                 elif "bytes" in message:
                     data = message["bytes"]
-                    await self.broadcast(data, workspace_id=workspace_id)
+                    await self.broadcast(data, workspace_id=workspace_id, session_id=session_id)
 
         except WebSocketDisconnect:
             pass
         finally:
-            self.workspaces[workspace_id].discard(websocket)
+            self.connections.disconnect(websocket, session_id, workspace_id)
+            if session is not None:
+                session.connections -= 1
 
     async def broadcast(
         self,
@@ -117,17 +124,19 @@ class AppServer:
         workspace_id: str = "main",
         remove_key=None,
         broadcast: bool = True,
+        session_id: str = DEFAULT_SESSION_ID,
     ):
         """Broadcast binary data or dictionary configurations cleanly to workspace clients.
 
-        `workspace_id=None` sends to the clients of every workspace, and persists in the
-        shared state that every workspace replays.
+        It goes to `workspace_id` of `session_id`; `workspace_id=None` sends to every
+        workspace of the session, and persists in what each of them replays. The default
+        session's messages reach every session (see `ConnectionManager`).
 
         `broadcast`, if False, still applies the persist/remove_key bookkeeping above but
         skips sending anything to already-connected clients - used to silently refresh a
         persisted snapshot for future reconnects only (see `Outbox.send_bytes`).
         """
-        self._keep(binary_data, obj_id, persist, workspace_id, remove_key)
+        self.connections.keep(binary_data, obj_id, persist, session_id, workspace_id, remove_key)
 
         if binary_data is None:
             # Pure state cleanup (see Outbox.forget) - nothing to broadcast live.
@@ -136,7 +145,7 @@ class AppServer:
         if not broadcast:
             return
 
-        target_clients = self._clients(workspace_id)
+        target_clients = self.connections.clients(session_id, workspace_id)
         if not target_clients:
             return
 
@@ -152,31 +161,27 @@ class AppServer:
 
     async def broadcast_many(self, entries):
         """`broadcast` of each of `entries` - (binary_data, obj_id, persist, workspace_id,
-        remove_key, broadcast) tuples, as `Outbox` gathers them - in order, but sending each
-        client what it gets of them as one frame (see `pack_batch`)."""
+        remove_key, broadcast[, session_id]) tuples, as `Outbox` gathers them - in order, but
+        sending each client what it gets of them as one frame (see `pack_batch`)."""
         outgoing = defaultdict(list)  # client -> its messages, in order
-        for binary_data, obj_id, persist, workspace_id, remove_key, broadcast in entries:
-            self._keep(binary_data, obj_id, persist, workspace_id, remove_key)
+        for entry in entries:
+            binary_data, obj_id, persist, workspace_id, remove_key, broadcast = entry[:6]
+            session_id = entry[6] if len(entry) > 6 else DEFAULT_SESSION_ID
+            self.connections.keep(binary_data, obj_id, persist, session_id, workspace_id, remove_key)
             if binary_data is not None and broadcast:
-                for ws in self._clients(workspace_id):
+                for ws in self.connections.clients(session_id, workspace_id):
                     outgoing[ws].append(binary_data)
         await asyncio.gather(*(self._send_in_order(ws, messages) for ws, messages in outgoing.items()), return_exceptions=True)
 
-    def _keep(self, binary_data, obj_id, persist, workspace_id, remove_key):
-        """The persisted state's bookkeeping for one message (see `broadcast`)."""
-        state = self.shared_state if workspace_id is None else self.workspace_states[workspace_id]
-        if remove_key is not None:
-            # Drops the object's earlier persisted "add" broadcast so it isn't replayed to
-            # clients that connect (or reconnect) after this removal.
-            state.pop(remove_key, None)
-        elif persist:
-            key = obj_id or str(len(state))
-            state[key] = binary_data
+    @property
+    def workspace_states(self) -> dict:
+        """The default session's persisted messages, by workspace (read-only use)."""
+        return {wid: saved for (sid, wid), saved in self.connections._saved.items() if sid == DEFAULT_SESSION_ID and wid is not None}
 
-    def _clients(self, workspace_id):
-        if workspace_id is None:
-            return set().union(*self.workspaces.values())
-        return self.workspaces[workspace_id]
+    @property
+    def shared_state(self) -> dict:
+        """What every tab of every session replays first (read-only use)."""
+        return self.connections.saved(DEFAULT_SESSION_ID, None)
 
     @staticmethod
     async def _send_in_order(websocket, messages):
@@ -207,10 +212,26 @@ class AppServer:
             self.loop.run_until_complete(self._cleanup())
             self.loop.close()
 
+    def every(self, seconds: float, function):
+        """Calls `function()` every `seconds` while the server runs, off the event loop - e.g.
+        `SessionManager.sweep`. Must be called before the server starts."""
+        self._periodic.append((seconds, function))
+
+    async def _repeat(self, seconds, function):
+        while True:
+            await asyncio.sleep(seconds)
+            try:
+                await asyncio.to_thread(function)
+            except Exception:
+                console.print_exception()
+
     async def _serve_until_shutdown(self, server):
         server_task = asyncio.create_task(server.serve())
+        repeating = [asyncio.create_task(self._repeat(seconds, function)) for seconds, function in self._periodic]
         await asyncio.to_thread(self.shutdown_event.wait)
         server.should_exit = True
+        for task in repeating:
+            task.cancel()
         await server_task
 
     async def _cleanup(self):

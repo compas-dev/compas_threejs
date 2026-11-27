@@ -1,5 +1,5 @@
 import json
-import threading
+from collections import ChainMap
 
 from compas.colors import Color
 from compas.geometry import Box
@@ -10,6 +10,8 @@ from compas.geometry import Transformation
 from rich.console import Console
 
 from compas_threejs.materials import Material
+
+from .session import State
 
 console = Console()
 
@@ -23,18 +25,18 @@ _CREATABLE_TYPES = {
 
 
 class Inbox:
-    """Routes messages coming in from the frontend and owns the registries needed to resolve them."""
+    """Routes messages coming in from the frontend to their handlers.
+
+    The registries it resolves them with - guid to geometry, material, callback - are the
+    current session's (see `State`): the attributes below are views onto them, kept under
+    their old names for the code that reads them.
+    """
 
     def __init__(self, app=None):
         self.app = app  # back-reference to the owning App, used to reach Workspace.update_geometry
-        self.buttons = dict()
-        self.geometry_registry = dict()
-        self.material_registry = dict()
-        self.metadata_registry = dict()
-        self.object_actions_registry = dict()
-        self.brep_viewmesh_registry = dict()  # brep_id -> viewmesh
-        self.action_registry = dict()  # action name -> callable, for manually-registered actions
-        self.lock = threading.Lock()  # guards geometry mutation against concurrent App.loop callbacks
+        # Without an App with sessions (a `Remote`, a test's stand-in), the registries are
+        # this inbox's own.
+        self._state = None if getattr(app, "sessions", None) is not None else State()
 
         self._handlers = {
             "ui_callback": self._handle_ui_callback,
@@ -48,42 +50,69 @@ class Inbox:
             "plugin": self._handle_plugin,
         }
 
-    # ---- REGISTRATION (called by Workspace when something is sent out) -------------------------
+    @property
+    def state(self) -> State:
+        """The `State` whose registries this resolves with: the current session's."""
+        return self._state if self._state is not None else self.app.sessions.current().state
+
+    def _shared(self, name):
+        """The current session's registry `name`, falling back to the default session's: what
+        was registered outside of any session (at startup, in app.py) is everyone's. Writes
+        go to the current session's."""
+        state = self.state
+        if state.shared is None:
+            return getattr(state, name)
+        return ChainMap(getattr(state, name), getattr(state.shared, name))
+
+    @property
+    def buttons(self):
+        """Callbacks by guid: UI elements and object actions - the session's, then everyone's."""
+        return self._shared("buttons")
+
+    @property
+    def geometry_registry(self):
+        """Geometry by guid - the session's, then everyone's. To change one, take it from
+        `State.own`: everyone's must not be changed in place."""
+        return self._shared("geometry")
+
+    @property
+    def material_registry(self):
+        return self._shared("materials")
+
+    @property
+    def metadata_registry(self):
+        return self._shared("metadata")
+
+    @property
+    def object_actions_registry(self):
+        return self._shared("object_actions")
+
+    @property
+    def brep_viewmesh_registry(self):
+        return self.state.brep_viewmeshes
+
+    @property
+    def action_registry(self):
+        """Callables by action name (see `register_action`) - the session's, then everyone's."""
+        return self._shared("actions")
+
+    @property
+    def lock(self):
+        return self.state.lock
+
+    # ---- REGISTRATION (see State) ---------------------------------------------------------------
 
     def register_geometry(self, obj_id, geometry, metadata=None, actions=None):
-        obj_id = str(obj_id)
-        self.geometry_registry[obj_id] = geometry
-        if metadata:
-            self.metadata_registry[obj_id] = metadata
-        if actions:
-            self.object_actions_registry[obj_id] = actions
-            for action in actions:
-                self.buttons[str(action.guid)] = action.action
+        self.state.register_geometry(obj_id, geometry, metadata, actions)
 
     def register_material(self, obj_id, material):
-        self.material_registry[str(obj_id)] = material
+        self.state.register_material(obj_id, material)
 
     def register_button(self, guid, action):
-        self.buttons[guid] = action
+        self.state.register_button(guid, action)
 
     def forget_geometry(self, obj_id: str) -> None:
-        """
-        Drops every registry entry register_geometry created for `obj_id` - called by
-        Workspace.remove_object, whose own cleanup only forgets the *outbox*'s persisted
-        material/visibility state (see there) and never touched these inbox-side registries.
-        Without this, a removed object's geometry/metadata/action-callback registrations stay
-        forever, and re-adding the same guid later (a Brep re-registered after
-        to_viewmesh()) would otherwise still work, but at the cost of a permanently growing
-        `buttons`/`object_actions_registry` for any workflow that repeatedly removes and
-        re-adds objects (e.g. a live-editable object action, or a viewer that clears and
-        rebuilds part of its own scene).
-        """
-        self.geometry_registry.pop(obj_id, None)
-        self.metadata_registry.pop(obj_id, None)
-        actions = self.object_actions_registry.pop(obj_id, None)
-        if actions:
-            for action in actions:
-                self.buttons.pop(str(action.guid), None)
+        self.state.forget_geometry(obj_id)
 
     def register_action(self, name, callable_function):
         """Manually registers a callable against a fixed action name.
@@ -92,14 +121,11 @@ class Inbox:
         auto-registered guid), but instead send a `dispatch: "other_action"` message with a fixed
         `action` name, e.g. `{"dispatch": "other_action", "action": "load_timber_model", ...}`.
         """
-        self.action_registry[name] = callable_function
+        self.state.register_action(name, callable_function)
 
     def update_metadata(self, metadata):
         """Updates the metadata associated with a geometry object in the viewer."""
-        for key, value in self.metadata_registry.items():
-            if value.guid == metadata.guid:
-                self.metadata_registry[key] = metadata
-                break
+        self.state.update_metadata(metadata)
 
     # ---- ROUTING --------------------------------------------------------------------------------
 
@@ -169,7 +195,7 @@ class Inbox:
         action_id = message.get("action_guid")
         object_id = message.get("object_guid")
         console.log(f"[blue]Received object action callback from frontend. Action ID: {action_id}, Object ID: {object_id}[/blue]")
-        obj = self.geometry_registry.get(object_id)
+        obj = self.state.own(object_id) if object_id else None  # the session's own: the callback may change it
         if action_id and action_id in self.buttons:
             value = message.get("value")
             console.log(f"[blue]Value associated with the action: {value}[/blue]")
@@ -190,7 +216,7 @@ class Inbox:
         guid = message.get("guid")
         matrix = message.get("matrix")
         console.log(f"[blue]Received object transform from frontend. Object ID: {guid}[/blue]")
-        geometry = self.geometry_registry.get(guid)
+        geometry = self.state.own(guid) if guid else None  # everyone's is copied first, not moved for all
         if geometry is None or matrix is None:
             console.log(f"[yellow]Unrecognized object_transform target: {guid}[/yellow]")
             return
@@ -253,11 +279,11 @@ class Inbox:
             console.log(f"[yellow]Unrecognized material_edit target: {guid}[/yellow]")
             return
 
-        material = self.material_registry.get(guid)
+        material = self.state.own_material(guid)  # everyone's is copied first
         if material is None:
             material = Material()
             material._geometry_guid = str(guid)
-            self.material_registry[guid] = material
+            self.state.materials[guid] = material
 
         updates = {}
         if "color" in message:

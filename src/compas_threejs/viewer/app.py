@@ -2,16 +2,24 @@ import socket
 import threading
 import time
 import webbrowser
+from typing import Callable
 from typing import Optional
 from typing import Union
 
 from compas.geometry import Point
 from rich.console import Console
 
+from .endpoint import SessionMiddleware
+from .endpoint import session_of
 from .inbox import Inbox
 from .outbox import Outbox
 from .plugin import Plugin
 from .server import AppServer
+from .session import DEFAULT_TIMEOUT
+from .session import Session
+from .session import SessionManager
+from .session import bind_workspace
+from .stores import SessionStore
 from .workspace import CameraView
 from .workspace import Workspace
 
@@ -82,10 +90,28 @@ class App:
 
     """
 
-    def __init__(self, host: str = "127.0.0.1", websocket_port: int = 9001, frontend_dir=None):
+    def __init__(
+        self,
+        host: str = "127.0.0.1",
+        websocket_port: int = 9001,
+        frontend_dir=None,
+        sessions: bool = False,
+        session_store: Optional[SessionStore] = None,
+        session_timeout: float = DEFAULT_TIMEOUT,
+    ):
         """
         Parameters
         ----------
+        sessions : bool, optional
+            Whether each client - a browser, with all its tabs - gets its own session: its own
+            workspaces, geometry and plugin data, found from a cookie. Default False: every
+            client shares one, as before. What is added outside of a session (at startup,
+            here) is everyone's either way. See SESSIONS.md.
+        session_store : SessionStore, optional
+            Where the records of sessions are kept: `MemorySessionStore` (the default) or
+            `RedisSessionStore`. See `App.sessions`.
+        session_timeout : float, optional
+            Seconds a session is kept after its last connection closed. Default 30 minutes.
         frontend_dir : str | pathlib.Path, optional
             Directory of a built frontend (an `index.html` plus its assets) to serve instead of
             this package's own bundled one at `viewer/frontend/`. Lets a consumer pin the served
@@ -98,8 +124,23 @@ class App:
         self.websocket_port = websocket_port
         self.websocket_server_thread = None
 
+        # Sessions: one per client, each with its own State (see session.py). There's always
+        # a default one, which every client joins until sessions are switched on.
+        self.sessions = SessionManager(session_store, session_timeout)
+
         self.server = AppServer(frontend_dir=frontend_dir)
         self.outbox = Outbox(self.server)
+        # The plugins hear of sessions starting and ending; what was kept to replay to an
+        # ended session's tabs goes with it.
+        self.sessions.on_started(self._session_started)
+        self.sessions.on_ended(self._session_ended)
+        self._authorize_callbacks = []
+        if sessions:
+            self.server.fastapi_app.add_middleware(SessionMiddleware, manager=self.sessions, authorize=self._authorized)
+            self.server.resolve_session = lambda websocket: session_of(websocket.scope)
+            # Ends the sessions that expired, keeps the ones with open tabs.
+            self.server.every(min(60, session_timeout / 4), self.sessions.sweep)
+        self.sessions_enabled = sessions
         self.inbox = Inbox(self)
 
         # Plugins: none by default, so the viewer starts without a toolbar
@@ -113,9 +154,8 @@ class App:
         self._loop = None
         self._default_lighting = True
 
-        # Workspaces
-        self.workspaces = {}
-        self.main = self.get_workspace("main")
+        # Workspaces: the default session's main one exists from the start
+        self.get_workspace("main")
 
     def __enter__(self):
         return self
@@ -125,11 +165,22 @@ class App:
 
     # ---- WORKSPACES ---------------------------------------------------------------------------
 
+    @property
+    def workspaces(self) -> dict:
+        """The current session's workspaces, by id (see `App.sessions`)."""
+        return self.sessions.current().state.workspaces
+
+    @property
+    def main(self) -> Workspace:
+        """The current session's "main" workspace, which the shorthands below act on."""
+        return self.get_workspace("main")
+
     def get_workspace(self, workspace_id: str) -> Workspace:
-        """Gets or creates an isolated workspace viewport."""
-        if workspace_id not in self.workspaces:
-            self.workspaces[workspace_id] = Workspace(self, workspace_id)
-        return self.workspaces[workspace_id]
+        """Gets or creates an isolated workspace viewport, in the current session."""
+        state = self.sessions.current().state
+        if workspace_id not in state.workspaces:
+            state.workspaces[workspace_id] = Workspace(self, workspace_id, state)
+        return state.workspaces[workspace_id]
 
     # ---- ATTRIBUTES (forwarded to the main workspace) ------------------------------------------
 
@@ -189,15 +240,21 @@ class App:
         return callback
 
     def _plugins_manifest(self, workspace: str = "main"):
-        # The page asks for its plugins first of all, so this is where a tab's workspace starts.
-        if workspace not in self.workspaces:
-            created = self.get_workspace(workspace)
-            for plugin in self._plugins:
-                plugin.new_workspace(created)
-            for callback in self._new_workspace_callbacks:
-                callback(created)
+        # The page asks for its plugins first of all, so this is usually where a tab's workspace starts.
         # A Python-only plugin (no `static`) has nothing for the page to load.
-        return [plugin.manifest() for plugin in self.workspaces[workspace].plugins if plugin.static_dir]
+        return [plugin.manifest() for plugin in self._tab_workspace(workspace).plugins if plugin.static_dir]
+
+    def _tab_workspace(self, workspace_id: str) -> Workspace:
+        """The workspace a browser tab asks for, in the current session: created, with the
+        `new_workspace` hooks run, if it doesn't exist yet."""
+        if workspace_id in self.workspaces:
+            return self.workspaces[workspace_id]
+        created = self.get_workspace(workspace_id)
+        for plugin in self._plugins:
+            plugin.new_workspace(created)
+        for callback in self._new_workspace_callbacks:
+            callback(created)
+        return created
 
     def _mount_plugins(self):
         for plugin in self._plugins:
@@ -432,11 +489,45 @@ class App:
 
     # ---- INCOMING MESSAGES ------------------------------------------------------------------------
 
-    def on_message(self, message, workspace_id: str = "main"):
+    def _session_started(self, session):
+        for plugin in list(self._plugins):
+            try:
+                plugin.new_session(session)
+            except Exception:
+                console.print_exception()
+
+    def _session_ended(self, session):
+        for plugin in list(self._plugins):
+            try:
+                plugin.end_session(session)
+            except Exception:
+                console.print_exception()
+        self.server.connections.forget_session(session.id)
+
+    def authorize_session(self, callback: Callable) -> Callable:
+        """Calls ``callback(connection, session)`` for each request and WebSocket, with sessions
+        on; a falsy answer refuses it (403). `connection` is a starlette ``HTTPConnection``
+        (headers, cookies, client address). Logging in is the host app's job; this is where it
+        says who may use a session. Usable as a decorator."""
+        self._authorize_callbacks.append(callback)
+        return callback
+
+    def _authorized(self, connection, session) -> bool:
+        return all(callback(connection, session) for callback in list(self._authorize_callbacks))
+
+    def on_message(self, message, workspace_id: str = "main", session: Optional[Session] = None):
         """Default handler for messages received from the frontend. What handling it sends
-        reaches the viewer together, when it's done (see `Outbox.batch`)."""
-        with self.outbox.batch():
-            self.inbox.handle(message, self.outbox, workspace_id=workspace_id)
+        reaches the viewer together, when it's done (see `Outbox.batch`).
+
+        The message is handled with its `session` (by default the default one) and its
+        workspace bound, so the code handling it finds them (see `current_session`).
+        """
+        session = session or self.sessions.default
+        self.sessions.touch(session)
+        with session.active():
+            workspace = self._tab_workspace(workspace_id)
+            with bind_workspace(workspace), self.outbox.batch():
+                self.inbox.handle(message, self.outbox, workspace_id=workspace_id)
 
     def update_metadata(self, metadata):
         """
